@@ -6,3 +6,22 @@
 .env.*
 !.env.example
 !.env.*.example
+
+# Python / local tools
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Build output and signing material
+build/
+*.jks
+*.keystore
+key.properties
+*.p12
+*.mobileprovision
