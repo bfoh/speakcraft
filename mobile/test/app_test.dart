@@ -26,6 +26,7 @@ void main() {
     SpeechRecognition recognition = const UnconfiguredSpeechRecognition(),
     SpeakingFeedback feedback = const UnconfiguredSpeakingFeedback(),
     KoraConversation conversation = const UnconfiguredKoraConversation(),
+    KoraConversation salon = const UnconfiguredKoraConversation(),
   }) async {
     store = MemoryProgressStore()..progress = progress;
     mic = FakeMicrophone();
@@ -45,6 +46,7 @@ void main() {
             recognition: recognition,
             feedback: feedback,
             conversation: conversation,
+            salon: salon,
           ),
         ),
       ],
@@ -352,6 +354,79 @@ void main() {
     expect(tester.takeException(), isNull);
     await tap(tester, 'Enable microphone');
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('learner speaks with first simulated salon customer', (
+    tester,
+  ) async {
+    final recognition = FakeRecognition()
+      ..result = 'Welcome. What kind of braids would you like?';
+    final salon = FakeConversation()
+      ..result = const KoraReply(
+        'I like medium braids.',
+        'Could you check the price?',
+      );
+    await launch(
+      tester,
+      progress: returning,
+      recognition: recognition,
+      salon: salon,
+    );
+    await tap(tester, 'Open AI Salon');
+    expect(find.text('AI Salon'), findsOneWidget);
+    expect(
+      find.text("Hello. I'd like braids. How much would they cost?"),
+      findsOneWidget,
+    );
+    expect(find.textContaining('No salon price is set'), findsOneWidget);
+    await tap(tester, 'Listen to customer');
+    expect(
+      speech.spoken.last,
+      "Hello. I'd like braids. How much would they cost?",
+    );
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    await tap(tester, 'Hear my words');
+    await tester.enterText(find.byType(TextField), 'pilot-access-code');
+    await tap(tester, 'Continue');
+    expect(salon.calls, isEmpty);
+    await tap(tester, 'Send reply to customer');
+    expect(salon.calls.first.$1, 'friendly-braids-price');
+    expect(
+      salon.calls.first.$3,
+      'Welcome. What kind of braids would you like?',
+    );
+    expect(
+      find.text('I like medium braids. Could you check the price?'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('offline salon reply preserves the current answer', (
+    tester,
+  ) async {
+    final salon = FakeConversation()
+      ..error = const ConversationException(ConversationProblem.offline);
+    await launch(
+      tester,
+      progress: returning,
+      recognition: FakeRecognition(),
+      salon: salon,
+    );
+    await tap(tester, 'Open AI Salon');
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    await tap(tester, 'Hear my words');
+    await tester.enterText(find.byType(TextField), 'pilot-access-code');
+    await tap(tester, 'Continue');
+    await tap(tester, 'Send reply to customer');
+    expect(find.textContaining("couldn't connect"), findsOneWidget);
+    expect(find.text('Delete answer'), findsOneWidget);
+    salon.error = null;
+    await tap(tester, 'Send reply to customer');
+    expect(salon.calls.length, 2);
   });
 
   testWidgets('storage failure does not navigate or claim saved state', (

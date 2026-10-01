@@ -19,6 +19,9 @@ void main() {
     expect(curriculum.dayOne.challenge, contains('30–60'));
     expect(curriculum.dayOne.conversation!.turnLimit, 3);
     expect(curriculum.dayOne.conversation!.opening, contains('Kora'));
+    expect(curriculum.firstSalonScenario.id, 'friendly-braids-price');
+    expect(curriculum.firstSalonScenario.difficulty, 1);
+    expect(curriculum.firstSalonScenario.successConditions.length, 3);
   });
   test('rejects future incompatible versions rather than misreading them', () {
     final data = jsonDecode(source) as Map<String, dynamic>;
@@ -34,6 +37,11 @@ void main() {
   test('rejects a missing or unbounded Day-1 conversation', () {
     final data = jsonDecode(source) as Map<String, dynamic>;
     data['lessons'][0]['conversation']['turn_limit'] = 40;
+    expect(() => Curriculum.parse(jsonEncode(data)), throwsFormatException);
+  });
+  test('rejects an unbounded salon scenario', () {
+    final data = jsonDecode(source) as Map<String, dynamic>;
+    data['salon_scenarios'][0]['turn_limit'] = 40;
     expect(() => Curriculum.parse(jsonEncode(data)), throwsFormatException);
   });
 }

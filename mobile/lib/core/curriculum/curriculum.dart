@@ -43,6 +43,48 @@ class LessonConversation {
       );
 }
 
+class SalonScenario {
+  const SalonScenario({
+    required this.id,
+    required this.scenarioGoal,
+    required this.customerGoal,
+    required this.customerPersonality,
+    required this.difficulty,
+    required this.customerOpening,
+    required this.learnerObjectives,
+    required this.targetLanguage,
+    required this.successConditions,
+    required this.turnLimit,
+  });
+  final String id;
+  final String scenarioGoal;
+  final String customerGoal;
+  final String customerPersonality;
+  final int difficulty;
+  final String customerOpening;
+  final List<String> learnerObjectives;
+  final List<String> targetLanguage;
+  final List<String> successConditions;
+  final int turnLimit;
+
+  factory SalonScenario.fromJson(Map<String, dynamic> json) => SalonScenario(
+    id: json['id'] as String,
+    scenarioGoal: json['scenario_goal'] as String,
+    customerGoal: json['customer_goal'] as String,
+    customerPersonality: json['customer_personality'] as String,
+    difficulty: json['difficulty'] as int,
+    customerOpening: json['customer_opening'] as String,
+    learnerObjectives: List<String>.unmodifiable(
+      json['learner_objectives'] as List,
+    ),
+    targetLanguage: List<String>.unmodifiable(json['target_language'] as List),
+    successConditions: List<String>.unmodifiable(
+      json['success_conditions'] as List,
+    ),
+    turnLimit: json['turn_limit'] as int,
+  );
+}
+
 class Lesson {
   const Lesson({
     required this.id,
@@ -87,9 +129,11 @@ class Lesson {
 }
 
 class Curriculum {
-  const Curriculum(this.lessons);
+  const Curriculum(this.lessons, this.salonScenarios);
   final List<Lesson> lessons;
+  final List<SalonScenario> salonScenarios;
   Lesson get dayOne => lessons.first;
+  SalonScenario get firstSalonScenario => salonScenarios.first;
 
   factory Curriculum.parse(String source) {
     final json = jsonDecode(source) as Map<String, dynamic>;
@@ -100,6 +144,22 @@ class Curriculum {
     final lessons = (json['lessons'] as List)
         .map((l) => Lesson.fromJson(l as Map<String, dynamic>))
         .toList();
+    final scenarios = (json['salon_scenarios'] as List)
+        .map((s) => SalonScenario.fromJson(s as Map<String, dynamic>))
+        .toList();
+    if (scenarios.length != 1 ||
+        scenarios.first.id != 'friendly-braids-price' ||
+        scenarios.first.difficulty != 1 ||
+        scenarios.first.turnLimit != 4 ||
+        scenarios.first.scenarioGoal.isEmpty ||
+        scenarios.first.customerGoal.isEmpty ||
+        scenarios.first.customerPersonality.isEmpty ||
+        scenarios.first.customerOpening.isEmpty ||
+        scenarios.first.learnerObjectives.isEmpty ||
+        scenarios.first.targetLanguage.isEmpty ||
+        scenarios.first.successConditions.isEmpty) {
+      throw const FormatException('Invalid salon scenario');
+    }
     final ids = <String>{};
     if (lessons.length != 5) {
       throw const FormatException('Alpha requires five lessons');
@@ -132,6 +192,6 @@ class Curriculum {
         }
       }
     }
-    return Curriculum(List.unmodifiable(lessons));
+    return Curriculum(List.unmodifiable(lessons), List.unmodifiable(scenarios));
   }
 }

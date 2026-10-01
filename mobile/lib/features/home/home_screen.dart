@@ -45,6 +45,27 @@ class HomeScreen extends ConsumerWidget {
             ],
           ),
         ),
+        SpeakCraftCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text('AI SALON • FIRST CUSTOMER'),
+              const SizedBox(height: 12),
+              Text(
+                curriculum.firstSalonScenario.scenarioGoal,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 12),
+              const Text('Practise with a simulated customer.'),
+              const SizedBox(height: 20),
+              SpeakCraftButton(
+                label: 'Open AI Salon',
+                icon: Icons.storefront_outlined,
+                onPressed: () => context.push('/salon/first'),
+              ),
+            ],
+          ),
+        ),
         const SpeakCraftNotice(
           'Your place is saved on this phone. You can practise without internet.',
           icon: Icons.offline_pin_outlined,

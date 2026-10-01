@@ -10,6 +10,7 @@ import '../core/storage/sqlite_progress_store.dart';
 import '../core/speech/recognition.dart';
 import '../core/speech/feedback.dart';
 import '../core/speech/conversation.dart';
+import '../core/speech/salon.dart';
 import '../features/conversation/conversation_controller.dart';
 import '../features/lesson/feedback_controller.dart';
 import '../features/lesson/microphone_controller.dart';
@@ -26,6 +27,7 @@ class AppServices {
     this.recognition = const UnconfiguredSpeechRecognition(),
     this.feedback = const UnconfiguredSpeakingFeedback(),
     this.conversation = const UnconfiguredKoraConversation(),
+    this.salon = const UnconfiguredKoraConversation(),
   });
   final Curriculum curriculum;
   final ProgressStore store;
@@ -36,6 +38,7 @@ class AppServices {
   final SpeechRecognition recognition;
   final SpeakingFeedback feedback;
   final KoraConversation conversation;
+  final KoraConversation salon;
 }
 
 final bootstrapProvider = FutureProvider<AppServices>((ref) async {
@@ -73,6 +76,9 @@ final bootstrapProvider = FutureProvider<AppServices>((ref) async {
         const String.fromEnvironment('SPEAKCRAFT_API_BASE_URL'),
       ),
       conversation: HttpKoraConversation(
+        const String.fromEnvironment('SPEAKCRAFT_API_BASE_URL'),
+      ),
+      salon: HttpSalonConversation(
         const String.fromEnvironment('SPEAKCRAFT_API_BASE_URL'),
       ),
     );
@@ -129,6 +135,18 @@ final conversationProvider = Provider<ConversationController>((ref) {
     lessonId: services.curriculum.dayOne.id,
     opening: authored.opening,
     turnLimit: authored.turnLimit,
+  );
+  ref.onDispose(controller.dispose);
+  return controller;
+}, dependencies: [servicesProvider]);
+final salonConversationProvider = Provider<ConversationController>((ref) {
+  final services = ref.watch(servicesProvider);
+  final scenario = services.curriculum.firstSalonScenario;
+  final controller = ConversationController(
+    provider: services.salon,
+    lessonId: scenario.id,
+    opening: scenario.customerOpening,
+    turnLimit: scenario.turnLimit,
   );
   ref.onDispose(controller.dispose);
   return controller;

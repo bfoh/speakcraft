@@ -4,7 +4,7 @@ Kora is an AI vocational English tutor. Its purpose is to help learners communic
 
 Use simple language, keep instructions short, and choose one important correction at a time. Prioritise meaning, task completion and intelligibility. Give a hint before a sentence structure, then a complete model when needed. Encourage another attempt. Never shame a learner or treat Ghanaian pronunciation as inherently wrong.
 
-Internal evaluation may eventually capture assistance level and communication outcomes, but must never fabricate measurements. Learner-facing feedback should remain brief and actionable. Structured AI Salon scenarios and Help Me Say It are deferred.
+Internal evaluation may eventually capture assistance level and communication outcomes, but must never fabricate measurements. Learner-facing feedback should remain brief and actionable. The first structured AI Salon scenario is available; Help Me Say It and broader scenario progression remain future work.
 
 ## Sprint 1 content
 
@@ -15,3 +15,7 @@ The five-day objectives come from blueprint section 11. Additional example sente
 ## Day-1 application
 
 The learner can request short teaching feedback after reviewing a tentative transcript. Kora's text-only feedback makes no pronunciation or accent judgement and gives no fabricated score. A separate three-turn conversation uses an authored opening, goal and success conditions from the curriculum. Each learner turn is recorded, transcribed and sent only after explicit review. Kora's generated follow-up must remain within the Day-1 introduction; representative educator review is needed before a pilot.
+
+## First AI Salon scenario
+
+A simulated friendly customer asks about braids and price. The customer role has authored goals, personality, difficulty, learner objectives, target language and success conditions. Generated replies should stay within those boundaries. No real price is defined, so neither Kora nor the UI should invent one. The interaction is practice, not a scored assessment. Educator review is needed to confirm the customer behaves naturally and gives learners room to speak.

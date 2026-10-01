@@ -2,7 +2,7 @@
 
 ## Foundation and boundaries
 
-A Flutter application runs the beginning of Day 1 on Android and iOS. A separate FastAPI process exposes liveness, optional speech transcription, prompt-bound teaching feedback and a bounded Kora dialogue. The mobile application remains usable offline and does not require the backend for navigation or recording. There is no learner authentication, cloud database, scored assessment or synchronisation in this build.
+A Flutter application runs the beginning of Day 1 on Android and iOS. A separate FastAPI process exposes liveness, optional speech transcription, prompt-bound teaching feedback, a bounded Kora dialogue and one structured AI Salon scenario. The mobile application remains usable offline and does not require the backend for navigation or recording. There is no learner authentication, cloud database, scored assessment or synchronisation in this build.
 
 The architecture follows blueprint sections 18–20. The explicit Sprint 1 instruction limits the full AI vertical slice proposed in section 35; see DECISIONS.md.
 
@@ -25,6 +25,10 @@ The model receives text, not audio. It is instructed to prioritize meaning and t
 The authored Day-1 conversation opening, goal, turn limit and success conditions live in canonical curriculum data and are copied to both runtimes. A learner records an answer, explicitly requests transcription and then explicitly sends the reviewed text to `POST /v1/kora/respond`. The request includes up to five prior dialogue turns. FastAPI validates the sequence and resolves the authoritative goal; it does not hold a server session. The provider uses Responses structured output with `store: false` to return a short reply and optional follow-up question. The client limits the exchange to three learner turns. Dialogue stays in mobile memory only, and failures retain the current answer for manual retry. This completed-file mode is not a low-latency Realtime implementation.
 
 Lesson practice and Kora dialogue use separate native recorders and private cache folders. Starting or leaving a conversation cannot discard a lesson practice take. Both folders are cleaned on the next app launch.
+
+## Sprint 5 AI Salon slice
+
+`curriculum/alpha.json` also contains the first difficulty-1 scenario: a friendly customer wants braids and asks about price. It specifies the scenario and customer goals, personality, learner objectives, target language, success conditions, opening and a four-turn limit. The same dialogue screen uses customer-facing text and maps its partner turns to `customer` at the `POST /v1/salon/respond` boundary. The backend validates the authored scenario and alternating history, then requests a short, structured customer reply from the provider with `store: false`. The provider is instructed not to invent a real salon price, booking or assessment result. The app does not claim successful completion or persist the exchange. The stateless endpoint is used until a genuine session/assessment store is needed.
 
 ## Mobile structure
 
@@ -63,7 +67,7 @@ The microphone processing state only represents local audio work. Recording succ
 
 ## Backend
 
-`backend/app/main.py` defines an application factory, a typed `GET /health` endpoint and bounded, pilot-protected `POST /v1/speech/transcribe`, `POST /v1/speech/evaluate` and `POST /v1/kora/respond`. The factory accepts settings and test providers. Configuration comes from `SPEAKCRAFT_` variables plus a server-only `OPENAI_API_KEY`. Interactive docs and OpenAPI are disabled by default and opt in via `SPEAKCRAFT_DOCS_ENABLED=true`. No broad CORS policy or speculative learner-data routes are installed.
+`backend/app/main.py` defines an application factory, a typed `GET /health` endpoint and bounded, pilot-protected `POST /v1/speech/transcribe`, `POST /v1/speech/evaluate`, `POST /v1/kora/respond` and `POST /v1/salon/respond`. The factory accepts settings and test providers. Configuration comes from `SPEAKCRAFT_` variables plus a server-only `OPENAI_API_KEY`. Interactive docs and OpenAPI are disabled by default and opt in via `SPEAKCRAFT_DOCS_ENABLED=true`. No broad CORS policy or speculative learner-data routes are installed.
 
 Use an authenticated SpeakCraft API boundary for future learner data. Provider credentials must remain server-side. Do not add a cloud service merely to serve current local content.
 

@@ -14,6 +14,8 @@ The microphone records only after an explicit learner action and OS permission. 
 
 Conversation audio uses its own private temporary cache folder. Entering or leaving the conversation does not remove a Day-1 lesson practice take. Leaving the conversation deletes its current take; app relaunch clears any remaining temporary takes in both folders.
 
+**AI Salon** reuses that temporary dialogue recorder with the same explicit record, transcribe and send steps. The selected scenario ID, bounded customer/learner history and current transcript reach the backend only when the learner sends a reply. The backend resolves the authored scenario and uses the provider with storage disabled in the request. It stores no session or exchange. Leaving the screen clears the local dialogue and current take, while a failed request keeps them available for retry.
+
 No background-recording capability is enabled. Active capture stops on app interruption/navigation and at 60 seconds. No learner audio is uploaded automatically. No analytics or learner-content logging are configured. Device TTS receives authored instructions, examples or a returned transcript; its installed voices may depend on the phone's speech engine and network availability.
 
 ## Permissions and backups

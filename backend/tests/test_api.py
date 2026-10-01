@@ -27,6 +27,7 @@ def test_opt_in_documentation_matches_response_schema() -> None:
             "/v1/speech/transcribe",
             "/v1/speech/evaluate",
             "/v1/kora/respond",
+            "/v1/salon/respond",
         }
         assert (
             schema["components"]["schemas"]["HealthResponse"]["properties"]["status"][

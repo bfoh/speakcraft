@@ -15,13 +15,21 @@ from app.conversation import (
     KoraReply,
     OpenAIConversationProvider,
 )
-from app.curriculum import conversation_context, prompt_context
+from app.curriculum import conversation_context, prompt_context, salon_context
 from app.feedback import (
     FeedbackFailure,
     FeedbackProvider,
     FeedbackTimeout,
     OpenAIFeedbackProvider,
     TeachingFeedback,
+)
+from app.salon import (
+    CustomerReply,
+    OpenAISalonProvider,
+    SalonFailure,
+    SalonProvider,
+    SalonTimeout,
+    SalonTurn,
 )
 from app.speech import (
     OpenAITranscriber,
@@ -33,6 +41,7 @@ from app.speech import (
 MAX_AUDIO_BYTES = 4 * 1024 * 1024
 MAX_FEEDBACK_BODY_BYTES = 4096
 MAX_CONVERSATION_BODY_BYTES = 4096
+MAX_SALON_BODY_BYTES = 4096
 
 
 class HealthResponse(BaseModel):
@@ -56,7 +65,14 @@ class ConversationRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     lesson_id: str = Field(min_length=1, max_length=80)
     turns: list[DialogueTurn] = Field(min_length=1, max_length=5)
-    transcript: str = Field(min_length=1, max_length=1500)
+    transcript: str = Field(min_length=1, max_length=400)
+
+
+class SalonRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    scenario_id: str = Field(min_length=1, max_length=80)
+    turns: list[SalonTurn] = Field(min_length=1, max_length=7)
+    transcript: str = Field(min_length=1, max_length=400)
 
 
 def create_app(
@@ -64,6 +80,7 @@ def create_app(
     transcriber: Transcriber | None = None,
     feedback_provider: FeedbackProvider | None = None,
     conversation_provider: ConversationProvider | None = None,
+    salon_provider: SalonProvider | None = None,
 ) -> FastAPI:
     config = settings or Settings()
     provider = transcriber
@@ -77,6 +94,11 @@ def create_app(
     conversation = conversation_provider
     if conversation is None and config.speech_ready and config.openai_api_key:
         conversation = OpenAIConversationProvider(
+            config.openai_api_key.get_secret_value(), config.feedback_model
+        )
+    salon = salon_provider
+    if salon is None and config.speech_ready and config.openai_api_key:
+        salon = OpenAISalonProvider(
             config.openai_api_key.get_secret_value(), config.feedback_model
         )
     application = FastAPI(
@@ -98,6 +120,7 @@ def create_app(
                 "/v1/speech/transcribe",
                 "/v1/speech/evaluate",
                 "/v1/kora/respond",
+                "/v1/salon/respond",
             }
             and request.method == "POST"
         ):
@@ -105,6 +128,7 @@ def create_app(
                 "/v1/speech/transcribe": provider,
                 "/v1/speech/evaluate": evaluator,
                 "/v1/kora/respond": conversation,
+                "/v1/salon/respond": salon,
             }[path]
             if (
                 not config.speech_ready
@@ -125,7 +149,11 @@ def create_app(
                 maximum = (
                     MAX_AUDIO_BYTES + 16 * 1024
                     if path == "/v1/speech/transcribe"
-                    else max(MAX_FEEDBACK_BODY_BYTES, MAX_CONVERSATION_BODY_BYTES)
+                    else max(
+                        MAX_FEEDBACK_BODY_BYTES,
+                        MAX_CONVERSATION_BODY_BYTES,
+                        MAX_SALON_BODY_BYTES,
+                    )
                 )
                 if int(content_length) > maximum:
                     return JSONResponse(
@@ -237,6 +265,45 @@ def create_app(
             raise HTTPException(status_code=504, detail="Kora timed out") from exc
         except ConversationFailure as exc:
             raise HTTPException(status_code=502, detail="Kora is unavailable") from exc
+
+    @application.post("/v1/salon/respond", response_model=CustomerReply, tags=["salon"])
+    async def salon_respond(request: Request) -> CustomerReply:
+        if salon is None:
+            raise HTTPException(status_code=503, detail="Salon is unavailable")
+        body = bytearray()
+        async for chunk in request.stream():
+            body.extend(chunk)
+            if len(body) > MAX_SALON_BODY_BYTES:
+                raise HTTPException(status_code=413, detail="Request is too large")
+        try:
+            payload = SalonRequest.model_validate_json(body)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=422, detail="Invalid salon request"
+            ) from exc
+        context = salon_context(payload.scenario_id)
+        if context is None:
+            raise HTTPException(status_code=400, detail="Unknown scenario")
+        turns = payload.turns
+        if (
+            len(turns) % 2 != 1
+            or len(turns) > 2 * context.turn_limit - 1
+            or turns[0].speaker != "customer"
+            or turns[0].text != context.customer_opening
+            or any(
+                turn.speaker != ("customer" if index % 2 == 0 else "learner")
+                or not turn.text.strip()
+                for index, turn in enumerate(turns)
+            )
+            or not payload.transcript.strip()
+        ):
+            raise HTTPException(status_code=422, detail="Invalid salon exchange")
+        try:
+            return await salon.respond(context, turns, payload.transcript.strip())
+        except SalonTimeout as exc:
+            raise HTTPException(status_code=504, detail="Salon timed out") from exc
+        except SalonFailure as exc:
+            raise HTTPException(status_code=502, detail="Salon is unavailable") from exc
 
     return application
 

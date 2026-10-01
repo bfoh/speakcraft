@@ -5,88 +5,22 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import 'api_endpoint.dart';
+import 'conversation.dart';
 
-enum ConversationProblem {
-  offline,
-  accessDenied,
-  unavailable,
-  invalidAnswer,
-  failure,
-}
-
-class ConversationException implements Exception {
-  const ConversationException(this.problem);
-  final ConversationProblem problem;
-}
-
-enum ConversationSpeaker { kora, learner }
-
-class ConversationTurn {
-  const ConversationTurn(this.speaker, this.text);
-  final ConversationSpeaker speaker;
-  final String text;
-
-  Map<String, String> toJson() => {'speaker': speaker.name, 'text': text};
-}
-
-class KoraReply {
-  const KoraReply(this.reply, this.nextQuestion);
-  final String reply;
-  final String? nextQuestion;
-
-  String get spokenText =>
-      nextQuestion == null ? reply : '$reply $nextQuestion';
-
-  factory KoraReply.fromJson(Map<String, dynamic> data) {
-    final reply = data['reply'];
-    final next = data['next_question'];
-    if (reply is! String ||
-        reply.trim().isEmpty ||
-        reply.length > 180 ||
-        (next != null &&
-            (next is! String || next.trim().isEmpty || next.length > 180))) {
-      throw const FormatException('Invalid Kora reply');
-    }
-    return KoraReply(reply.trim(), next is String ? next.trim() : null);
-  }
-}
-
-abstract interface class KoraConversation {
-  bool get configured;
-  Future<KoraReply> respond(
-    String lessonId,
-    List<ConversationTurn> turns,
-    String transcript,
-    String accessToken,
-  );
-}
-
-class UnconfiguredKoraConversation implements KoraConversation {
-  const UnconfiguredKoraConversation();
-  @override
-  bool get configured => false;
-  @override
-  Future<KoraReply> respond(
-    String lessonId,
-    List<ConversationTurn> turns,
-    String transcript,
-    String accessToken,
-  ) async => throw const ConversationException(ConversationProblem.unavailable);
-}
-
-class HttpKoraConversation implements KoraConversation {
-  HttpKoraConversation(String baseUrl, {this._client}) : _baseUrl = baseUrl;
+/// Maps the shared voice-dialogue UI to the salon's customer-role contract.
+class HttpSalonConversation implements KoraConversation {
+  HttpSalonConversation(String baseUrl, {this._client}) : _baseUrl = baseUrl;
 
   final String _baseUrl;
   final http.Client? _client;
-  Uri? get _endpoint => speechApiEndpoint(_baseUrl, '/v1/kora/respond');
+  Uri? get _endpoint => speechApiEndpoint(_baseUrl, '/v1/salon/respond');
 
   @override
   bool get configured => _endpoint != null;
 
   @override
   Future<KoraReply> respond(
-    String lessonId,
+    String scenarioId,
     List<ConversationTurn> turns,
     String transcript,
     String accessToken,
@@ -108,8 +42,17 @@ class HttpKoraConversation implements KoraConversation {
               'Content-Type': 'application/json',
             },
             body: jsonEncode({
-              'lesson_id': lessonId,
-              'turns': turns.map((turn) => turn.toJson()).toList(),
+              'scenario_id': scenarioId,
+              'turns': turns
+                  .map(
+                    (turn) => {
+                      'speaker': turn.speaker == ConversationSpeaker.kora
+                          ? 'customer'
+                          : 'learner',
+                      'text': turn.text,
+                    },
+                  )
+                  .toList(),
               'transcript': transcript,
             }),
           )
@@ -118,7 +61,18 @@ class HttpKoraConversation implements KoraConversation {
         case 200:
           final data = jsonDecode(response.body);
           if (data is! Map<String, dynamic>) throw const FormatException();
-          return KoraReply.fromJson(data);
+          final reply = data['customer_reply'];
+          final next = data['next_question'];
+          if (reply is! String ||
+              reply.trim().isEmpty ||
+              reply.length > 180 ||
+              (next != null &&
+                  (next is! String ||
+                      next.trim().isEmpty ||
+                      next.length > 180))) {
+            throw const FormatException('Invalid customer reply');
+          }
+          return KoraReply(reply.trim(), next is String ? next.trim() : null);
         case 401:
           throw const ConversationException(ConversationProblem.accessDenied);
         case 400:

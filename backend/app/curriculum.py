@@ -29,6 +29,19 @@ class ConversationContext(BaseModel):
     target_language: list[str]
 
 
+class SalonContext(BaseModel):
+    scenario_id: str
+    scenario_goal: str
+    customer_goal: str
+    customer_personality: str
+    difficulty: int
+    customer_opening: str
+    learner_objectives: list[str]
+    target_language: list[str]
+    success_conditions: list[str]
+    turn_limit: int
+
+
 @lru_cache(maxsize=1)
 def _content() -> dict[str, Any]:
     return cast(
@@ -73,5 +86,24 @@ def conversation_context(lesson_id: str) -> ConversationContext | None:
                 turn_limit=conversation["turn_limit"],
                 success_conditions=conversation["success_conditions"],
                 target_language=lesson["target_language"],
+            )
+    return None
+
+
+@lru_cache(maxsize=1)
+def salon_context(scenario_id: str) -> SalonContext | None:
+    for scenario in _content()["salon_scenarios"]:
+        if scenario["id"] == scenario_id:
+            return SalonContext(
+                scenario_id=scenario_id,
+                scenario_goal=scenario["scenario_goal"],
+                customer_goal=scenario["customer_goal"],
+                customer_personality=scenario["customer_personality"],
+                difficulty=scenario["difficulty"],
+                customer_opening=scenario["customer_opening"],
+                learner_objectives=scenario["learner_objectives"],
+                target_language=scenario["target_language"],
+                success_conditions=scenario["success_conditions"],
+                turn_limit=scenario["turn_limit"],
             )
     return None

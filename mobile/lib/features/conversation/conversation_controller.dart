@@ -9,6 +9,7 @@ enum ConversationState {
   offline,
   accessDenied,
   unavailable,
+  invalidAnswer,
   failure,
 }
 
@@ -68,6 +69,7 @@ class ConversationController extends ChangeNotifier {
         ConversationProblem.offline => ConversationState.offline,
         ConversationProblem.accessDenied => ConversationState.accessDenied,
         ConversationProblem.unavailable => ConversationState.unavailable,
+        ConversationProblem.invalidAnswer => ConversationState.invalidAnswer,
         ConversationProblem.failure => ConversationState.failure,
       });
     } catch (_) {

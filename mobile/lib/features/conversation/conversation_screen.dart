@@ -13,7 +13,8 @@ import '../../shared/pilot_access_dialog.dart';
 import 'conversation_controller.dart';
 
 class ConversationScreen extends ConsumerStatefulWidget {
-  const ConversationScreen({super.key});
+  const ConversationScreen({super.key, this.salon = false});
+  final bool salon;
   @override
   ConsumerState<ConversationScreen> createState() => _ConversationScreenState();
 }
@@ -29,7 +30,9 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
     super.initState();
     _mic = ref.read(conversationMicrophoneProvider);
     _transcription = ref.read(transcriptionProvider);
-    _conversation = ref.read(conversationProvider);
+    _conversation = ref.read(
+      widget.salon ? salonConversationProvider : conversationProvider,
+    );
     _mic.resume();
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -94,6 +97,8 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: Listenable.merge([_mic, _transcription, _conversation]),
     builder: (context, _) {
+      final scenario = ref.read(servicesProvider).curriculum.firstSalonScenario;
+      final partner = widget.salon ? 'CUSTOMER' : 'KORA';
       final (status, button, icon) = switch (_mic.state) {
         MicrophoneState.idle => (
           'Tap to use your microphone.',
@@ -101,7 +106,9 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
           Icons.mic_none,
         ),
         MicrophoneState.requestingPermission => (
-          'Allow the microphone to speak with Kora.',
+          widget.salon
+              ? 'Allow the microphone to speak with the customer.'
+              : 'Allow the microphone to speak with Kora.',
           'Requesting permission…',
           Icons.mic_none,
         ),
@@ -146,12 +153,23 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
           if (!didPop) unawaited(_home());
         },
         child: SpeakCraftPage(
-          title: 'Talk with Kora',
+          title: widget.salon ? 'AI Salon' : 'Talk with Kora',
           onBack: _home,
           children: [
-            const Text(
-              'Practise introducing yourself in a short conversation.',
-            ),
+            if (widget.salon) ...[
+              const Text('Practise with a simulated customer.'),
+              Text(
+                scenario.scenarioGoal,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SpeakCraftNotice(
+                'No salon price is set here. Ask about the style and offer to check the price.',
+                icon: Icons.info_outline,
+              ),
+            ] else
+              const Text(
+                'Practise introducing yourself in a short conversation.',
+              ),
             SpeakCraftNotice(
               'Turn ${_conversation.complete ? _conversation.learnerTurns : _conversation.learnerTurns + 1} of ${_conversation.turnLimit}',
               icon: Icons.chat_bubble_outline,
@@ -162,7 +180,9 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      turn.speaker == ConversationSpeaker.kora ? 'KORA' : 'YOU',
+                      turn.speaker == ConversationSpeaker.kora
+                          ? partner
+                          : 'YOU',
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -173,7 +193,9 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
                       const SizedBox(height: 12),
                       SpeakCraftAudioButton(
                         text: turn.text,
-                        label: 'Listen to Kora',
+                        label: widget.salon
+                            ? 'Listen to customer'
+                            : 'Listen to Kora',
                         enabled: !controlsBusy,
                       ),
                     ],
@@ -193,7 +215,11 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
                           case MicrophoneState.ready:
                             _transcription.clear();
                             _conversation.beginNewRecording();
-                            await _mic.start('conversation-day-1');
+                            await _mic.start(
+                              widget.salon
+                                  ? 'salon-first'
+                                  : 'conversation-day-1',
+                            );
                           case MicrophoneState.recording:
                             await _mic.finish();
                           default:
@@ -226,8 +252,10 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
               ],
               if (!_transcription.configured ||
                   !_conversation.provider.configured)
-                const SpeakCraftNotice(
-                  'Kora needs a SpeakCraft server connection. You can still practise speaking here.',
+                SpeakCraftNotice(
+                  widget.salon
+                      ? 'AI Salon needs a SpeakCraft server connection. You can still practise speaking here.'
+                      : 'Kora needs a SpeakCraft server connection. You can still practise speaking here.',
                   icon: Icons.wifi_off_outlined,
                 ),
               if (_transcription.state == TranscriptionState.success &&
@@ -249,8 +277,12 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
                 ),
                 SpeakCraftButton(
                   label: _conversation.sending
-                      ? 'Kora is thinking…'
-                      : 'Send reply to Kora',
+                      ? (widget.salon
+                            ? 'Customer is thinking…'
+                            : 'Kora is thinking…')
+                      : (widget.salon
+                            ? 'Send reply to customer'
+                            : 'Send reply to Kora'),
                   icon: Icons.send_outlined,
                   onPressed: controlsBusy ? null : _reply,
                 ),
@@ -277,9 +309,17 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
                 ),
               if (_transcription.state == TranscriptionState.unavailable ||
                   _conversation.state == ConversationState.unavailable)
-                const SpeakCraftNotice(
-                  'Kora is unavailable right now. Your answer is still here.',
+                SpeakCraftNotice(
+                  widget.salon
+                      ? 'AI Salon is unavailable right now. Your answer is still here.'
+                      : 'Kora is unavailable right now. Your answer is still here.',
                   icon: Icons.cloud_off_outlined,
+                  live: true,
+                ),
+              if (_conversation.state == ConversationState.invalidAnswer)
+                const SpeakCraftNotice(
+                  'Please try a shorter answer, about one or two sentences.',
+                  icon: Icons.short_text,
                   live: true,
                 ),
               if (_transcription.state == TranscriptionState.failure ||
@@ -290,18 +330,26 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
                   live: true,
                 ),
             ] else ...[
-              const SpeakCraftNotice(
-                'Conversation finished. You can practise again.',
+              SpeakCraftNotice(
+                widget.salon
+                    ? 'Salon practice finished. You can try again.'
+                    : 'Conversation finished. You can practise again.',
                 icon: Icons.check_circle_outline,
               ),
               OutlinedButton.icon(
                 onPressed: _startOver,
                 icon: const Icon(Icons.replay),
-                label: const Text('Start conversation again'),
+                label: Text(
+                  widget.salon
+                      ? 'Start salon again'
+                      : 'Start conversation again',
+                ),
               ),
             ],
-            const SpeakCraftNotice(
-              'Your voice stays on this phone until you choose Hear my words. Send reply sends the words you see to Kora. This conversation is not saved.',
+            SpeakCraftNotice(
+              widget.salon
+                  ? 'Your voice stays on this phone until you choose Hear my words. Send reply sends the words you see to the simulated customer. This practice is not saved.'
+                  : 'Your voice stays on this phone until you choose Hear my words. Send reply sends the words you see to Kora. This conversation is not saved.',
               icon: Icons.privacy_tip_outlined,
             ),
             OutlinedButton.icon(

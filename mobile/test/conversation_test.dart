@@ -63,6 +63,29 @@ void main() {
     client.close();
   });
 
+  test('overlong answer is rejected before a network request', () async {
+    var calls = 0;
+    final client = MockClient((request) async {
+      calls++;
+      return http.Response('{}', 200);
+    });
+    await expectLater(
+      HttpKoraConversation(
+        'https://api.example.org',
+        client: client,
+      ).respond('day-1', turns, 'x' * 401, 'pilot'),
+      throwsA(
+        isA<ConversationException>().having(
+          (e) => e.problem,
+          'problem',
+          ConversationProblem.invalidAnswer,
+        ),
+      ),
+    );
+    expect(calls, 0);
+    client.close();
+  });
+
   test('offline and access denial map to safe errors', () async {
     for (final (client, problem) in [
       (

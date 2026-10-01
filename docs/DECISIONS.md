@@ -45,3 +45,7 @@ The learner requests feedback only after seeing the tentative transcript. The ba
 ## 2026-10-02 — Bounded Kora conversation
 
 Apply the Day-1 introduction in a three-turn dialogue before adding AI Salon. Keep the opening, goal and success conditions in authored curriculum. Use a stateless backend request with bounded recent turns, provider-neutral structured output and no stored conversation. The learner reviews a tentative transcript and explicitly sends each reply. Device speech reads Kora's words. This design is slower than streaming voice but preserves the explicit privacy and recovery controls already used in practice.
+
+## 2026-10-02 — First AI Salon scenario
+
+Add only the blueprint's first difficulty-1 customer: friendly, interested in braids and asking about price. Keep every scenario boundary in canonical curriculum. Reuse the explicit voice-dialogue UI, while the API adapter maps partner turns to customer/learner roles. The backend uses a stateless `POST /v1/salon/respond` contract because there is no durable session or assessment store yet. It returns a customer reply without a success score and asks the provider not to invent a real salon price.

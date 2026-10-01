@@ -16,6 +16,7 @@ import 'package:speakcraft/core/storage/sqlite_progress_store.dart';
 import 'package:speakcraft/core/speech/recognition.dart';
 import 'package:speakcraft/core/speech/feedback.dart';
 import 'package:speakcraft/core/speech/conversation.dart';
+import 'package:speakcraft/core/speech/salon.dart';
 import 'package:speakcraft/features/lesson/microphone_controller.dart';
 import 'package:speakcraft/features/lesson/transcription_controller.dart';
 
@@ -29,6 +30,7 @@ void main() {
     var receivedBytes = 0;
     String? feedbackBody;
     String? conversationBody;
+    String? salonBody;
     server.listen((request) async {
       final parts = await request.toList();
       request.response.headers.contentType = ContentType.json;
@@ -41,6 +43,11 @@ void main() {
         conversationBody = String.fromCharCodes(parts.expand((bytes) => bytes));
         request.response.write(
           '{"reply":"Nice to meet you.","next_question":"Why did you choose it?"}',
+        );
+      } else if (request.uri.path == '/v1/salon/respond') {
+        salonBody = String.fromCharCodes(parts.expand((bytes) => bytes));
+        request.response.write(
+          '{"customer_reply":"I like medium braids.","next_question":"Could you check the price?"}',
         );
       } else {
         receivedAuthorization = request.headers.value(
@@ -70,6 +77,7 @@ void main() {
       recognition: HttpSpeechRecognition('http://127.0.0.1:${server.port}'),
       feedback: HttpSpeakingFeedback('http://127.0.0.1:${server.port}'),
       conversation: HttpKoraConversation('http://127.0.0.1:${server.port}'),
+      salon: HttpSalonConversation('http://127.0.0.1:${server.port}'),
     );
     final container = ProviderContainer(
       overrides: [servicesProvider.overrideWithValue(services)],
@@ -185,6 +193,29 @@ void main() {
     );
     expect(conversationBody, contains('day-1'));
     expect(conversationBody, contains('I study beauty and cosmetology.'));
+    await tap('Back to Home');
+    await tap('Open AI Salon');
+    await tap('Enable microphone');
+    for (
+      var attempt = 0;
+      attempt < 50 &&
+          conversationMic.state == MicrophoneState.requestingPermission;
+      attempt++
+    ) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(conversationMic.state, MicrophoneState.ready);
+    await tap('Start recording');
+    await tester.pump(const Duration(seconds: 2));
+    await tap('Stop recording');
+    await tap('Hear my words');
+    await tap('Send reply to customer');
+    expect(
+      find.text('I like medium braids. Could you check the price?'),
+      findsOneWidget,
+    );
+    expect(salonBody, contains('friendly-braids-price'));
+    expect(salonBody, contains('"speaker":"customer"'));
     await tap('Back to Home');
     await tap('Open Day 1');
     expect(container.read(microphoneProvider).recordingPath, recording);

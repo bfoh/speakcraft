@@ -4,6 +4,32 @@
   "version": "0.1.0",
   "profession": "beauty-cosmetology",
   "title": "Beauty & Cosmetology",
+  "salon_scenarios": [
+    {
+      "id": "friendly-braids-price",
+      "scenario_goal": "Help a friendly customer explore braids and discuss price honestly.",
+      "customer_goal": "The customer wants braids and asks how much they cost.",
+      "customer_personality": "Friendly and patient.",
+      "difficulty": 1,
+      "customer_opening": "Hello. I'd like braids. How much would they cost?",
+      "learner_objectives": [
+        "Greet the customer.",
+        "Ask what kind of braids they want.",
+        "Explain that the price depends on details and offer to check."
+      ],
+      "target_language": [
+        "Welcome. How can I help you?",
+        "What kind of braids would you like?",
+        "Let me check the price for that style."
+      ],
+      "success_conditions": [
+        "The learner greets the customer.",
+        "The learner asks about braid preferences.",
+        "The learner responds to price without inventing an amount."
+      ],
+      "turn_limit": 4
+    }
+  ],
   "lessons": [
     {
       "id": "day-1",

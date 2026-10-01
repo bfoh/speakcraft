@@ -40,6 +40,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/conversation/day-1',
         builder: (context, state) => const ConversationScreen(),
       ),
+      GoRoute(
+        path: '/salon/first',
+        builder: (context, state) => const ConversationScreen(salon: true),
+      ),
     ],
     errorBuilder: (context, state) => SpeakCraftPage(
       title: 'Let’s go back',
