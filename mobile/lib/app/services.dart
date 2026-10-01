@@ -7,7 +7,9 @@ import '../core/audio/speech_output.dart';
 import '../core/curriculum/curriculum.dart';
 import '../core/storage/progress_store.dart';
 import '../core/storage/sqlite_progress_store.dart';
+import '../core/speech/recognition.dart';
 import '../features/lesson/microphone_controller.dart';
+import '../features/lesson/transcription_controller.dart';
 
 class AppServices {
   const AppServices({
@@ -16,12 +18,14 @@ class AppServices {
     required this.progress,
     required this.microphone,
     required this.speech,
+    this.recognition = const UnconfiguredSpeechRecognition(),
   });
   final Curriculum curriculum;
   final ProgressStore store;
   final LearnerProgress progress;
   final Microphone microphone;
   final SpeechOutput speech;
+  final SpeechRecognition recognition;
 }
 
 final bootstrapProvider = FutureProvider<AppServices>((ref) async {
@@ -44,6 +48,9 @@ final bootstrapProvider = FutureProvider<AppServices>((ref) async {
       progress: progress,
       microphone: microphone,
       speech: DeviceSpeechOutput(),
+      recognition: HttpSpeechRecognition(
+        const String.fromEnvironment('SPEAKCRAFT_API_BASE_URL'),
+      ),
     );
   } catch (_) {
     await store.close();
@@ -64,6 +71,13 @@ final sessionProvider = Provider<SessionController>((ref) {
 final microphoneProvider = Provider<MicrophoneController>((ref) {
   final services = ref.watch(servicesProvider);
   final controller = MicrophoneController(services.microphone, services.speech);
+  ref.onDispose(controller.dispose);
+  return controller;
+}, dependencies: [servicesProvider]);
+final transcriptionProvider = Provider<TranscriptionController>((ref) {
+  final controller = TranscriptionController(
+    ref.watch(servicesProvider).recognition,
+  );
   ref.onDispose(controller.dispose);
   return controller;
 }, dependencies: [servicesProvider]);

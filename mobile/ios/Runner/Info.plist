@@ -7,7 +7,14 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>SpeakCraft uses your microphone when you choose to practise speaking. Recordings stay on this phone.</string>
+	<string>SpeakCraft uses your microphone when you practise speaking. Recordings stay on this phone unless you choose to send one for speech recognition.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>SpeakCraft connects to your local practice server when you choose to hear your words.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<key>CFBundleDisplayName</key>
 	<string>Speakcraft</string>
 	<key>CFBundleExecutable</key>

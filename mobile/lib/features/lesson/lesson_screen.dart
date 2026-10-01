@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/services.dart';
 import '../../shared/components.dart';
 import 'microphone_controller.dart';
+import 'transcription_controller.dart';
 
 class LessonScreen extends ConsumerStatefulWidget {
   const LessonScreen({super.key});
@@ -17,10 +18,12 @@ class LessonScreen extends ConsumerStatefulWidget {
 class _LessonScreenState extends ConsumerState<LessonScreen>
     with WidgetsBindingObserver {
   late MicrophoneController _mic;
+  late TranscriptionController _transcription;
   @override
   void initState() {
     super.initState();
     _mic = ref.read(microphoneProvider);
+    _transcription = ref.read(transcriptionProvider);
     _mic.resume();
     WidgetsBinding.instance.addObserver(this);
   }
@@ -46,13 +49,53 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
     if (mounted) context.go('/home');
   }
 
+  Future<void> _hearMyWords(String path) async {
+    if (!_transcription.hasAccessToken) {
+      var input = '';
+      final code = await showDialog<String>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Connect speech recognition'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Ask your facilitator for the pilot access code. It is used only while this app is open.',
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                obscureText: true,
+                decoration: const InputDecoration(labelText: 'Access code'),
+                onChanged: (value) => input = value,
+                onSubmitted: (value) => Navigator.of(context).pop(value),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(input),
+              child: const Text('Continue'),
+            ),
+          ],
+        ),
+      );
+      if (code == null || code.trim().isEmpty) return;
+      _transcription.setAccessToken(code);
+    }
+    if (mounted) await _transcription.transcribe(path);
+  }
+
   @override
   Widget build(BuildContext context) {
     final services = ref.watch(servicesProvider);
     final session = ref.watch(sessionProvider);
     final lesson = services.curriculum.dayOne;
     return ListenableBuilder(
-      listenable: Listenable.merge([_mic, session]),
+      listenable: Listenable.merge([_mic, session, _transcription]),
       builder: (context, _) {
         final index = session.progress.dayOnePrompt;
         final prompt = lesson.prompts[index];
@@ -83,7 +126,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
             Icons.hourglass_top,
           ),
           MicrophoneState.success => (
-            'Your recording is saved for this session. Speech feedback is not available yet.',
+            'Your recording is saved for this session.',
             'Try again',
             Icons.replay,
           ),
@@ -148,11 +191,12 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
               SpeakCraftButton(
                 label: button,
                 icon: icon,
-                onPressed: _mic.busy || session.saving
+                onPressed: _mic.busy || session.saving || _transcription.sending
                     ? null
                     : () async {
                         switch (_mic.state) {
                           case MicrophoneState.ready:
+                            _transcription.clear();
                             await _mic.start(prompt.id);
                           case MicrophoneState.recording:
                             await _mic.finish();
@@ -163,14 +207,95 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
               ),
               if (_mic.recordingPath != null)
                 OutlinedButton.icon(
-                  onPressed: _mic.capturing ? null : _mic.discard,
+                  onPressed: _mic.capturing || _transcription.sending
+                      ? null
+                      : () async {
+                          await _mic.discard();
+                          if (_mic.recordingPath == null) {
+                            _transcription.clear();
+                          }
+                        },
                   icon: const Icon(Icons.delete_outline),
                   label: const Text('Delete recording'),
                 ),
               const SpeakCraftNotice(
-                'Your voice stays on this phone. Recordings are removed when you replace them or reopen the app.',
+                'Your voice stays on this phone unless you choose Hear my words. That sends this recording to SpeakCraft for speech recognition.',
                 icon: Icons.privacy_tip_outlined,
               ),
+              if (_mic.recordingPath != null && _transcription.configured)
+                SpeakCraftButton(
+                  label: _transcription.sending
+                      ? 'Listening to your words…'
+                      : 'Hear my words',
+                  icon: Icons.hearing,
+                  onPressed: _transcription.sending || _mic.capturing
+                      ? null
+                      : () => _hearMyWords(_mic.recordingPath!),
+                ),
+              if (_mic.recordingPath != null && !_transcription.configured)
+                const SpeakCraftNotice(
+                  'Speech recognition needs a SpeakCraft server connection. You can still practise without internet.',
+                  icon: Icons.wifi_off_outlined,
+                ),
+              if (_transcription.state == TranscriptionState.success)
+                SpeakCraftCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text('WHAT I HEARD'),
+                      const SizedBox(height: 12),
+                      Text(
+                        _transcription.transcript!,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 12),
+                      SpeakCraftAudioButton(
+                        text: _transcription.transcript!,
+                        label: 'Listen to what I heard',
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Speech recognition can make mistakes. You can try again.',
+                      ),
+                    ],
+                  ),
+                ),
+              if (_transcription.state == TranscriptionState.noSpeech)
+                const SpeakCraftNotice(
+                  "I couldn't hear words in that recording. Try speaking again.",
+                  icon: Icons.hearing_disabled_outlined,
+                  live: true,
+                ),
+              if (_transcription.state == TranscriptionState.offline)
+                const SpeakCraftNotice(
+                  "We couldn't connect. Your recording is still here. Try again when you're online.",
+                  icon: Icons.wifi_off_outlined,
+                  live: true,
+                ),
+              if (_transcription.state == TranscriptionState.accessDenied)
+                const SpeakCraftNotice(
+                  'That access code did not work. Ask your facilitator and try again.',
+                  icon: Icons.lock_outline,
+                  live: true,
+                ),
+              if (_transcription.state == TranscriptionState.unavailable)
+                const SpeakCraftNotice(
+                  'Speech recognition is unavailable right now. Your recording is still here.',
+                  icon: Icons.cloud_off_outlined,
+                  live: true,
+                ),
+              if (_transcription.state == TranscriptionState.invalidRecording)
+                const SpeakCraftNotice(
+                  "We couldn't use that recording. Please record again.",
+                  icon: Icons.mic_off_outlined,
+                  live: true,
+                ),
+              if (_transcription.state == TranscriptionState.failure)
+                const SpeakCraftNotice(
+                  'Something went wrong while listening. Your recording is still here. Try again.',
+                  icon: Icons.error_outline,
+                  live: true,
+                ),
               if (session.error != null)
                 SpeakCraftNotice(
                   session.error!,
@@ -179,13 +304,19 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
                 ),
               if (index < lesson.prompts.length - 1)
                 OutlinedButton.icon(
-                  onPressed: _mic.capturing || session.saving
+                  onPressed:
+                      _mic.capturing || session.saving || _transcription.sending
                       ? null
                       : () async {
                           final saved = await session.update(
                             session.progress.copyWith(dayOnePrompt: index + 1),
                           );
-                          if (saved) await _mic.discard();
+                          if (saved) {
+                            await _mic.discard();
+                            if (_mic.recordingPath == null) {
+                              _transcription.clear();
+                            }
+                          }
                         },
                   icon: const Icon(Icons.arrow_forward),
                   label: Text(session.saving ? 'Saving…' : 'Next practice'),
@@ -195,13 +326,19 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
                   'Keep practising your introduction. We have not assessed or scored your speaking.',
                 ),
                 OutlinedButton.icon(
-                  onPressed: _mic.capturing || session.saving
+                  onPressed:
+                      _mic.capturing || session.saving || _transcription.sending
                       ? null
                       : () async {
                           final saved = await session.update(
                             session.progress.copyWith(dayOnePrompt: 0),
                           );
-                          if (saved) await _mic.discard();
+                          if (saved) {
+                            await _mic.discard();
+                            if (_mic.recordingPath == null) {
+                              _transcription.clear();
+                            }
+                          }
                         },
                   icon: const Icon(Icons.replay),
                   label: const Text('Practise from the start'),

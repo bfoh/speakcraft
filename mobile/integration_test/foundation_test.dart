@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,13 +13,30 @@ import 'package:speakcraft/core/audio/speech_output.dart';
 import 'package:speakcraft/core/curriculum/curriculum.dart';
 import 'package:speakcraft/core/storage/progress_store.dart';
 import 'package:speakcraft/core/storage/sqlite_progress_store.dart';
+import 'package:speakcraft/core/speech/recognition.dart';
 import 'package:speakcraft/features/lesson/microphone_controller.dart';
+import 'package:speakcraft/features/lesson/transcription_controller.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-  testWidgets('native onboarding, SQLite resume and local capture', (
+  testWidgets('native onboarding, local capture and explicit speech upload', (
     tester,
   ) async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    String? receivedAuthorization;
+    var receivedBytes = 0;
+    server.listen((request) async {
+      receivedAuthorization = request.headers.value(
+        HttpHeaders.authorizationHeader,
+      );
+      final parts = await request.toList();
+      receivedBytes = parts.fold(0, (sum, bytes) => sum + bytes.length);
+      request.response.headers.contentType = ContentType.json;
+      request.response.write(
+        '{"transcript":"I study beauty and cosmetology."}',
+      );
+      await request.response.close();
+    });
     final path = '${(await getTemporaryDirectory()).path}/sprint-1-smoke.db';
     var store = await SqliteProgressStore.open(path: path);
     await store.save(const LearnerProgress());
@@ -30,6 +48,7 @@ void main() {
       progress: await store.load(),
       microphone: await NativeMicrophone.create(),
       speech: DeviceSpeechOutput(),
+      recognition: HttpSpeechRecognition('http://127.0.0.1:${server.port}'),
     );
     final container = ProviderContainer(
       overrides: [servicesProvider.overrideWithValue(services)],
@@ -99,6 +118,21 @@ void main() {
     final recording = container.read(microphoneProvider).recordingPath;
     expect(recording, isNotNull);
     expect(await File(recording!).length(), greaterThan(0));
+    await tap('Hear my words');
+    await tester.enterText(find.byType(TextField), 'pilot-test');
+    await tap('Continue');
+    final transcription = container.read(transcriptionProvider);
+    for (
+      var attempt = 0;
+      attempt < 50 && transcription.state == TranscriptionState.sending;
+      attempt++
+    ) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(transcription.state, TranscriptionState.success);
+    expect(transcription.transcript, 'I study beauty and cosmetology.');
+    expect(receivedAuthorization, 'Bearer pilot-test');
+    expect(receivedBytes, greaterThan(await File(recording).length()));
     await tap('Back to Home');
     await tap('Open Day 1');
     expect(container.read(microphoneProvider).recordingPath, recording);
@@ -109,5 +143,6 @@ void main() {
     expect((await store.load()).dayOnePrompt, 1);
     await store.close();
     container.dispose();
+    await server.close(force: true);
   });
 }

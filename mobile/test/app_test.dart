@@ -8,6 +8,7 @@ import 'package:speakcraft/app/services.dart';
 import 'package:speakcraft/app/speakcraft_app.dart';
 import 'package:speakcraft/core/curriculum/curriculum.dart';
 import 'package:speakcraft/core/storage/progress_store.dart';
+import 'package:speakcraft/core/speech/recognition.dart';
 
 import 'support/fakes.dart';
 
@@ -20,6 +21,7 @@ void main() {
   Future<void> launch(
     WidgetTester tester, {
     LearnerProgress progress = const LearnerProgress(),
+    SpeechRecognition recognition = const UnconfiguredSpeechRecognition(),
   }) async {
     store = MemoryProgressStore()..progress = progress;
     mic = FakeMicrophone();
@@ -35,6 +37,7 @@ void main() {
             progress: progress,
             microphone: mic,
             speech: speech,
+            recognition: recognition,
           ),
         ),
       ],
@@ -113,7 +116,7 @@ void main() {
       expect(find.text('Stop recording'), findsOneWidget);
       await tap(tester, 'Stop recording');
       expect(
-        find.textContaining('Speech feedback is not available'),
+        find.textContaining('Your recording is saved for this session'),
         findsOneWidget,
       );
       await tap(tester, 'Back to Home');
@@ -124,6 +127,46 @@ void main() {
       expect(find.text('Say what you study.'), findsOneWidget);
     },
   );
+
+  testWidgets('learner explicitly sends one take and sees tentative words', (
+    tester,
+  ) async {
+    final recognition = FakeRecognition();
+    await launch(tester, progress: returning, recognition: recognition);
+    await tap(tester, 'Open Day 1');
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    expect(recognition.calls, isEmpty);
+    await tap(tester, 'Hear my words');
+    expect(find.text('Connect speech recognition'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'pilot-access-code');
+    await tap(tester, 'Continue');
+    expect(recognition.calls, [('/test/recording.m4a', 'pilot-access-code')]);
+    expect(find.text('My name is Ama.'), findsNWidgets(2));
+    expect(find.textContaining('can make mistakes'), findsOneWidget);
+    await tap(tester, 'Next practice');
+    expect(find.text('My name is Ama.'), findsNothing);
+  });
+
+  testWidgets('offline upload keeps the recording for retry', (tester) async {
+    final recognition = FakeRecognition()
+      ..error = const SpeechRecognitionException(SpeechProblem.offline);
+    await launch(tester, progress: returning, recognition: recognition);
+    await tap(tester, 'Open Day 1');
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    await tap(tester, 'Hear my words');
+    await tester.enterText(find.byType(TextField), 'pilot-access-code');
+    await tap(tester, 'Continue');
+    expect(find.textContaining("couldn't connect"), findsOneWidget);
+    expect(find.text('Delete recording'), findsOneWidget);
+    recognition.error = null;
+    await tap(tester, 'Hear my words');
+    expect(recognition.calls.length, 2);
+    expect(find.text('My name is Ama.'), findsNWidgets(2));
+  });
 
   testWidgets('storage failure does not navigate or claim saved state', (
     tester,

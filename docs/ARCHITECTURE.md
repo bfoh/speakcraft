@@ -1,10 +1,18 @@
 # SpeakCraft Alpha architecture
 
-## Sprint 1 boundary
+## Foundation and boundaries
 
-A Flutter application runs the beginning of Day 1 on Android and iOS. A separate FastAPI process exposes liveness. The mobile application has no backend dependency yet. There is no authentication, cloud database, transcription, generated conversation, evaluation, or synchronisation in this build.
+A Flutter application runs the beginning of Day 1 on Android and iOS. A separate FastAPI process exposes liveness and optional speech transcription. The mobile application remains usable offline and does not require the backend for navigation or recording. There is no learner authentication, cloud database, generated conversation, evaluation, or synchronisation in this build.
 
 The architecture follows blueprint sections 18–20. The explicit Sprint 1 instruction limits the full AI vertical slice proposed in section 35; see DECISIONS.md.
+
+## Sprint 2 speech slice
+
+An explicit Day-1 action sends the current `.m4a` recording to SpeakCraft's `POST /v1/speech/transcribe`. Flutter knows only the SpeakCraft API contract. Its URL is a nonsecret build configuration; a facilitator enters an internal pilot access code at runtime, retained in memory only. The mobile client rejects insecure remote HTTP URLs. Speech recognition is unavailable when no server URL is configured, while local recording still works.
+
+FastAPI requires a pilot bearer token and a server-only OpenAI key before accepting an upload. It reads at most 4 MiB, checks the `.m4a` container signature, forwards bytes through a `Transcriber` interface to OpenAI's documented file transcription endpoint, and returns transcript text. Audio and text are not stored on the server. An empty transcript is shown as no words recognised; no score or correction is inferred. Provider errors and timeouts return safe responses, and the app keeps the local take for manual retry.
+
+This pilot access mechanism is limited to local/internal testing. Public deployment needs per-learner authentication, rate limits, and a reviewed retention policy. No live provider call was possible during implementation without an API key.
 
 ## Mobile structure
 
@@ -35,21 +43,21 @@ Day 1 has four authored prompts, ending in the blueprint's 30–60 second introd
 
 `Microphone` provides permission, start, stop, discard, interruption and disposal operations. `NativeMicrophone` implements it through `record`, storing mono AAC in a private cache directory. `MicrophoneController` owns visible transitions and a 60-second limit. UI requires separate permission and start actions. Navigation or backgrounding ends active capture. A take stays available during in-app navigation until replaced/discarded; cache cleanup occurs on the next app launch.
 
-The processing state only represents local audio work. Success means a nonempty recording file exists; it does not mean a learner was understood. There is no transcript or score. A future SpeakCraft speech API can accept the recording behind a separate backend client without exposing provider details here.
+The microphone processing state only represents local audio work. Recording success means a nonempty file exists; it does not mean a learner was understood. A separate, explicit upload action may return a transcript through the SpeakCraft backend. No score is computed or shown.
 
 `flutter_tts` reads authored instructions/examples through the device speech engine. It does not send learner audio to an AI service. English voice availability depends on device settings, and offline voice availability varies. The UI offers text and a useful failure message. Reference speech does not establish an accent standard.
 
 ## Backend
 
-`backend/app/main.py` defines an application factory and a typed `GET /health` endpoint. The factory accepts settings for testing. Configuration comes from environment variables prefixed `SPEAKCRAFT_`. Interactive docs and OpenAPI are disabled by default and opt in via `SPEAKCRAFT_DOCS_ENABLED=true`. No broad CORS policy, authentication stubs or speculative speech routes are installed.
+`backend/app/main.py` defines an application factory, a typed `GET /health` endpoint and the bounded, pilot-protected `POST /v1/speech/transcribe`. The factory accepts settings and a test transcriber. Configuration comes from `SPEAKCRAFT_` variables plus a server-only `OPENAI_API_KEY`. Interactive docs and OpenAPI are disabled by default and opt in via `SPEAKCRAFT_DOCS_ENABLED=true`. No broad CORS policy or speculative learner-data routes are installed.
 
 Use an authenticated SpeakCraft API boundary for future learner data. Provider credentials must remain server-side. Do not add a cloud service merely to serve current local content.
 
 ## Dependencies
 
-Runtime mobile dependencies each have a specific role: Riverpod (composition), GoRouter (navigation), sqflite (durable local state), record (native capture), path_provider (private storage locations), flutter_tts (audio instructions). Tests additionally use sqflite_common_ffi to test actual SQLite reopen behavior on a host.
+Runtime mobile dependencies each have a specific role: Riverpod (composition), GoRouter (navigation), sqflite (durable local state), record (native capture), path_provider (private storage locations), flutter_tts (audio instructions) and http (SpeakCraft API transport). Tests additionally use sqflite_common_ffi to test actual SQLite reopen behavior on a host.
 
-FastAPI provides routing and schemas, Uvicorn serves ASGI, and pydantic-settings reads typed configuration. Dependency resolutions are tracked in `mobile/pubspec.lock` and `backend/requirements-dev.lock`. Flutter is pinned in `.flutter-version` and CI. Do not manually update generated native files without preserving both platform targets.
+FastAPI provides routing and schemas, Uvicorn serves ASGI, pydantic-settings reads typed configuration, python-multipart parses the bounded upload, and httpx sends it to the provider. Dependency resolutions are tracked in `mobile/pubspec.lock` and `backend/requirements-dev.lock`. Flutter is pinned in `.flutter-version` and CI. Do not manually update generated native files without preserving both platform targets.
 
 ## Platform baseline
 
@@ -64,3 +72,4 @@ Flutter 3.47.5 / Dart 3.13.4. Android API 24+ with compile/target SDK 36; Java 1
 - [Device text to speech](https://pub.dev/packages/flutter_tts)
 - [SQLite](https://pub.dev/packages/sqflite)
 - [FastAPI testing](https://fastapi.tiangolo.com/tutorial/testing/)
+- [OpenAI file transcription](https://developers.openai.com/api/docs/guides/speech-to-text)

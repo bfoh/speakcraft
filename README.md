@@ -6,9 +6,13 @@
 
 Welcome → Profession → Support Language → Meet Kora → Assessment Introduction → Home → Day 1: This Is Me → local microphone practice.
 
-This foundation includes shared Android/iOS screens, a small accessible design system, saved onboarding and phrase position, authored audio instructions through device speech, and real local recording. It does **not** transcribe, score, execute an assessment, generate Kora conversations, or mark lessons complete. Days 2–5 are structured curriculum seeds and are unavailable in the UI.
+Sprint 1 established shared Android/iOS screens, a small accessible design system, saved onboarding and phrase position, authored audio instructions through device speech, and real local recording. The assessment, scoring, generated Kora conversations and lesson completion remain unavailable. Days 2–5 are structured curriculum seeds and are unavailable in the UI.
 
 The app works without the backend. Routine recordings stay in private cache for the running session, and are removed on replacement, deletion, phrase change or next launch. Installed device voices determine whether audio instructions work offline.
+
+## Sprint 2 speech slice
+
+Day 1 includes an explicit **Hear my words** action when a SpeakCraft API URL is configured. It uploads the current take for transcription, displays what speech recognition heard, and lets the learner listen or retry. It does not score, correct or assess the learner. Offline recording and local phrase progress continue to work. The OpenAI key is server-only; live provider transcription remains unverified until a key is supplied outside the repository. See the [Sprint 2 plan](.agent/plans/sprint-02-speech-recognition.md).
 
 ## Repository
 
@@ -56,6 +60,8 @@ flutter devices
 flutter run -d <device-id>
 ```
 
+To connect a local backend for speech on the iOS simulator, use `flutter run -d <device-id> --dart-define=SPEAKCRAFT_API_BASE_URL=http://127.0.0.1:8000`. For an Android emulator, use `http://10.0.2.2:8000`. The URL contains no secret. A facilitator enters the pilot access code in the app when sending a recording; it stays only in memory. For physical devices, use an HTTPS backend URL. Local recording remains available when no URL is configured.
+
 Replace `<device-id>` with an Android or iOS device from `flutter devices`. For an iOS simulator, start Simulator with `open -a Simulator` first. For Android, start an installed emulator or connect an authorized USB device. The same Dart entry point runs on both. No environment secrets or backend URL are needed.
 
 Build development artefacts:
@@ -80,6 +86,8 @@ python3.12 -m venv .venv
 SPEAKCRAFT_DOCS_ENABLED=true .venv/bin/uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
+The speech endpoint is disabled until `OPENAI_API_KEY` and a long random `SPEAKCRAFT_PILOT_TOKEN` are exported in the backend environment. Keep both out of Git and logs. This shared-token setup is for local/internal testing only; public exposure needs learner authentication and abuse controls. The service does not save uploaded audio or returned transcripts.
+
 If `.venv` already exists (as on the Sprint 1 development machine), the last command starts the backend directly. `.env.example` documents the optional setting; environment files are not loaded implicitly.
 
 ```sh
@@ -88,7 +96,7 @@ curl http://127.0.0.1:8000/health
 
 Expected response: `{"status":"ok","service":"speakcraft-api","version":"0.1.0"}`.
 
-When enabled, [interactive API docs](http://127.0.0.1:8000/docs) describe the real health endpoint. No `/v1/speech`, assessment or learner-data endpoints are implemented. Health means the process is alive, not that future cloud dependencies are ready.
+When enabled, [interactive API docs](http://127.0.0.1:8000/docs) describe the real health and speech-transcription endpoints. Assessment, speaking evaluation and learner-data endpoints remain unimplemented. Health means the process is alive, not that speech credentials are configured.
 
 ## Validate
 
@@ -113,8 +121,8 @@ cd mobile
 flutter test integration_test/foundation_test.dart -d <device-id>
 ```
 
-The native smoke test uses real SQLite and recording, and a separate test database. It must not be represented as a hardware test when only unit/widget doubles ran. See [validation evidence and device checklist](docs/SPRINT_1_VALIDATION.md).
+The native smoke test uses real SQLite and recording, a separate test database, and a local test HTTP server for the speech upload. It does not call OpenAI or establish transcription accuracy. See the [Sprint 1](docs/SPRINT_1_VALIDATION.md) and [Sprint 2](docs/SPRINT_2_VALIDATION.md) validation records.
 
-## Next sprint
+## Next build milestone
 
-After the foundation/device gate passes, Sprint 2 should make Kora hear: a server-side speech adapter and a consented recording → transcription → retry slice, evaluated with Ghanaian-accented English. Do not add scoring or generic chatbot behaviour as a substitute for reliable transcription.
+After the transcription slice is verified with a provider key and Ghanaian-accented speech samples, add teaching feedback that checks meaning, selects one useful correction and supports a retry. Do not infer a score from transcription alone.

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:speakcraft/core/audio/microphone.dart';
 import 'package:speakcraft/core/audio/speech_output.dart';
 import 'package:speakcraft/core/storage/progress_store.dart';
+import 'package:speakcraft/core/speech/recognition.dart';
 
 /// Test-only adapters; production always uses native recording and SQLite.
 class FakeMicrophone implements Microphone {
@@ -56,6 +57,21 @@ class FakeSpeech implements SpeechOutput {
 
   @override
   Future<void> stop() async {}
+}
+
+class FakeRecognition implements SpeechRecognition {
+  String result = 'My name is Ama.';
+  SpeechRecognitionException? error;
+  Completer<String>? gate;
+  final calls = <(String, String)>[];
+  @override
+  bool get configured => true;
+  @override
+  Future<String> transcribe(String recordingPath, String accessToken) async {
+    calls.add((recordingPath, accessToken));
+    if (error != null) throw error!;
+    return gate == null ? result : gate!.future;
+  }
 }
 
 class MemoryProgressStore implements ProgressStore {

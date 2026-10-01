@@ -11,10 +11,12 @@ dependencies = [
   "fastapi>=0.115,<1",
   "uvicorn>=0.34,<1",
   "pydantic-settings>=2.7,<3",
+  "httpx>=0.28,<1",
+  "python-multipart>=0.0.20,<1",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8,<10", "httpx>=0.28,<1", "ruff>=0.11,<1", "mypy>=1.15,<2"]
+dev = ["pytest>=8,<10", "ruff>=0.11,<1", "mypy>=1.15,<2"]
 
 [tool.setuptools.packages.find]
 include = ["app*"]

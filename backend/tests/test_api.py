@@ -22,7 +22,7 @@ def test_opt_in_documentation_matches_response_schema() -> None:
     with TestClient(create_app(Settings(docs_enabled=True))) as client:
         assert client.get("/docs").status_code == 200
         schema = client.get("/openapi.json").json()
-        assert set(schema["paths"]) == {"/health"}
+        assert set(schema["paths"]) == {"/health", "/v1/speech/transcribe"}
         assert (
             schema["components"]["schemas"]["HealthResponse"]["properties"]["status"][
                 "const"
