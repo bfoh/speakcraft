@@ -37,3 +37,7 @@ Pin Flutter 3.47.5/Dart 3.13.4. Android minimum API 24, compile/target 36, Java 
 Use the blueprint's completed-file transcription step before teaching feedback. Mobile calls only `POST /v1/speech/transcribe`; the provider-specific request and key remain on FastAPI. A transcript is shown as tentative words, never a communication score. The learner separately chooses recording and upload. Failed uploads leave the take available for manual retry; no automatic background upload occurs.
 
 Require a server-side provider key and long pilot bearer token. A facilitator enters the pilot code at runtime in the app; it is held only in memory. This is restricted to local/internal testing. Public access needs learner authentication, rate limits and reviewed provider retention. No live provider call was verified without a key.
+
+## 2026-10-01 — Prompt-bound teaching feedback
+
+The learner requests feedback only after seeing the tentative transcript. The backend loads lesson objectives from the canonical curriculum and refuses client-authored objectives. OpenAI Responses produces strict structured output with `store: false`; application validation bounds fields and rejects malformed feedback. Text-only feedback gives no pronunciation or numerical score. Feedback is ephemeral in the mobile app, and a failed request preserves the take and transcript. No live model or educator review was possible without a server key and consented learner samples.

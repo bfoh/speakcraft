@@ -8,6 +8,7 @@ import '../../app/services.dart';
 import '../../shared/components.dart';
 import 'microphone_controller.dart';
 import 'transcription_controller.dart';
+import 'feedback_controller.dart';
 
 class LessonScreen extends ConsumerStatefulWidget {
   const LessonScreen({super.key});
@@ -19,11 +20,13 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
     with WidgetsBindingObserver {
   late MicrophoneController _mic;
   late TranscriptionController _transcription;
+  late FeedbackController _feedback;
   @override
   void initState() {
     super.initState();
     _mic = ref.read(microphoneProvider);
     _transcription = ref.read(transcriptionProvider);
+    _feedback = ref.read(feedbackProvider);
     _mic.resume();
     WidgetsBinding.instance.addObserver(this);
   }
@@ -50,6 +53,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
   }
 
   Future<void> _hearMyWords(String path) async {
+    _feedback.clear();
     if (!_transcription.hasAccessToken) {
       var input = '';
       final code = await showDialog<String>(
@@ -95,7 +99,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
     final session = ref.watch(sessionProvider);
     final lesson = services.curriculum.dayOne;
     return ListenableBuilder(
-      listenable: Listenable.merge([_mic, session, _transcription]),
+      listenable: Listenable.merge([_mic, session, _transcription, _feedback]),
       builder: (context, _) {
         final index = session.progress.dayOnePrompt;
         final prompt = lesson.prompts[index];
@@ -191,12 +195,17 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
               SpeakCraftButton(
                 label: button,
                 icon: icon,
-                onPressed: _mic.busy || session.saving || _transcription.sending
+                onPressed:
+                    _mic.busy ||
+                        session.saving ||
+                        _transcription.sending ||
+                        _feedback.sending
                     ? null
                     : () async {
                         switch (_mic.state) {
                           case MicrophoneState.ready:
                             _transcription.clear();
+                            _feedback.clear();
                             await _mic.start(prompt.id);
                           case MicrophoneState.recording:
                             await _mic.finish();
@@ -207,19 +216,23 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
               ),
               if (_mic.recordingPath != null)
                 OutlinedButton.icon(
-                  onPressed: _mic.capturing || _transcription.sending
+                  onPressed:
+                      _mic.capturing ||
+                          _transcription.sending ||
+                          _feedback.sending
                       ? null
                       : () async {
                           await _mic.discard();
                           if (_mic.recordingPath == null) {
                             _transcription.clear();
+                            _feedback.clear();
                           }
                         },
                   icon: const Icon(Icons.delete_outline),
                   label: const Text('Delete recording'),
                 ),
               const SpeakCraftNotice(
-                'Your voice stays on this phone unless you choose Hear my words. That sends this recording to SpeakCraft for speech recognition.',
+                'Your voice stays on this phone unless you choose Hear my words. That sends the recording for speech recognition. Help me say it better sends the words you see for feedback.',
                 icon: Icons.privacy_tip_outlined,
               ),
               if (_mic.recordingPath != null && _transcription.configured)
@@ -228,7 +241,10 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
                       ? 'Listening to your words…'
                       : 'Hear my words',
                   icon: Icons.hearing,
-                  onPressed: _transcription.sending || _mic.capturing
+                  onPressed:
+                      _transcription.sending ||
+                          _mic.capturing ||
+                          _feedback.sending
                       ? null
                       : () => _hearMyWords(_mic.recordingPath!),
                 ),
@@ -259,6 +275,76 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
                       ),
                     ],
                   ),
+                ),
+              if (_transcription.state == TranscriptionState.success &&
+                  _feedback.provider.configured)
+                SpeakCraftButton(
+                  label: _feedback.sending
+                      ? 'Thinking about your words…'
+                      : 'Help me say it better',
+                  icon: Icons.lightbulb_outline,
+                  onPressed: _feedback.sending || _mic.capturing
+                      ? null
+                      : () => _feedback.evaluate(
+                          lesson.id,
+                          prompt.id,
+                          _transcription.transcript!,
+                          _transcription.accessToken,
+                        ),
+                ),
+              if (_feedback.state == TeachingFeedbackState.success)
+                SpeakCraftCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text('KORA SAYS'),
+                      const SizedBox(height: 12),
+                      Text(
+                        _feedback.result!.feedback,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 12),
+                      SpeakCraftAudioButton(
+                        text: _feedback.result!.feedback,
+                        label: 'Listen to Kora',
+                        enabled: !_mic.capturing,
+                      ),
+                      if (_feedback.result!.example != null) ...[
+                        const SizedBox(height: 12),
+                        Text(_feedback.result!.example!),
+                        const SizedBox(height: 12),
+                        SpeakCraftAudioButton(
+                          text: _feedback.result!.example!,
+                          label: 'Listen and try again',
+                          enabled: !_mic.capturing,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              if (_feedback.state == TeachingFeedbackState.offline)
+                const SpeakCraftNotice(
+                  "We couldn't connect for feedback. Your words and recording are still here.",
+                  icon: Icons.wifi_off_outlined,
+                  live: true,
+                ),
+              if (_feedback.state == TeachingFeedbackState.accessDenied)
+                const SpeakCraftNotice(
+                  'The access code has stopped working. Ask your facilitator.',
+                  icon: Icons.lock_outline,
+                  live: true,
+                ),
+              if (_feedback.state == TeachingFeedbackState.unavailable)
+                const SpeakCraftNotice(
+                  'Feedback is unavailable right now. You can still practise.',
+                  icon: Icons.cloud_off_outlined,
+                  live: true,
+                ),
+              if (_feedback.state == TeachingFeedbackState.failure)
+                const SpeakCraftNotice(
+                  'Something went wrong with feedback. You can try again.',
+                  icon: Icons.error_outline,
+                  live: true,
                 ),
               if (_transcription.state == TranscriptionState.noSpeech)
                 const SpeakCraftNotice(
@@ -305,7 +391,10 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
               if (index < lesson.prompts.length - 1)
                 OutlinedButton.icon(
                   onPressed:
-                      _mic.capturing || session.saving || _transcription.sending
+                      _mic.capturing ||
+                          session.saving ||
+                          _transcription.sending ||
+                          _feedback.sending
                       ? null
                       : () async {
                           final saved = await session.update(
@@ -315,6 +404,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
                             await _mic.discard();
                             if (_mic.recordingPath == null) {
                               _transcription.clear();
+                              _feedback.clear();
                             }
                           }
                         },
@@ -327,7 +417,10 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
                 ),
                 OutlinedButton.icon(
                   onPressed:
-                      _mic.capturing || session.saving || _transcription.sending
+                      _mic.capturing ||
+                          session.saving ||
+                          _transcription.sending ||
+                          _feedback.sending
                       ? null
                       : () async {
                           final saved = await session.update(
@@ -337,6 +430,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
                             await _mic.discard();
                             if (_mic.recordingPath == null) {
                               _transcription.clear();
+                              _feedback.clear();
                             }
                           }
                         },

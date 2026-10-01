@@ -2,8 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+
+import 'api_endpoint.dart';
 
 enum SpeechProblem {
   offline,
@@ -40,23 +41,7 @@ class HttpSpeechRecognition implements SpeechRecognition {
   final http.Client? _client;
   static const maxAudioBytes = 4 * 1024 * 1024;
 
-  Uri? get _endpoint {
-    if (_baseUrl.isEmpty) return null;
-    final base = Uri.tryParse(_baseUrl);
-    if (base == null || !base.hasAuthority || base.userInfo.isNotEmpty) {
-      return null;
-    }
-    final local = ['localhost', '127.0.0.1', '10.0.2.2'].contains(base.host);
-    if (base.scheme != 'https' &&
-        !(kDebugMode && base.scheme == 'http' && local)) {
-      return null;
-    }
-    return base.replace(
-      path: '${base.path.replaceAll(RegExp(r'/$'), '')}/v1/speech/transcribe',
-      query: null,
-      fragment: null,
-    );
-  }
+  Uri? get _endpoint => speechApiEndpoint(_baseUrl, '/v1/speech/transcribe');
 
   @override
   bool get configured => _endpoint != null;

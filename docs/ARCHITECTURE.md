@@ -2,7 +2,7 @@
 
 ## Foundation and boundaries
 
-A Flutter application runs the beginning of Day 1 on Android and iOS. A separate FastAPI process exposes liveness and optional speech transcription. The mobile application remains usable offline and does not require the backend for navigation or recording. There is no learner authentication, cloud database, generated conversation, evaluation, or synchronisation in this build.
+A Flutter application runs the beginning of Day 1 on Android and iOS. A separate FastAPI process exposes liveness, optional speech transcription and prompt-bound teaching feedback. The mobile application remains usable offline and does not require the backend for navigation or recording. There is no learner authentication, cloud database, generated conversation, scored assessment or synchronisation in this build.
 
 The architecture follows blueprint sections 18–20. The explicit Sprint 1 instruction limits the full AI vertical slice proposed in section 35; see DECISIONS.md.
 
@@ -14,12 +14,19 @@ FastAPI requires a pilot bearer token and a server-only OpenAI key before accept
 
 This pilot access mechanism is limited to local/internal testing. Public deployment needs per-learner authentication, rate limits, and a reviewed retention policy. No live provider call was possible during implementation without an API key.
 
+## Sprint 3 teaching slice
+
+The learner sees the tentative transcript before separately requesting **Help me say it better**. Flutter sends `lesson_id`, `prompt_id` and transcript to `POST /v1/speech/evaluate`; it does not send an editable lesson objective. FastAPI resolves the prompt against a packaged, byte-identical copy of `curriculum/alpha.json`. Requests and returned fields are bounded. Kora's provider adapter uses OpenAI Responses with a strict JSON schema and `store: false`; Pydantic validates the result again. Only a short outcome, feedback and optional example reach the app. The server does not retain them.
+
+The model receives text, not audio. It is instructed to prioritize meaning and task completion, offer at most one useful improvement and avoid pronunciation judgements, scores and invented personal facts. Schema validation controls shape, while educator review remains necessary to establish teaching quality. Feedback failures preserve the take and transcript for manual retry. The mobile controller invalidates stale feedback after a changed take or prompt.
+
 ## Mobile structure
 
 - `lib/app`: composition, Riverpod providers, GoRouter routes and theme.
 - `lib/core/curriculum`: immutable typed models and bundled curriculum validation.
 - `lib/core/storage`: progress repository interface and native SQLite adapter.
 - `lib/core/audio`: microphone interface, native recording adapter, authored-text speech output.
+- `lib/core/speech`: backend-facing transcription and teaching-feedback contracts.
 - `lib/features/onboarding`: welcome, profession, support language, Kora introduction, assessment introduction.
 - `lib/features/home`: Day-1 entry and a preview of the five-day journey.
 - `lib/features/lesson`: phrase practice, microphone state controller and UI.
@@ -35,7 +42,7 @@ Future local changes must increment the schema version and provide tested upgrad
 
 ## Curriculum
 
-`curriculum/alpha.json` is the editorial source of truth for the five Alpha days. `scripts/sync_curriculum.py` validates it and copies identical content into `mobile/assets/curriculum/alpha.json`. CI checks that copy for drift. No symlinks outside the Flutter project are required for packaging.
+`curriculum/alpha.json` is the editorial source of truth for the five Alpha days. `scripts/sync_curriculum.py` validates it and copies identical content into `mobile/assets/curriculum/alpha.json` and `backend/app/data/alpha.json`. CI checks both copies for drift. No symlinks outside the projects are required for packaging.
 
 Day 1 has four authored prompts, ending in the blueprint's 30–60 second introduction. Days 2–5 contain objectives, target language and initial prompts; their activities remain unavailable. Example sentences are editorial seeds requiring educator review. They are not generated assessment data.
 
@@ -49,7 +56,7 @@ The microphone processing state only represents local audio work. Recording succ
 
 ## Backend
 
-`backend/app/main.py` defines an application factory, a typed `GET /health` endpoint and the bounded, pilot-protected `POST /v1/speech/transcribe`. The factory accepts settings and a test transcriber. Configuration comes from `SPEAKCRAFT_` variables plus a server-only `OPENAI_API_KEY`. Interactive docs and OpenAPI are disabled by default and opt in via `SPEAKCRAFT_DOCS_ENABLED=true`. No broad CORS policy or speculative learner-data routes are installed.
+`backend/app/main.py` defines an application factory, a typed `GET /health` endpoint and bounded, pilot-protected `POST /v1/speech/transcribe` and `POST /v1/speech/evaluate`. The factory accepts settings and test providers. Configuration comes from `SPEAKCRAFT_` variables plus a server-only `OPENAI_API_KEY`. Interactive docs and OpenAPI are disabled by default and opt in via `SPEAKCRAFT_DOCS_ENABLED=true`. No broad CORS policy or speculative learner-data routes are installed.
 
 Use an authenticated SpeakCraft API boundary for future learner data. Provider credentials must remain server-side. Do not add a cloud service merely to serve current local content.
 
@@ -73,3 +80,4 @@ Flutter 3.47.5 / Dart 3.13.4. Android API 24+ with compile/target SDK 36; Java 1
 - [SQLite](https://pub.dev/packages/sqflite)
 - [FastAPI testing](https://fastapi.tiangolo.com/tutorial/testing/)
 - [OpenAI file transcription](https://developers.openai.com/api/docs/guides/speech-to-text)
+- [OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs)

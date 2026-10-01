@@ -21,6 +21,9 @@ dev = ["pytest>=8,<10", "ruff>=0.11,<1", "mypy>=1.15,<2"]
 [tool.setuptools.packages.find]
 include = ["app*"]
 
+[tool.setuptools.package-data]
+app = ["data/*.json"]
+
 [tool.ruff]
 target-version = "py312"
 line-length = 88

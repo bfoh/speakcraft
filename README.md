@@ -14,6 +14,10 @@ The app works without the backend. Routine recordings stay in private cache for 
 
 Day 1 includes an explicit **Hear my words** action when a SpeakCraft API URL is configured. It uploads the current take for transcription, displays what speech recognition heard, and lets the learner listen or retry. It does not score, correct or assess the learner. Offline recording and local phrase progress continue to work. The OpenAI key is server-only; live provider transcription remains unverified until a key is supplied outside the repository. See the [Sprint 2 plan](.agent/plans/sprint-02-speech-recognition.md).
 
+## Sprint 3 teaching slice
+
+After reviewing a transcript, the learner may choose **Help me say it better**. Kora gives one short teaching response tied to the selected curriculum prompt, with an example to hear and repeat when useful. The learner can retry recording. The app displays no score or pronunciation judgement. Feedback requires the same internal backend and pilot access code as transcription. A failed request keeps the local take and transcript; generated feedback is not saved. Model quality remains unverified without a server key and educator review. See the [Sprint 3 plan](.agent/plans/sprint-03-teaching-feedback.md).
+
 ## Repository
 
 ```text
@@ -86,7 +90,7 @@ python3.12 -m venv .venv
 SPEAKCRAFT_DOCS_ENABLED=true .venv/bin/uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-The speech endpoint is disabled until `OPENAI_API_KEY` and a long random `SPEAKCRAFT_PILOT_TOKEN` are exported in the backend environment. Keep both out of Git and logs. This shared-token setup is for local/internal testing only; public exposure needs learner authentication and abuse controls. The service does not save uploaded audio or returned transcripts.
+The speech and feedback endpoints are disabled until `OPENAI_API_KEY` and a long random `SPEAKCRAFT_PILOT_TOKEN` are exported in the backend environment. Keep both out of Git and logs. `SPEAKCRAFT_FEEDBACK_MODEL` may override the server-side feedback model. This shared-token setup is for local/internal testing only; public exposure needs learner authentication and abuse controls. The service does not save uploaded audio, transcripts or feedback.
 
 If `.venv` already exists (as on the Sprint 1 development machine), the last command starts the backend directly. `.env.example` documents the optional setting; environment files are not loaded implicitly.
 
@@ -96,7 +100,7 @@ curl http://127.0.0.1:8000/health
 
 Expected response: `{"status":"ok","service":"speakcraft-api","version":"0.1.0"}`.
 
-When enabled, [interactive API docs](http://127.0.0.1:8000/docs) describe the real health and speech-transcription endpoints. Assessment, speaking evaluation and learner-data endpoints remain unimplemented. Health means the process is alive, not that speech credentials are configured.
+When enabled, [interactive API docs](http://127.0.0.1:8000/docs) describe health, transcription and prompt-bound teaching feedback. Formal assessment, scoring and learner-data endpoints remain unimplemented. Health means the process is alive, not that speech credentials are configured.
 
 ## Validate
 
@@ -121,8 +125,8 @@ cd mobile
 flutter test integration_test/foundation_test.dart -d <device-id>
 ```
 
-The native smoke test uses real SQLite and recording, a separate test database, and a local test HTTP server for the speech upload. It does not call OpenAI or establish transcription accuracy. See the [Sprint 1](docs/SPRINT_1_VALIDATION.md) and [Sprint 2](docs/SPRINT_2_VALIDATION.md) validation records.
+The native smoke test uses real SQLite and recording, a separate test database, and a local test HTTP server for speech and feedback contracts. It does not call OpenAI or establish teaching quality. See the [Sprint 1](docs/SPRINT_1_VALIDATION.md), [Sprint 2](docs/SPRINT_2_VALIDATION.md) and [Sprint 3](docs/SPRINT_3_VALIDATION.md) validation records.
 
 ## Next build milestone
 
-After the transcription slice is verified with a provider key and Ghanaian-accented speech samples, add teaching feedback that checks meaning, selects one useful correction and supports a retry. Do not infer a score from transcription alone.
+Complete the Day-1 guidance loop by adding a bounded Kora conversation that can respond to a learner's next spoken turn while preserving the same explicit recording and upload controls. Verify transcription and teaching responses with consented Ghanaian-accented speech and educator review before a pilot.

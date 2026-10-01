@@ -3,10 +3,18 @@ from hmac import compare_digest
 from typing import Annotated, Literal
 
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 from starlette.responses import JSONResponse, Response
 
 from app.config import Settings
+from app.curriculum import prompt_context
+from app.feedback import (
+    FeedbackFailure,
+    FeedbackProvider,
+    FeedbackTimeout,
+    OpenAIFeedbackProvider,
+    TeachingFeedback,
+)
 from app.speech import (
     OpenAITranscriber,
     Transcriber,
@@ -15,6 +23,7 @@ from app.speech import (
 )
 
 MAX_AUDIO_BYTES = 4 * 1024 * 1024
+MAX_FEEDBACK_BODY_BYTES = 4096
 
 
 class HealthResponse(BaseModel):
@@ -27,13 +36,27 @@ class TranscriptResponse(BaseModel):
     transcript: str
 
 
+class FeedbackRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    lesson_id: str = Field(min_length=1, max_length=80)
+    prompt_id: str = Field(min_length=1, max_length=80)
+    transcript: str = Field(min_length=1, max_length=1500)
+
+
 def create_app(
-    settings: Settings | None = None, transcriber: Transcriber | None = None
+    settings: Settings | None = None,
+    transcriber: Transcriber | None = None,
+    feedback_provider: FeedbackProvider | None = None,
 ) -> FastAPI:
     config = settings or Settings()
     provider = transcriber
     if provider is None and config.speech_ready and config.openai_api_key:
         provider = OpenAITranscriber(config.openai_api_key.get_secret_value())
+    evaluator = feedback_provider
+    if evaluator is None and config.speech_ready and config.openai_api_key:
+        evaluator = OpenAIFeedbackProvider(
+            config.openai_api_key.get_secret_value(), config.feedback_model
+        )
     application = FastAPI(
         title="SpeakCraft API",
         version="0.1.0",
@@ -46,10 +69,21 @@ def create_app(
     async def guard_speech_upload(
         request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
-        if request.url.path == "/v1/speech/transcribe" and request.method == "POST":
+        if (
+            request.url.path
+            in {
+                "/v1/speech/transcribe",
+                "/v1/speech/evaluate",
+            }
+            and request.method == "POST"
+        ):
             if (
                 not config.speech_ready
-                or provider is None
+                or (
+                    provider is None
+                    if request.url.path == "/v1/speech/transcribe"
+                    else evaluator is None
+                )
                 or config.pilot_token is None
             ):
                 return JSONResponse(
@@ -63,9 +97,14 @@ def create_app(
             if content_length is not None:
                 if not content_length.isdecimal():
                     return JSONResponse({"detail": "Invalid upload"}, status_code=400)
-                if int(content_length) > MAX_AUDIO_BYTES + 16 * 1024:
+                maximum = (
+                    MAX_AUDIO_BYTES + 16 * 1024
+                    if request.url.path == "/v1/speech/transcribe"
+                    else MAX_FEEDBACK_BODY_BYTES
+                )
+                if int(content_length) > maximum:
                     return JSONResponse(
-                        {"detail": "Recording is too large"}, status_code=413
+                        {"detail": "Request is too large"}, status_code=413
                     )
         return await call_next(request)
 
@@ -99,6 +138,38 @@ def create_app(
         except TranscriptionFailure as exc:
             raise HTTPException(
                 status_code=502, detail="Speech is unavailable"
+            ) from exc
+
+    @application.post(
+        "/v1/speech/evaluate", response_model=TeachingFeedback, tags=["speech"]
+    )
+    async def evaluate(request: Request) -> TeachingFeedback:
+        if evaluator is None:
+            raise HTTPException(status_code=503, detail="Feedback is unavailable")
+        body = bytearray()
+        async for chunk in request.stream():
+            body.extend(chunk)
+            if len(body) > MAX_FEEDBACK_BODY_BYTES:
+                raise HTTPException(status_code=413, detail="Request is too large")
+        try:
+            payload = FeedbackRequest.model_validate_json(body)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=422, detail="Invalid feedback request"
+            ) from exc
+        transcript = payload.transcript.strip()
+        if not transcript:
+            raise HTTPException(status_code=422, detail="Transcript is empty")
+        context = prompt_context(payload.lesson_id, payload.prompt_id)
+        if context is None:
+            raise HTTPException(status_code=400, detail="Unknown lesson prompt")
+        try:
+            return await evaluator.evaluate(context, transcript)
+        except FeedbackTimeout as exc:
+            raise HTTPException(status_code=504, detail="Feedback timed out") from exc
+        except FeedbackFailure as exc:
+            raise HTTPException(
+                status_code=502, detail="Feedback is unavailable"
             ) from exc
 
     return application

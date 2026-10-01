@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     openai_api_key: SecretStr | None = Field(
         default=None, validation_alias="OPENAI_API_KEY"
     )
+    feedback_model: str = "gpt-6-astra"
 
     @field_validator("pilot_token")
     @classmethod

@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "id": "beauty-alpha",
+  "version": "0.1.0",
+  "profession": "beauty-cosmetology",
+  "title": "Beauty & Cosmetology",
+  "lessons": [
+    {
+      "id": "day-1",
+      "day": 1,
+      "title": "This Is Me",
+      "objective": "Introduce yourself and say what you study.",
+      "estimated_minutes": 15,
+      "challenge": "Give a 30–60 second introduction.",
+      "target_language": ["My name is…", "I study…", "I want to…"],
+      "prompts": [
+        {"id": "introduce-name", "instruction": "Say your name.", "example": "My name is Ama.", "hint": "Start with: My name is…"},
+        {"id": "introduce-study", "instruction": "Say what you study.", "example": "I study beauty and cosmetology.", "hint": "Start with: I study…"},
+        {"id": "introduce-purpose", "instruction": "Say why you chose your course.", "example": "I want to help people feel confident.", "hint": "Start with: I want to…"},
+        {"id": "introduce-yourself", "instruction": "Tell us about yourself. Say your name, what you study and why.", "example": "My name is Ama. I study beauty and cosmetology. I want to help people feel confident.", "hint": "My name is… I study… I want to…"}
+      ]
+    },
+    {
+      "id": "day-2", "day": 2, "title": "My Salon",
+      "objective": "Name and describe common salon objects.",
+      "estimated_minutes": 15,
+      "challenge": "Name a salon object and explain what you use it for.",
+      "target_language": ["comb", "brush", "dryer", "scissors", "wig", "shampoo", "conditioner", "extensions"],
+      "prompts": [{"id": "salon-object", "instruction": "Name a tool you use.", "example": "This is a comb. I use it to comb hair.", "hint": "This is a… I use it to…"}]
+    },
+    {
+      "id": "day-3", "day": 3, "title": "Welcome a Customer",
+      "objective": "Greet a customer and ask what they need.",
+      "estimated_minutes": 15,
+      "challenge": "Complete a 90-second customer consultation.",
+      "target_language": ["Welcome", "How can I help you?", "What hairstyle would you like?"],
+      "prompts": [{"id": "customer-greeting", "instruction": "Welcome a customer to your salon.", "example": "Welcome. What hairstyle would you like?", "hint": "Start with: Welcome…"}]
+    },
+    {
+      "id": "day-4", "day": 4, "title": "Recommend",
+      "objective": "Recommend a hairstyle and explain why.",
+      "estimated_minutes": 15,
+      "challenge": "Give a customer a recommendation and a reason.",
+      "target_language": ["I recommend…", "I think…", "This would be better because…"],
+      "prompts": [{"id": "recommend-style", "instruction": "Recommend a hairstyle that is easy to maintain.", "example": "I recommend braids because they are easy to maintain.", "hint": "I recommend… because…"}]
+    },
+    {
+      "id": "day-5", "day": 5, "title": "Salon Challenge",
+      "objective": "Guide a customer through a salon conversation.",
+      "estimated_minutes": 20,
+      "challenge": "Greet a customer, discover their needs, ask questions, recommend, explain and close.",
+      "target_language": ["Welcome", "What would you like?", "I recommend…", "Thank you"],
+      "prompts": [{"id": "salon-conversation", "instruction": "Start a conversation with your customer.", "example": "Welcome. How can I help you today?", "hint": "Greet your customer, then ask what they need."}]
+    }
+  ]
+}

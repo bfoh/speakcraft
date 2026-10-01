@@ -25,6 +25,7 @@ class TranscriptionController extends ChangeNotifier {
 
   bool get configured => recognition.configured;
   bool get hasAccessToken => _accessToken != null;
+  String? get accessToken => _accessToken;
   bool get sending => state == TranscriptionState.sending;
 
   void setAccessToken(String value) {

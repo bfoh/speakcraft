@@ -4,6 +4,7 @@ import 'package:speakcraft/core/audio/microphone.dart';
 import 'package:speakcraft/core/audio/speech_output.dart';
 import 'package:speakcraft/core/storage/progress_store.dart';
 import 'package:speakcraft/core/speech/recognition.dart';
+import 'package:speakcraft/core/speech/feedback.dart';
 
 /// Test-only adapters; production always uses native recording and SQLite.
 class FakeMicrophone implements Microphone {
@@ -69,6 +70,30 @@ class FakeRecognition implements SpeechRecognition {
   @override
   Future<String> transcribe(String recordingPath, String accessToken) async {
     calls.add((recordingPath, accessToken));
+    if (error != null) throw error!;
+    return gate == null ? result : gate!.future;
+  }
+}
+
+class FakeFeedback implements SpeakingFeedback {
+  TeachingFeedback result = const TeachingFeedback(
+    outcome: FeedbackOutcome.improve,
+    feedback: 'Good start. Make your sentence clearer.',
+    example: 'My name is Ama.',
+  );
+  FeedbackException? error;
+  Completer<TeachingFeedback>? gate;
+  final calls = <(String, String, String, String)>[];
+  @override
+  bool get configured => true;
+  @override
+  Future<TeachingFeedback> evaluate(
+    String lessonId,
+    String promptId,
+    String transcript,
+    String accessToken,
+  ) async {
+    calls.add((lessonId, promptId, transcript, accessToken));
     if (error != null) throw error!;
     return gate == null ? result : gate!.future;
   }

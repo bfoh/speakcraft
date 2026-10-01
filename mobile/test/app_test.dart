@@ -9,6 +9,7 @@ import 'package:speakcraft/app/speakcraft_app.dart';
 import 'package:speakcraft/core/curriculum/curriculum.dart';
 import 'package:speakcraft/core/storage/progress_store.dart';
 import 'package:speakcraft/core/speech/recognition.dart';
+import 'package:speakcraft/core/speech/feedback.dart';
 
 import 'support/fakes.dart';
 
@@ -22,6 +23,7 @@ void main() {
     WidgetTester tester, {
     LearnerProgress progress = const LearnerProgress(),
     SpeechRecognition recognition = const UnconfiguredSpeechRecognition(),
+    SpeakingFeedback feedback = const UnconfiguredSpeakingFeedback(),
   }) async {
     store = MemoryProgressStore()..progress = progress;
     mic = FakeMicrophone();
@@ -38,6 +40,7 @@ void main() {
             microphone: mic,
             speech: speech,
             recognition: recognition,
+            feedback: feedback,
           ),
         ),
       ],
@@ -166,6 +169,70 @@ void main() {
     await tap(tester, 'Hear my words');
     expect(recognition.calls.length, 2);
     expect(find.text('My name is Ama.'), findsNWidgets(2));
+  });
+
+  testWidgets('learner asks for feedback and can listen to one model', (
+    tester,
+  ) async {
+    final recognition = FakeRecognition();
+    final feedback = FakeFeedback();
+    await launch(
+      tester,
+      progress: returning,
+      recognition: recognition,
+      feedback: feedback,
+    );
+    await tap(tester, 'Open Day 1');
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    await tap(tester, 'Hear my words');
+    await tester.enterText(find.byType(TextField), 'pilot-access-code');
+    await tap(tester, 'Continue');
+    expect(feedback.calls, isEmpty);
+    await tap(tester, 'Help me say it better');
+    expect(feedback.calls, [
+      ('day-1', 'introduce-name', 'My name is Ama.', 'pilot-access-code'),
+    ]);
+    expect(
+      find.text('Good start. Make your sentence clearer.'),
+      findsOneWidget,
+    );
+    await tap(tester, 'Listen to Kora');
+    expect(speech.spoken.last, 'Good start. Make your sentence clearer.');
+    await tap(tester, 'Listen and try again');
+    expect(speech.spoken.last, 'My name is Ama.');
+    await tap(tester, 'Next practice');
+    expect(find.text('Good start. Make your sentence clearer.'), findsNothing);
+  });
+
+  testWidgets('feedback connection failure keeps transcript and take', (
+    tester,
+  ) async {
+    final feedback = FakeFeedback()
+      ..error = const FeedbackException(FeedbackProblem.offline);
+    await launch(
+      tester,
+      progress: returning,
+      recognition: FakeRecognition(),
+      feedback: feedback,
+    );
+    await tap(tester, 'Open Day 1');
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    await tap(tester, 'Hear my words');
+    await tester.enterText(find.byType(TextField), 'pilot-access-code');
+    await tap(tester, 'Continue');
+    await tap(tester, 'Help me say it better');
+    expect(
+      find.textContaining("couldn't connect for feedback"),
+      findsOneWidget,
+    );
+    expect(find.text('Delete recording'), findsOneWidget);
+    feedback.error = null;
+    await tap(tester, 'Help me say it better');
+    expect(feedback.calls.length, 2);
   });
 
   testWidgets('storage failure does not navigate or claim saved state', (

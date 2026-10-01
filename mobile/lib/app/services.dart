@@ -8,6 +8,8 @@ import '../core/curriculum/curriculum.dart';
 import '../core/storage/progress_store.dart';
 import '../core/storage/sqlite_progress_store.dart';
 import '../core/speech/recognition.dart';
+import '../core/speech/feedback.dart';
+import '../features/lesson/feedback_controller.dart';
 import '../features/lesson/microphone_controller.dart';
 import '../features/lesson/transcription_controller.dart';
 
@@ -19,6 +21,7 @@ class AppServices {
     required this.microphone,
     required this.speech,
     this.recognition = const UnconfiguredSpeechRecognition(),
+    this.feedback = const UnconfiguredSpeakingFeedback(),
   });
   final Curriculum curriculum;
   final ProgressStore store;
@@ -26,6 +29,7 @@ class AppServices {
   final Microphone microphone;
   final SpeechOutput speech;
   final SpeechRecognition recognition;
+  final SpeakingFeedback feedback;
 }
 
 final bootstrapProvider = FutureProvider<AppServices>((ref) async {
@@ -49,6 +53,9 @@ final bootstrapProvider = FutureProvider<AppServices>((ref) async {
       microphone: microphone,
       speech: DeviceSpeechOutput(),
       recognition: HttpSpeechRecognition(
+        const String.fromEnvironment('SPEAKCRAFT_API_BASE_URL'),
+      ),
+      feedback: HttpSpeakingFeedback(
         const String.fromEnvironment('SPEAKCRAFT_API_BASE_URL'),
       ),
     );
@@ -78,6 +85,11 @@ final transcriptionProvider = Provider<TranscriptionController>((ref) {
   final controller = TranscriptionController(
     ref.watch(servicesProvider).recognition,
   );
+  ref.onDispose(controller.dispose);
+  return controller;
+}, dependencies: [servicesProvider]);
+final feedbackProvider = Provider<FeedbackController>((ref) {
+  final controller = FeedbackController(ref.watch(servicesProvider).feedback);
   ref.onDispose(controller.dispose);
   return controller;
 }, dependencies: [servicesProvider]);

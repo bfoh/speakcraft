@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate canonical content and package the identical bytes for Flutter."""
+"""Validate canonical content and package identical bytes for both runtimes."""
 
 import argparse
 import json
@@ -7,7 +7,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "curriculum/alpha.json"
-TARGET = ROOT / "mobile/assets/curriculum/alpha.json"
+TARGETS = [
+    ROOT / "mobile/assets/curriculum/alpha.json",
+    ROOT / "backend/app/data/alpha.json",
+]
 TITLES = [
     "This Is Me",
     "My Salon",
@@ -48,14 +51,17 @@ def main() -> None:
     content = SOURCE.read_bytes()
     validate(json.loads(content))
     if args.check:
-        if not TARGET.exists() or TARGET.read_bytes() != content:
+        if any(
+            not target.exists() or target.read_bytes() != content for target in TARGETS
+        ):
             raise SystemExit(
                 "Curriculum asset is stale. Run python3 scripts/sync_curriculum.py"
             )
     else:
-        TARGET.parent.mkdir(parents=True, exist_ok=True)
-        TARGET.write_bytes(content)
-    print("Curriculum valid; mobile asset matches canonical content.")
+        for target in TARGETS:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(content)
+    print("Curriculum valid; mobile and backend assets match canonical content.")
 
 
 if __name__ == "__main__":

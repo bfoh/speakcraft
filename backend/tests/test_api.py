@@ -22,7 +22,11 @@ def test_opt_in_documentation_matches_response_schema() -> None:
     with TestClient(create_app(Settings(docs_enabled=True))) as client:
         assert client.get("/docs").status_code == 200
         schema = client.get("/openapi.json").json()
-        assert set(schema["paths"]) == {"/health", "/v1/speech/transcribe"}
+        assert set(schema["paths"]) == {
+            "/health",
+            "/v1/speech/transcribe",
+            "/v1/speech/evaluate",
+        }
         assert (
             schema["components"]["schemas"]["HealthResponse"]["properties"]["status"][
                 "const"
@@ -31,9 +35,7 @@ def test_opt_in_documentation_matches_response_schema() -> None:
         )
 
 
-@pytest.mark.parametrize(
-    "path", ["/v1/speech/evaluate", "/v1/kora/respond", "/v1/assessment/start"]
-)
+@pytest.mark.parametrize("path", ["/v1/kora/respond", "/v1/assessment/start"])
 def test_future_ai_routes_are_not_fake_integrations(path: str) -> None:
     with TestClient(create_app(Settings(docs_enabled=False))) as client:
         assert client.post(path, json={}).status_code == 404

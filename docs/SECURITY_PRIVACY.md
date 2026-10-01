@@ -8,6 +8,8 @@ The microphone records only after an explicit learner action and OS permission. 
 
 **Hear my words** is a separate learner action that uploads the current take to the SpeakCraft backend for transcription. The transcript stays in app memory with that take. The backend reads at most 4 MiB and stores neither audio nor transcript. The configured provider receives audio for transcription; review the provider account's retention and data-use settings before processing real learner recordings. A failed connection leaves the local take available for manual retry, but relaunch still clears it.
 
+**Help me say it better** is another explicit action. It sends the displayed transcript and selected curriculum prompt IDs to the backend; the backend looks up the authored objective and asks the provider for short structured feedback with storage disabled in the request. Feedback stays in app memory and is cleared when the take or prompt changes. The backend stores no feedback. The provider's actual retention settings and teaching quality still require review before real learner use.
+
 No background-recording capability is enabled. Active capture stops on app interruption/navigation and at 60 seconds. No learner audio is uploaded automatically. No analytics or learner-content logging are configured. Device TTS receives authored instructions, examples or a returned transcript; its installed voices may depend on the phone's speech engine and network availability.
 
 ## Permissions and backups
@@ -20,7 +22,7 @@ Permission denial is recoverable via phone settings and Check permission again. 
 
 There are no provider credentials in the mobile app. A pilot access code is entered at runtime and held in memory for the current app session. Environment files, signing credentials, local SDK paths and generated build output are ignored. The backend has no learner-data endpoints or remote database. `/health` exposes only a fixed service name, version and liveness. API docs are off unless explicitly enabled for local development. Release signing and production hosting are not configured.
 
-The pilot bearer token protects an internal test endpoint but is not per-learner authorization or a public abuse control. Do not expose this service publicly or place that token in a mobile build. Use proper learner authentication, rate limiting and transport protection before public deployment.
+The pilot bearer token protects internal test endpoints but is not per-learner authorization or a public abuse control. Do not expose this service publicly or place that token in a mobile build. Use proper learner authentication, rate limiting and transport protection before public deployment.
 
 Before storing remote learner data or exposing the API publicly, implement learner authentication, per-learner authorization, rate limits, retention/deletion policies and transport protection. Use database migrations and row-level access controls when a shared data platform is introduced. These are future requirements, not completed pilot functionality.
 
