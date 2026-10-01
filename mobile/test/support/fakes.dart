@@ -6,6 +6,7 @@ import 'package:speakcraft/core/storage/progress_store.dart';
 import 'package:speakcraft/core/speech/recognition.dart';
 import 'package:speakcraft/core/speech/feedback.dart';
 import 'package:speakcraft/core/speech/conversation.dart';
+import 'package:speakcraft/core/speech/expression.dart';
 
 /// Test-only adapters; production always uses native recording and SQLite.
 class FakeMicrophone implements Microphone {
@@ -120,6 +121,27 @@ class FakeConversation implements KoraConversation {
     calls.add((lessonId, turns, transcript, accessToken));
     if (error != null) throw error!;
     return gate == null ? result : gate!.future;
+  }
+}
+
+class FakeExpression implements ExpressionGenerator {
+  UsefulExpression result = const UsefulExpression(
+    'I think you want to suggest braids.',
+    'I recommend braids because they are easy to maintain.',
+    'Why do you recommend braids?',
+  );
+  ExpressionException? error;
+  final calls = <(String, String)>[];
+  @override
+  bool get configured => true;
+  @override
+  Future<UsefulExpression> generate(
+    String intention,
+    String accessToken,
+  ) async {
+    calls.add((intention, accessToken));
+    if (error != null) throw error!;
+    return result;
   }
 }
 

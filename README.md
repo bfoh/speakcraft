@@ -26,6 +26,10 @@ Day 1 also offers **Talk with Kora**: a short spoken exchange about the learner'
 
 **AI Salon** opens a structured first scenario with a simulated friendly customer who wants braids and asks about price. The learner listens, records, checks the transcript and explicitly sends each reply. The customer stays within the authored scenario for up to four learner turns. There is no real salon price, booking or completion score; the screen prompts the learner to ask about the style and offer to check the price. The exchange is transient and requires the internal backend for generated customer replies. See the [Sprint 5 plan](.agent/plans/sprint-05-ai-salon.md).
 
+## Sprint 6 Help Me Say It slice
+
+**Help Me Say It** lets the learner record an intended message, review the transcript and ask Kora for one useful English expression. The learner can hear and repeat it, then answer a short simulated customer cue. The app shows what recognition heard without claiming pronunciation accuracy or mastery. The generated phrase and practice remain in memory for the open screen only. See the [Sprint 6 plan](.agent/plans/sprint-06-help-me-say-it.md).
+
 ## Repository
 
 ```text
@@ -98,7 +102,7 @@ python3.12 -m venv .venv
 SPEAKCRAFT_DOCS_ENABLED=true .venv/bin/uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-The speech, feedback, Kora dialogue and AI Salon endpoints are disabled until `OPENAI_API_KEY` and a long random `SPEAKCRAFT_PILOT_TOKEN` are exported in the backend environment. Keep both out of Git and logs. `SPEAKCRAFT_FEEDBACK_MODEL` may override the server-side text model. This shared-token setup is for local/internal testing only; public exposure needs learner authentication and abuse controls. The service does not save uploaded audio, transcripts, feedback or dialogue.
+The speech, feedback, Kora dialogue, AI Salon and Help Me Say It endpoints are disabled until `OPENAI_API_KEY` and a long random `SPEAKCRAFT_PILOT_TOKEN` are exported in the backend environment. Keep both out of Git and logs. `SPEAKCRAFT_FEEDBACK_MODEL` may override the server-side text model. This shared-token setup is for local/internal testing only; public exposure needs learner authentication and abuse controls. The service does not save uploaded audio, transcripts, feedback or dialogue.
 
 If `.venv` already exists (as on the Sprint 1 development machine), the last command starts the backend directly. `.env.example` documents the optional setting; environment files are not loaded implicitly.
 
@@ -108,7 +112,7 @@ curl http://127.0.0.1:8000/health
 
 Expected response: `{"status":"ok","service":"speakcraft-api","version":"0.1.0"}`.
 
-When enabled, [interactive API docs](http://127.0.0.1:8000/docs) describe health, transcription, teaching feedback, Kora dialogue and the first structured salon response. Formal assessment, scoring and learner-data endpoints remain unimplemented. Health means the process is alive, not that speech credentials are configured.
+When enabled, [interactive API docs](http://127.0.0.1:8000/docs) describe health, transcription, teaching feedback, Kora dialogue, the first structured salon response and Help Me Say It. Formal assessment, scoring and learner-data endpoints remain unimplemented. Health means the process is alive, not that speech credentials are configured.
 
 ## Validate
 
@@ -133,8 +137,8 @@ cd mobile
 flutter test integration_test/foundation_test.dart -d <device-id>
 ```
 
-The native smoke test uses real SQLite and recording, a separate test database, and a local test HTTP server for speech, feedback, Kora and AI Salon contracts. It does not call OpenAI or establish teaching quality. See the [Sprint 1](docs/SPRINT_1_VALIDATION.md), [Sprint 2](docs/SPRINT_2_VALIDATION.md), [Sprint 3](docs/SPRINT_3_VALIDATION.md), [Sprint 4](docs/SPRINT_4_VALIDATION.md) and [Sprint 5](docs/SPRINT_5_VALIDATION.md) validation records.
+The native smoke test uses real SQLite and recording, a separate test database, and a local test HTTP server for speech, feedback, Kora, AI Salon and Help Me Say It contracts. It does not call OpenAI or establish teaching quality. See the [Sprint 1](docs/SPRINT_1_VALIDATION.md), [Sprint 2](docs/SPRINT_2_VALIDATION.md), [Sprint 3](docs/SPRINT_3_VALIDATION.md), [Sprint 4](docs/SPRINT_4_VALIDATION.md) and [Sprint 5](docs/SPRINT_5_VALIDATION.md) validation records.
 
 ## Next build milestone
 
-Build Help Me Say It as intention → level-appropriate English → listen → repeat → short role-play. Verify all generated teaching and dialogue with consented Ghanaian-accented speech and educator review before a learner pilot.
+Turn the authored Days 2–5 curriculum into accessible practice journeys while retaining explicit recording and review controls. Verify generated teaching and dialogue with consented Ghanaian-accented speech and educator review before a learner pilot.

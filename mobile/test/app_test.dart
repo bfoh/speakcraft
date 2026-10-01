@@ -11,6 +11,7 @@ import 'package:speakcraft/core/storage/progress_store.dart';
 import 'package:speakcraft/core/speech/recognition.dart';
 import 'package:speakcraft/core/speech/feedback.dart';
 import 'package:speakcraft/core/speech/conversation.dart';
+import 'package:speakcraft/core/speech/expression.dart';
 
 import 'support/fakes.dart';
 
@@ -27,6 +28,7 @@ void main() {
     SpeakingFeedback feedback = const UnconfiguredSpeakingFeedback(),
     KoraConversation conversation = const UnconfiguredKoraConversation(),
     KoraConversation salon = const UnconfiguredKoraConversation(),
+    ExpressionGenerator expression = const UnconfiguredExpressionGenerator(),
   }) async {
     store = MemoryProgressStore()..progress = progress;
     mic = FakeMicrophone();
@@ -47,6 +49,7 @@ void main() {
             feedback: feedback,
             conversation: conversation,
             salon: salon,
+            expression: expression,
           ),
         ),
       ],
@@ -427,6 +430,75 @@ void main() {
     salon.error = null;
     await tap(tester, 'Send reply to customer');
     expect(salon.calls.length, 2);
+  });
+
+  testWidgets('Help Me Say It flows through expression, repeat and role-play', (
+    tester,
+  ) async {
+    final recognition = FakeRecognition()..result = 'I want to suggest braids';
+    final expression = FakeExpression();
+    await launch(
+      tester,
+      progress: returning,
+      recognition: recognition,
+      expression: expression,
+    );
+    await tap(tester, 'Open Help Me Say It');
+    expect(find.text('1 • Say what you mean'), findsOneWidget);
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    await tap(tester, 'Hear my words');
+    await tester.enterText(find.byType(TextField), 'pilot-access-code');
+    await tap(tester, 'Continue');
+    expect(expression.calls, isEmpty);
+    await tap(tester, 'Ask Kora for English');
+    expect(expression.calls.single.$1, 'I want to suggest braids');
+    expect(find.text('2 • Listen and repeat'), findsOneWidget);
+    await tap(tester, 'Listen to phrase');
+    expect(speech.spoken.last, expression.result.expression);
+    recognition.result = expression.result.expression;
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    await tap(tester, 'Hear my words');
+    await tap(tester, 'Continue to customer');
+    expect(find.text('3 • Answer the customer'), findsOneWidget);
+    await tap(tester, 'Listen to customer');
+    expect(speech.spoken.last, expression.result.customerCue);
+    recognition.result = 'Because braids are easy to maintain';
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    await tap(tester, 'Hear my words');
+    await tap(tester, 'Finish practice');
+    expect(find.text('You practised the phrase'), findsOneWidget);
+    expect(find.text('Because braids are easy to maintain'), findsOneWidget);
+  });
+
+  testWidgets('Help Me Say It keeps the take after offline generation', (
+    tester,
+  ) async {
+    final expression = FakeExpression()
+      ..error = const ExpressionException(ExpressionProblem.offline);
+    await launch(
+      tester,
+      progress: returning,
+      recognition: FakeRecognition(),
+      expression: expression,
+    );
+    await tap(tester, 'Open Help Me Say It');
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    await tap(tester, 'Hear my words');
+    await tester.enterText(find.byType(TextField), 'pilot-access-code');
+    await tap(tester, 'Continue');
+    await tap(tester, 'Ask Kora for English');
+    expect(find.textContaining('Your recording is still here'), findsOneWidget);
+    expression.error = null;
+    await tap(tester, 'Ask Kora for English');
+    expect(find.text('2 • Listen and repeat'), findsOneWidget);
   });
 
   testWidgets('storage failure does not navigate or claim saved state', (

@@ -23,6 +23,13 @@ from app.feedback import (
     OpenAIFeedbackProvider,
     TeachingFeedback,
 )
+from app.help_me_say_it import (
+    Expression,
+    ExpressionFailure,
+    ExpressionProvider,
+    ExpressionTimeout,
+    OpenAIExpressionProvider,
+)
 from app.salon import (
     CustomerReply,
     OpenAISalonProvider,
@@ -42,6 +49,7 @@ MAX_AUDIO_BYTES = 4 * 1024 * 1024
 MAX_FEEDBACK_BODY_BYTES = 4096
 MAX_CONVERSATION_BODY_BYTES = 4096
 MAX_SALON_BODY_BYTES = 4096
+MAX_EXPRESSION_BODY_BYTES = 2048
 
 
 class HealthResponse(BaseModel):
@@ -75,12 +83,19 @@ class SalonRequest(BaseModel):
     transcript: str = Field(min_length=1, max_length=400)
 
 
+class ExpressionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    context_id: Literal["beauty-cosmetology"]
+    intention: str = Field(min_length=1, max_length=400)
+
+
 def create_app(
     settings: Settings | None = None,
     transcriber: Transcriber | None = None,
     feedback_provider: FeedbackProvider | None = None,
     conversation_provider: ConversationProvider | None = None,
     salon_provider: SalonProvider | None = None,
+    expression_provider: ExpressionProvider | None = None,
 ) -> FastAPI:
     config = settings or Settings()
     provider = transcriber
@@ -99,6 +114,11 @@ def create_app(
     salon = salon_provider
     if salon is None and config.speech_ready and config.openai_api_key:
         salon = OpenAISalonProvider(
+            config.openai_api_key.get_secret_value(), config.feedback_model
+        )
+    expression = expression_provider
+    if expression is None and config.speech_ready and config.openai_api_key:
+        expression = OpenAIExpressionProvider(
             config.openai_api_key.get_secret_value(), config.feedback_model
         )
     application = FastAPI(
@@ -121,6 +141,7 @@ def create_app(
                 "/v1/speech/evaluate",
                 "/v1/kora/respond",
                 "/v1/salon/respond",
+                "/v1/help-me-say-it",
             }
             and request.method == "POST"
         ):
@@ -129,6 +150,7 @@ def create_app(
                 "/v1/speech/evaluate": evaluator,
                 "/v1/kora/respond": conversation,
                 "/v1/salon/respond": salon,
+                "/v1/help-me-say-it": expression,
             }[path]
             if (
                 not config.speech_ready
@@ -153,6 +175,7 @@ def create_app(
                         MAX_FEEDBACK_BODY_BYTES,
                         MAX_CONVERSATION_BODY_BYTES,
                         MAX_SALON_BODY_BYTES,
+                        MAX_EXPRESSION_BODY_BYTES,
                     )
                 )
                 if int(content_length) > maximum:
@@ -304,6 +327,32 @@ def create_app(
             raise HTTPException(status_code=504, detail="Salon timed out") from exc
         except SalonFailure as exc:
             raise HTTPException(status_code=502, detail="Salon is unavailable") from exc
+
+    @application.post("/v1/help-me-say-it", response_model=Expression, tags=["kora"])
+    async def help_me_say_it(request: Request) -> Expression:
+        if expression is None:
+            raise HTTPException(status_code=503, detail="Expression is unavailable")
+        body = bytearray()
+        async for chunk in request.stream():
+            body.extend(chunk)
+            if len(body) > MAX_EXPRESSION_BODY_BYTES:
+                raise HTTPException(status_code=413, detail="Request is too large")
+        try:
+            payload = ExpressionRequest.model_validate_json(body)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=422, detail="Invalid expression request"
+            ) from exc
+        if not payload.intention.strip():
+            raise HTTPException(status_code=422, detail="Intention is empty")
+        try:
+            return await expression.express(payload.intention.strip())
+        except ExpressionTimeout as exc:
+            raise HTTPException(status_code=504, detail="Expression timed out") from exc
+        except ExpressionFailure as exc:
+            raise HTTPException(
+                status_code=502, detail="Expression is unavailable"
+            ) from exc
 
     return application
 

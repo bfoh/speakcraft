@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../features/home/home_screen.dart';
 import '../features/conversation/conversation_screen.dart';
+import '../features/help_me_say_it/expression_screen.dart';
 import '../features/lesson/lesson_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../shared/components.dart';
@@ -43,6 +44,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/salon/first',
         builder: (context, state) => const ConversationScreen(salon: true),
+      ),
+      GoRoute(
+        path: '/help-me-say-it',
+        builder: (context, state) => const ExpressionScreen(),
       ),
     ],
     errorBuilder: (context, state) => SpeakCraftPage(

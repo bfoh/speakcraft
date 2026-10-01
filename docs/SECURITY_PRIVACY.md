@@ -16,6 +16,8 @@ Conversation audio uses its own private temporary cache folder. Entering or leav
 
 **AI Salon** reuses that temporary dialogue recorder with the same explicit record, transcribe and send steps. The selected scenario ID, bounded customer/learner history and current transcript reach the backend only when the learner sends a reply. The backend resolves the authored scenario and uses the provider with storage disabled in the request. It stores no session or exchange. Leaving the screen clears the local dialogue and current take, while a failed request keeps them available for retry.
 
+**Help Me Say It** also uses that recorder. The learner reviews a tentative intention transcript before explicitly requesting an expression. Only the transcript and fixed Beauty & Cosmetology context ID reach the authenticated backend. The provider returns bounded structured text with storage disabled in the request. The phrase, repeat transcript and role-play reply stay in app memory while the screen is open; leaving clears them. A failed generation request preserves the take for retry. The feature does not store a phrase bank or assess pronunciation.
+
 No background-recording capability is enabled. Active capture stops on app interruption/navigation and at 60 seconds. No learner audio is uploaded automatically. No analytics or learner-content logging are configured. Device TTS receives authored instructions, examples or a returned transcript; its installed voices may depend on the phone's speech engine and network availability.
 
 ## Permissions and backups

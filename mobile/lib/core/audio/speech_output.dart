@@ -5,7 +5,7 @@ abstract interface class SpeechOutput {
   Future<void> stop();
 }
 
-/// Reads authored instructions, never learner recordings or generated feedback.
+/// Reads visible lesson or dialogue text through the device's English voice.
 class DeviceSpeechOutput implements SpeechOutput {
   final FlutterTts _tts = FlutterTts();
 

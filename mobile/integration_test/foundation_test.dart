@@ -17,6 +17,7 @@ import 'package:speakcraft/core/speech/recognition.dart';
 import 'package:speakcraft/core/speech/feedback.dart';
 import 'package:speakcraft/core/speech/conversation.dart';
 import 'package:speakcraft/core/speech/salon.dart';
+import 'package:speakcraft/core/speech/expression.dart';
 import 'package:speakcraft/features/lesson/microphone_controller.dart';
 import 'package:speakcraft/features/lesson/transcription_controller.dart';
 
@@ -31,6 +32,7 @@ void main() {
     String? feedbackBody;
     String? conversationBody;
     String? salonBody;
+    String? expressionBody;
     server.listen((request) async {
       final parts = await request.toList();
       request.response.headers.contentType = ContentType.json;
@@ -48,6 +50,11 @@ void main() {
         salonBody = String.fromCharCodes(parts.expand((bytes) => bytes));
         request.response.write(
           '{"customer_reply":"I like medium braids.","next_question":"Could you check the price?"}',
+        );
+      } else if (request.uri.path == '/v1/help-me-say-it') {
+        expressionBody = String.fromCharCodes(parts.expand((bytes) => bytes));
+        request.response.write(
+          '{"understood_meaning":"I think you want to talk about your studies.","expression":"I study beauty and cosmetology.","customer_cue":"What do you study?"}',
         );
       } else {
         receivedAuthorization = request.headers.value(
@@ -78,6 +85,7 @@ void main() {
       feedback: HttpSpeakingFeedback('http://127.0.0.1:${server.port}'),
       conversation: HttpKoraConversation('http://127.0.0.1:${server.port}'),
       salon: HttpSalonConversation('http://127.0.0.1:${server.port}'),
+      expression: HttpExpressionGenerator('http://127.0.0.1:${server.port}'),
     );
     final container = ProviderContainer(
       overrides: [servicesProvider.overrideWithValue(services)],
@@ -217,6 +225,42 @@ void main() {
     expect(salonBody, contains('friendly-braids-price'));
     expect(salonBody, contains('"speaker":"customer"'));
     await tap('Back to Home');
+    await tap('Open Help Me Say It');
+    await tap('Enable microphone');
+    for (
+      var attempt = 0;
+      attempt < 50 &&
+          conversationMic.state == MicrophoneState.requestingPermission;
+      attempt++
+    ) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(conversationMic.state, MicrophoneState.ready);
+    await tap('Start recording');
+    await tester.pump(const Duration(seconds: 2));
+    await tap('Stop recording');
+    await tap('Hear my words');
+    await tap('Ask Kora for English');
+    expect(expressionBody, contains('I study beauty and cosmetology.'));
+    expect(find.text('2 • Listen and repeat'), findsOneWidget);
+    await tap('Listen to phrase');
+    await tap('Enable microphone');
+    await tap('Start recording');
+    await tester.pump(const Duration(seconds: 2));
+    await tap('Stop recording');
+    await tap('Hear my words');
+    await tap('Continue to customer');
+    expect(find.text('3 • Answer the customer'), findsOneWidget);
+    await tap('Listen to customer');
+    await tap('Enable microphone');
+    await tap('Start recording');
+    await tester.pump(const Duration(seconds: 2));
+    await tap('Stop recording');
+    await tap('Hear my words');
+    await tap('Finish practice');
+    expect(find.text('You practised the phrase'), findsOneWidget);
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
     await tap('Open Day 1');
     expect(container.read(microphoneProvider).recordingPath, recording);
     expect(await File(recording).exists(), isTrue);

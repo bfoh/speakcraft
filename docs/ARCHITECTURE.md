@@ -30,6 +30,10 @@ Lesson practice and Kora dialogue use separate native recorders and private cach
 
 `curriculum/alpha.json` also contains the first difficulty-1 scenario: a friendly customer wants braids and asks about price. It specifies the scenario and customer goals, personality, learner objectives, target language, success conditions, opening and a four-turn limit. The same dialogue screen uses customer-facing text and maps its partner turns to `customer` at the `POST /v1/salon/respond` boundary. The backend validates the authored scenario and alternating history, then requests a short, structured customer reply from the provider with `store: false`. The provider is instructed not to invent a real salon price, booking or assessment result. The app does not claim successful completion or persist the exchange. The stateless endpoint is used until a genuine session/assessment store is needed.
 
+## Sprint 6 Help Me Say It slice
+
+The learner records an intention, reviews the tentative transcript and explicitly sends it to `POST /v1/help-me-say-it`. The authenticated backend accepts only the authored Beauty & Cosmetology context identifier and a bounded intention. Responses structured output returns a brief meaning confirmation, one expression and one customer cue; Pydantic validates all fields and provider storage is disabled. The mobile controller advances through intention, repeat and short role-play only after learner actions. The expression and subsequent transcripts remain in memory. Dialogue uses the separate conversation recorder, so Day-1 practice takes remain untouched. Recognition transcripts document what was heard; they do not establish pronunciation quality.
+
 ## Mobile structure
 
 - `lib/app`: composition, Riverpod providers, GoRouter routes and theme.
@@ -41,6 +45,7 @@ Lesson practice and Kora dialogue use separate native recorders and private cach
 - `lib/features/home`: Day-1 entry and a preview of the five-day journey.
 - `lib/features/lesson`: phrase practice, microphone state controller and UI.
 - `lib/features/conversation`: bounded Day-1 dialogue controller and screen.
+- `lib/features/help_me_say_it`: short intention, repeat and customer role-play flow.
 - `lib/shared`: responsive page, buttons, cards, notices and listen control.
 
 Riverpod supplies application dependencies. The bootstrap loads native services, then passes them through a scoped provider. Providers that depend on those services explicitly declare their scoped dependencies, including the router. Small ChangeNotifier controllers expose synchronous UI state around asynchronous operations. GoRouter guards routes until onboarding is saved. The router is disposed with its provider. Native adapters are isolated from widgets and can be replaced by explicit test doubles in tests.

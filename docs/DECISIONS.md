@@ -49,3 +49,7 @@ Apply the Day-1 introduction in a three-turn dialogue before adding AI Salon. Ke
 ## 2026-10-02 — First AI Salon scenario
 
 Add only the blueprint's first difficulty-1 customer: friendly, interested in braids and asking about price. Keep every scenario boundary in canonical curriculum. Reuse the explicit voice-dialogue UI, while the API adapter maps partner turns to customer/learner roles. The backend uses a stateless `POST /v1/salon/respond` contract because there is no durable session or assessment store yet. It returns a customer reply without a success score and asks the provider not to invent a real salon price.
+
+## 2026-10-02 — Help Me Say It micro-lesson
+
+Use explicit intention review before requesting an expression. Generate one short phrase and customer cue through a bounded structured-output endpoint. Keep the inferred meaning visible so the learner can notice a misunderstanding and start again. Reuse device speech and the separate dialogue recorder for repetition and a single role-play reply. Recognition output is not a pronunciation score, and no phrase bank or new persistent learner data is introduced.

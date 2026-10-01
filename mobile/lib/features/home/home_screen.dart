@@ -66,6 +66,25 @@ class HomeScreen extends ConsumerWidget {
             ],
           ),
         ),
+        SpeakCraftCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text('HELP ME SAY IT'),
+              const SizedBox(height: 12),
+              Text(
+                'Find useful English for something you want to tell a customer.',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 20),
+              SpeakCraftButton(
+                label: 'Open Help Me Say It',
+                icon: Icons.lightbulb_outline,
+                onPressed: () => context.push('/help-me-say-it'),
+              ),
+            ],
+          ),
+        ),
         const SpeakCraftNotice(
           'Your place is saved on this phone. You can practise without internet.',
           icon: Icons.offline_pin_outlined,

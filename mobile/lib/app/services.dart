@@ -11,7 +11,9 @@ import '../core/speech/recognition.dart';
 import '../core/speech/feedback.dart';
 import '../core/speech/conversation.dart';
 import '../core/speech/salon.dart';
+import '../core/speech/expression.dart';
 import '../features/conversation/conversation_controller.dart';
+import '../features/help_me_say_it/expression_controller.dart';
 import '../features/lesson/feedback_controller.dart';
 import '../features/lesson/microphone_controller.dart';
 import '../features/lesson/transcription_controller.dart';
@@ -28,6 +30,7 @@ class AppServices {
     this.feedback = const UnconfiguredSpeakingFeedback(),
     this.conversation = const UnconfiguredKoraConversation(),
     this.salon = const UnconfiguredKoraConversation(),
+    this.expression = const UnconfiguredExpressionGenerator(),
   });
   final Curriculum curriculum;
   final ProgressStore store;
@@ -39,6 +42,7 @@ class AppServices {
   final SpeakingFeedback feedback;
   final KoraConversation conversation;
   final KoraConversation salon;
+  final ExpressionGenerator expression;
 }
 
 final bootstrapProvider = FutureProvider<AppServices>((ref) async {
@@ -79,6 +83,9 @@ final bootstrapProvider = FutureProvider<AppServices>((ref) async {
         const String.fromEnvironment('SPEAKCRAFT_API_BASE_URL'),
       ),
       salon: HttpSalonConversation(
+        const String.fromEnvironment('SPEAKCRAFT_API_BASE_URL'),
+      ),
+      expression: HttpExpressionGenerator(
         const String.fromEnvironment('SPEAKCRAFT_API_BASE_URL'),
       ),
     );
@@ -147,6 +154,13 @@ final salonConversationProvider = Provider<ConversationController>((ref) {
     lessonId: scenario.id,
     opening: scenario.customerOpening,
     turnLimit: scenario.turnLimit,
+  );
+  ref.onDispose(controller.dispose);
+  return controller;
+}, dependencies: [servicesProvider]);
+final expressionProvider = Provider<ExpressionController>((ref) {
+  final controller = ExpressionController(
+    ref.watch(servicesProvider).expression,
   );
   ref.onDispose(controller.dispose);
   return controller;
