@@ -11,3 +11,7 @@ Internal evaluation may eventually capture assistance level and communication ou
 Kora's introduction and all Day-1 examples are authored text. Device speech reads that text; there is no model-generated conversation, listening judgement or evaluation. Example names are examples, and the screen asks learners to use their own details. No learner has been assessed simply by passing the assessment introduction.
 
 The five-day objectives come from blueprint section 11. Additional example sentences are implementation content for educator review. Local-language support awaits native-speaker and voice-quality review.
+
+## Day-1 application
+
+The learner can request short teaching feedback after reviewing a tentative transcript. Kora's text-only feedback makes no pronunciation or accent judgement and gives no fabricated score. A separate three-turn conversation uses an authored opening, goal and success conditions from the curriculum. Each learner turn is recorded, transcribed and sent only after explicit review. Kora's generated follow-up must remain within the Day-1 introduction; representative educator review is needed before a pilot.

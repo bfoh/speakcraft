@@ -41,3 +41,7 @@ Require a server-side provider key and long pilot bearer token. A facilitator en
 ## 2026-10-01 — Prompt-bound teaching feedback
 
 The learner requests feedback only after seeing the tentative transcript. The backend loads lesson objectives from the canonical curriculum and refuses client-authored objectives. OpenAI Responses produces strict structured output with `store: false`; application validation bounds fields and rejects malformed feedback. Text-only feedback gives no pronunciation or numerical score. Feedback is ephemeral in the mobile app, and a failed request preserves the take and transcript. No live model or educator review was possible without a server key and consented learner samples.
+
+## 2026-10-02 — Bounded Kora conversation
+
+Apply the Day-1 introduction in a three-turn dialogue before adding AI Salon. Keep the opening, goal and success conditions in authored curriculum. Use a stateless backend request with bounded recent turns, provider-neutral structured output and no stored conversation. The learner reviews a tentative transcript and explicitly sends each reply. Device speech reads Kora's words. This design is slower than streaming voice but preserves the explicit privacy and recovery controls already used in practice.

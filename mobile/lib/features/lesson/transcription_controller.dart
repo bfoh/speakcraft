@@ -33,6 +33,10 @@ class TranscriptionController extends ChangeNotifier {
     _accessToken = trimmed.isEmpty ? null : trimmed;
   }
 
+  void clearAccessToken() {
+    _accessToken = null;
+  }
+
   void _set(TranscriptionState next) {
     if (_disposed) return;
     state = next;

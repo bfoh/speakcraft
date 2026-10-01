@@ -10,6 +10,10 @@ The microphone records only after an explicit learner action and OS permission. 
 
 **Help me say it better** is another explicit action. It sends the displayed transcript and selected curriculum prompt IDs to the backend; the backend looks up the authored objective and asks the provider for short structured feedback with storage disabled in the request. Feedback stays in app memory and is cleared when the take or prompt changes. The backend stores no feedback. The provider's actual retention settings and teaching quality still require review before real learner use.
 
+**Talk with Kora** uses separate record, transcribe and send actions. A bounded turn history and the current transcript go to the backend only on Send reply. The backend validates the Day-1 goal and sends this transient context to the provider with storage disabled in the request. Dialogue is held only in app memory while the screen is open; leaving clears it. A connection failure keeps the current answer for explicit retry.
+
+Conversation audio uses its own private temporary cache folder. Entering or leaving the conversation does not remove a Day-1 lesson practice take. Leaving the conversation deletes its current take; app relaunch clears any remaining temporary takes in both folders.
+
 No background-recording capability is enabled. Active capture stops on app interruption/navigation and at 60 seconds. No learner audio is uploaded automatically. No analytics or learner-content logging are configured. Device TTS receives authored instructions, examples or a returned transcript; its installed voices may depend on the phone's speech engine and network availability.
 
 ## Permissions and backups

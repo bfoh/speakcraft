@@ -18,6 +18,10 @@ Day 1 includes an explicit **Hear my words** action when a SpeakCraft API URL is
 
 After reviewing a transcript, the learner may choose **Help me say it better**. Kora gives one short teaching response tied to the selected curriculum prompt, with an example to hear and repeat when useful. The learner can retry recording. The app displays no score or pronunciation judgement. Feedback requires the same internal backend and pilot access code as transcription. A failed request keeps the local take and transcript; generated feedback is not saved. Model quality remains unverified without a server key and educator review. See the [Sprint 3 plan](.agent/plans/sprint-03-teaching-feedback.md).
 
+## Sprint 4 conversation slice
+
+Day 1 also offers **Talk with Kora**: a short spoken exchange about the learner's introduction. Kora starts with an authored question. The learner records, reviews the tentative transcript and explicitly sends each reply. Kora responds within the Day-1 goal, with a limit of three learner turns. The app reads Kora's words aloud through the device voice and keeps the current take if a request fails. The dialogue is transient and has no score. This completed-file exchange is slower than live streaming and still needs real learner review. See the [Sprint 4 plan](.agent/plans/sprint-04-kora-conversation.md).
+
 ## Repository
 
 ```text
@@ -90,7 +94,7 @@ python3.12 -m venv .venv
 SPEAKCRAFT_DOCS_ENABLED=true .venv/bin/uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-The speech and feedback endpoints are disabled until `OPENAI_API_KEY` and a long random `SPEAKCRAFT_PILOT_TOKEN` are exported in the backend environment. Keep both out of Git and logs. `SPEAKCRAFT_FEEDBACK_MODEL` may override the server-side feedback model. This shared-token setup is for local/internal testing only; public exposure needs learner authentication and abuse controls. The service does not save uploaded audio, transcripts or feedback.
+The speech, feedback and Kora dialogue endpoints are disabled until `OPENAI_API_KEY` and a long random `SPEAKCRAFT_PILOT_TOKEN` are exported in the backend environment. Keep both out of Git and logs. `SPEAKCRAFT_FEEDBACK_MODEL` may override the server-side text model. This shared-token setup is for local/internal testing only; public exposure needs learner authentication and abuse controls. The service does not save uploaded audio, transcripts, feedback or dialogue.
 
 If `.venv` already exists (as on the Sprint 1 development machine), the last command starts the backend directly. `.env.example` documents the optional setting; environment files are not loaded implicitly.
 
@@ -100,7 +104,7 @@ curl http://127.0.0.1:8000/health
 
 Expected response: `{"status":"ok","service":"speakcraft-api","version":"0.1.0"}`.
 
-When enabled, [interactive API docs](http://127.0.0.1:8000/docs) describe health, transcription and prompt-bound teaching feedback. Formal assessment, scoring and learner-data endpoints remain unimplemented. Health means the process is alive, not that speech credentials are configured.
+When enabled, [interactive API docs](http://127.0.0.1:8000/docs) describe health, transcription, prompt-bound teaching feedback and the bounded Kora dialogue endpoint. Formal assessment, scoring and learner-data endpoints remain unimplemented. Health means the process is alive, not that speech credentials are configured.
 
 ## Validate
 
@@ -125,8 +129,8 @@ cd mobile
 flutter test integration_test/foundation_test.dart -d <device-id>
 ```
 
-The native smoke test uses real SQLite and recording, a separate test database, and a local test HTTP server for speech and feedback contracts. It does not call OpenAI or establish teaching quality. See the [Sprint 1](docs/SPRINT_1_VALIDATION.md), [Sprint 2](docs/SPRINT_2_VALIDATION.md) and [Sprint 3](docs/SPRINT_3_VALIDATION.md) validation records.
+The native smoke test uses real SQLite and recording, a separate test database, and a local test HTTP server for speech, feedback and conversation contracts. It does not call OpenAI or establish teaching quality. See the [Sprint 1](docs/SPRINT_1_VALIDATION.md), [Sprint 2](docs/SPRINT_2_VALIDATION.md), [Sprint 3](docs/SPRINT_3_VALIDATION.md) and [Sprint 4](docs/SPRINT_4_VALIDATION.md) validation records.
 
 ## Next build milestone
 
-Complete the Day-1 guidance loop by adding a bounded Kora conversation that can respond to a learner's next spoken turn while preserving the same explicit recording and upload controls. Verify transcription and teaching responses with consented Ghanaian-accented speech and educator review before a pilot.
+Build the first structured AI Salon customer scenario, with authored goals and success conditions. Verify transcription, teaching and dialogue with consented Ghanaian-accented speech and educator review before a learner pilot.

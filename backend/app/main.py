@@ -7,7 +7,15 @@ from pydantic import BaseModel, ConfigDict, Field
 from starlette.responses import JSONResponse, Response
 
 from app.config import Settings
-from app.curriculum import prompt_context
+from app.conversation import (
+    ConversationFailure,
+    ConversationProvider,
+    ConversationTimeout,
+    DialogueTurn,
+    KoraReply,
+    OpenAIConversationProvider,
+)
+from app.curriculum import conversation_context, prompt_context
 from app.feedback import (
     FeedbackFailure,
     FeedbackProvider,
@@ -24,6 +32,7 @@ from app.speech import (
 
 MAX_AUDIO_BYTES = 4 * 1024 * 1024
 MAX_FEEDBACK_BODY_BYTES = 4096
+MAX_CONVERSATION_BODY_BYTES = 4096
 
 
 class HealthResponse(BaseModel):
@@ -43,10 +52,18 @@ class FeedbackRequest(BaseModel):
     transcript: str = Field(min_length=1, max_length=1500)
 
 
+class ConversationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    lesson_id: str = Field(min_length=1, max_length=80)
+    turns: list[DialogueTurn] = Field(min_length=1, max_length=5)
+    transcript: str = Field(min_length=1, max_length=1500)
+
+
 def create_app(
     settings: Settings | None = None,
     transcriber: Transcriber | None = None,
     feedback_provider: FeedbackProvider | None = None,
+    conversation_provider: ConversationProvider | None = None,
 ) -> FastAPI:
     config = settings or Settings()
     provider = transcriber
@@ -55,6 +72,11 @@ def create_app(
     evaluator = feedback_provider
     if evaluator is None and config.speech_ready and config.openai_api_key:
         evaluator = OpenAIFeedbackProvider(
+            config.openai_api_key.get_secret_value(), config.feedback_model
+        )
+    conversation = conversation_provider
+    if conversation is None and config.speech_ready and config.openai_api_key:
+        conversation = OpenAIConversationProvider(
             config.openai_api_key.get_secret_value(), config.feedback_model
         )
     application = FastAPI(
@@ -69,21 +91,24 @@ def create_app(
     async def guard_speech_upload(
         request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
+        path = request.url.path
         if (
-            request.url.path
+            path
             in {
                 "/v1/speech/transcribe",
                 "/v1/speech/evaluate",
+                "/v1/kora/respond",
             }
             and request.method == "POST"
         ):
+            active_provider = {
+                "/v1/speech/transcribe": provider,
+                "/v1/speech/evaluate": evaluator,
+                "/v1/kora/respond": conversation,
+            }[path]
             if (
                 not config.speech_ready
-                or (
-                    provider is None
-                    if request.url.path == "/v1/speech/transcribe"
-                    else evaluator is None
-                )
+                or active_provider is None
                 or config.pilot_token is None
             ):
                 return JSONResponse(
@@ -99,8 +124,8 @@ def create_app(
                     return JSONResponse({"detail": "Invalid upload"}, status_code=400)
                 maximum = (
                     MAX_AUDIO_BYTES + 16 * 1024
-                    if request.url.path == "/v1/speech/transcribe"
-                    else MAX_FEEDBACK_BODY_BYTES
+                    if path == "/v1/speech/transcribe"
+                    else max(MAX_FEEDBACK_BODY_BYTES, MAX_CONVERSATION_BODY_BYTES)
                 )
                 if int(content_length) > maximum:
                     return JSONResponse(
@@ -171,6 +196,47 @@ def create_app(
             raise HTTPException(
                 status_code=502, detail="Feedback is unavailable"
             ) from exc
+
+    @application.post("/v1/kora/respond", response_model=KoraReply, tags=["kora"])
+    async def respond(request: Request) -> KoraReply:
+        if conversation is None:
+            raise HTTPException(status_code=503, detail="Kora is unavailable")
+        body = bytearray()
+        async for chunk in request.stream():
+            body.extend(chunk)
+            if len(body) > MAX_CONVERSATION_BODY_BYTES:
+                raise HTTPException(status_code=413, detail="Request is too large")
+        try:
+            payload = ConversationRequest.model_validate_json(body)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=422, detail="Invalid conversation request"
+            ) from exc
+        context = conversation_context(payload.lesson_id)
+        if context is None:
+            raise HTTPException(status_code=400, detail="Unknown lesson")
+        turns = payload.turns
+        if (
+            len(turns) % 2 != 1
+            or len(turns) > 2 * context.turn_limit - 1
+            or turns[0].speaker != "kora"
+            or turns[0].text != context.opening
+            or any(
+                turn.speaker != ("kora" if index % 2 == 0 else "learner")
+                or not turn.text.strip()
+                for index, turn in enumerate(turns)
+            )
+            or not payload.transcript.strip()
+        ):
+            raise HTTPException(status_code=422, detail="Invalid conversation")
+        try:
+            return await conversation.respond(
+                context, turns, payload.transcript.strip()
+            )
+        except ConversationTimeout as exc:
+            raise HTTPException(status_code=504, detail="Kora timed out") from exc
+        except ConversationFailure as exc:
+            raise HTTPException(status_code=502, detail="Kora is unavailable") from exc
 
     return application
 

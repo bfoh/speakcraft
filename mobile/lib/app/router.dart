@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/home/home_screen.dart';
+import '../features/conversation/conversation_screen.dart';
 import '../features/lesson/lesson_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../shared/components.dart';
@@ -34,6 +35,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/lesson/day-1',
         builder: (context, state) => const LessonScreen(),
+      ),
+      GoRoute(
+        path: '/conversation/day-1',
+        builder: (context, state) => const ConversationScreen(),
       ),
     ],
     errorBuilder: (context, state) => SpeakCraftPage(

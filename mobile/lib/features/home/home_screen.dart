@@ -36,6 +36,12 @@ class HomeScreen extends ConsumerWidget {
                 icon: Icons.play_arrow_rounded,
                 onPressed: () => context.push('/lesson/day-1'),
               ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () => context.push('/conversation/day-1'),
+                icon: const Icon(Icons.record_voice_over_outlined),
+                label: const Text('Talk with Kora'),
+              ),
             ],
           ),
         ),

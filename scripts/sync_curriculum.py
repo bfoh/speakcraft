@@ -35,6 +35,27 @@ def validate(data: dict) -> None:
                 raise ValueError(f"Missing {key}")
         if not 1 <= lesson["estimated_minutes"] <= 30:
             raise ValueError("Invalid duration")
+        conversation = lesson.get("conversation")
+        if day == 1:
+            if not isinstance(conversation, dict):
+                raise ValueError("Day 1 needs a conversation")
+            if conversation.get("turn_limit") != 3:
+                raise ValueError("Day 1 conversation needs three turns")
+            for key in ("opening", "goal"):
+                if (
+                    not isinstance(conversation.get(key), str)
+                    or not conversation[key].strip()
+                ):
+                    raise ValueError(f"Invalid conversation {key}")
+            conditions = conversation.get("success_conditions")
+            if (
+                not isinstance(conditions, list)
+                or not conditions
+                or any(not isinstance(x, str) or not x.strip() for x in conditions)
+            ):
+                raise ValueError("Invalid conversation success conditions")
+        elif conversation is not None:
+            raise ValueError("Only Day 1 conversation is authored")
         for prompt in lesson["prompts"]:
             if prompt["id"] in ids:
                 raise ValueError("Duplicate prompt ID")

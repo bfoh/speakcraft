@@ -12,6 +12,16 @@
       "objective": "Introduce yourself and say what you study.",
       "estimated_minutes": 15,
       "challenge": "Give a 30–60 second introduction.",
+      "conversation": {
+        "opening": "Hello! I'm Kora. Tell me your name and what you study.",
+        "goal": "Introduce yourself, say what you study, and explain why you chose it.",
+        "turn_limit": 3,
+        "success_conditions": [
+          "Learner introduces themself.",
+          "Learner names Beauty & Cosmetology as their course.",
+          "Learner gives a reason for studying it."
+        ]
+      },
       "target_language": ["My name is…", "I study…", "I want to…"],
       "prompts": [
         {"id": "introduce-name", "instruction": "Say your name.", "example": "My name is Ama.", "hint": "Start with: My name is…"},

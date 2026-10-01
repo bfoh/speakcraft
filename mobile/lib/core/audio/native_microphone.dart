@@ -11,9 +11,11 @@ class NativeMicrophone implements Microphone {
   final AudioRecorder _recorder = AudioRecorder();
   String? _path;
 
-  static Future<NativeMicrophone> create() async {
+  static Future<NativeMicrophone> create({
+    String folder = 'speakcraft-takes',
+  }) async {
     final directory = Directory(
-      '${(await getTemporaryDirectory()).path}/speakcraft-takes',
+      '${(await getTemporaryDirectory()).path}/$folder',
     );
     // Only this application's routine takes; never traverse arbitrary paths.
     if (await directory.exists()) await directory.delete(recursive: true);

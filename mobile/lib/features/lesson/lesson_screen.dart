@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/services.dart';
 import '../../shared/components.dart';
+import '../../shared/pilot_access_dialog.dart';
 import 'microphone_controller.dart';
 import 'transcription_controller.dart';
 import 'feedback_controller.dart';
@@ -55,38 +56,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
   Future<void> _hearMyWords(String path) async {
     _feedback.clear();
     if (!_transcription.hasAccessToken) {
-      var input = '';
-      final code = await showDialog<String>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Connect speech recognition'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Ask your facilitator for the pilot access code. It is used only while this app is open.',
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                obscureText: true,
-                decoration: const InputDecoration(labelText: 'Access code'),
-                onChanged: (value) => input = value,
-                onSubmitted: (value) => Navigator.of(context).pop(value),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(input),
-              child: const Text('Continue'),
-            ),
-          ],
-        ),
-      );
+      final code = await askForPilotAccessCode(context);
       if (code == null || code.trim().isEmpty) return;
       _transcription.setAccessToken(code);
     }
@@ -285,12 +255,24 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
                   icon: Icons.lightbulb_outline,
                   onPressed: _feedback.sending || _mic.capturing
                       ? null
-                      : () => _feedback.evaluate(
-                          lesson.id,
-                          prompt.id,
-                          _transcription.transcript!,
-                          _transcription.accessToken,
-                        ),
+                      : () async {
+                          if (!_transcription.hasAccessToken) {
+                            final code = await askForPilotAccessCode(context);
+                            if (code == null || code.trim().isEmpty) return;
+                            _transcription.setAccessToken(code);
+                          }
+                          if (!mounted) return;
+                          await _feedback.evaluate(
+                            lesson.id,
+                            prompt.id,
+                            _transcription.transcript!,
+                            _transcription.accessToken,
+                          );
+                          if (_feedback.state ==
+                              TeachingFeedbackState.accessDenied) {
+                            _transcription.clearAccessToken();
+                          }
+                        },
                 ),
               if (_feedback.state == TeachingFeedbackState.success)
                 SpeakCraftCard(

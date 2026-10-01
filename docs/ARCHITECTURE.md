@@ -2,7 +2,7 @@
 
 ## Foundation and boundaries
 
-A Flutter application runs the beginning of Day 1 on Android and iOS. A separate FastAPI process exposes liveness, optional speech transcription and prompt-bound teaching feedback. The mobile application remains usable offline and does not require the backend for navigation or recording. There is no learner authentication, cloud database, generated conversation, scored assessment or synchronisation in this build.
+A Flutter application runs the beginning of Day 1 on Android and iOS. A separate FastAPI process exposes liveness, optional speech transcription, prompt-bound teaching feedback and a bounded Kora dialogue. The mobile application remains usable offline and does not require the backend for navigation or recording. There is no learner authentication, cloud database, scored assessment or synchronisation in this build.
 
 The architecture follows blueprint sections 18–20. The explicit Sprint 1 instruction limits the full AI vertical slice proposed in section 35; see DECISIONS.md.
 
@@ -20,6 +20,12 @@ The learner sees the tentative transcript before separately requesting **Help me
 
 The model receives text, not audio. It is instructed to prioritize meaning and task completion, offer at most one useful improvement and avoid pronunciation judgements, scores and invented personal facts. Schema validation controls shape, while educator review remains necessary to establish teaching quality. Feedback failures preserve the take and transcript for manual retry. The mobile controller invalidates stale feedback after a changed take or prompt.
 
+## Sprint 4 conversation slice
+
+The authored Day-1 conversation opening, goal, turn limit and success conditions live in canonical curriculum data and are copied to both runtimes. A learner records an answer, explicitly requests transcription and then explicitly sends the reviewed text to `POST /v1/kora/respond`. The request includes up to five prior dialogue turns. FastAPI validates the sequence and resolves the authoritative goal; it does not hold a server session. The provider uses Responses structured output with `store: false` to return a short reply and optional follow-up question. The client limits the exchange to three learner turns. Dialogue stays in mobile memory only, and failures retain the current answer for manual retry. This completed-file mode is not a low-latency Realtime implementation.
+
+Lesson practice and Kora dialogue use separate native recorders and private cache folders. Starting or leaving a conversation cannot discard a lesson practice take. Both folders are cleaned on the next app launch.
+
 ## Mobile structure
 
 - `lib/app`: composition, Riverpod providers, GoRouter routes and theme.
@@ -30,6 +36,7 @@ The model receives text, not audio. It is instructed to prioritize meaning and t
 - `lib/features/onboarding`: welcome, profession, support language, Kora introduction, assessment introduction.
 - `lib/features/home`: Day-1 entry and a preview of the five-day journey.
 - `lib/features/lesson`: phrase practice, microphone state controller and UI.
+- `lib/features/conversation`: bounded Day-1 dialogue controller and screen.
 - `lib/shared`: responsive page, buttons, cards, notices and listen control.
 
 Riverpod supplies application dependencies. The bootstrap loads native services, then passes them through a scoped provider. Providers that depend on those services explicitly declare their scoped dependencies, including the router. Small ChangeNotifier controllers expose synchronous UI state around asynchronous operations. GoRouter guards routes until onboarding is saved. The router is disposed with its provider. Native adapters are isolated from widgets and can be replaced by explicit test doubles in tests.
@@ -56,7 +63,7 @@ The microphone processing state only represents local audio work. Recording succ
 
 ## Backend
 
-`backend/app/main.py` defines an application factory, a typed `GET /health` endpoint and bounded, pilot-protected `POST /v1/speech/transcribe` and `POST /v1/speech/evaluate`. The factory accepts settings and test providers. Configuration comes from `SPEAKCRAFT_` variables plus a server-only `OPENAI_API_KEY`. Interactive docs and OpenAPI are disabled by default and opt in via `SPEAKCRAFT_DOCS_ENABLED=true`. No broad CORS policy or speculative learner-data routes are installed.
+`backend/app/main.py` defines an application factory, a typed `GET /health` endpoint and bounded, pilot-protected `POST /v1/speech/transcribe`, `POST /v1/speech/evaluate` and `POST /v1/kora/respond`. The factory accepts settings and test providers. Configuration comes from `SPEAKCRAFT_` variables plus a server-only `OPENAI_API_KEY`. Interactive docs and OpenAPI are disabled by default and opt in via `SPEAKCRAFT_DOCS_ENABLED=true`. No broad CORS policy or speculative learner-data routes are installed.
 
 Use an authenticated SpeakCraft API boundary for future learner data. Provider credentials must remain server-side. Do not add a cloud service merely to serve current local content.
 

@@ -20,6 +20,29 @@ class LessonPrompt {
   );
 }
 
+class LessonConversation {
+  const LessonConversation({
+    required this.opening,
+    required this.goal,
+    required this.turnLimit,
+    required this.successConditions,
+  });
+  final String opening;
+  final String goal;
+  final int turnLimit;
+  final List<String> successConditions;
+
+  factory LessonConversation.fromJson(Map<String, dynamic> json) =>
+      LessonConversation(
+        opening: json['opening'] as String,
+        goal: json['goal'] as String,
+        turnLimit: json['turn_limit'] as int,
+        successConditions: List<String>.unmodifiable(
+          json['success_conditions'] as List,
+        ),
+      );
+}
+
 class Lesson {
   const Lesson({
     required this.id,
@@ -30,6 +53,7 @@ class Lesson {
     required this.challenge,
     required this.targetLanguage,
     required this.prompts,
+    this.conversation,
   });
   final String id;
   final int day;
@@ -39,6 +63,7 @@ class Lesson {
   final String challenge;
   final List<String> targetLanguage;
   final List<LessonPrompt> prompts;
+  final LessonConversation? conversation;
 
   factory Lesson.fromJson(Map<String, dynamic> json) => Lesson(
     id: json['id'] as String,
@@ -53,6 +78,11 @@ class Lesson {
         (p) => LessonPrompt.fromJson(p as Map<String, dynamic>),
       ),
     ),
+    conversation: json['conversation'] == null
+        ? null
+        : LessonConversation.fromJson(
+            json['conversation'] as Map<String, dynamic>,
+          ),
   );
 }
 
@@ -84,6 +114,14 @@ class Curriculum {
           lesson.targetLanguage.isEmpty ||
           lesson.estimatedMinutes <= 0) {
         throw const FormatException('Invalid lesson');
+      }
+      if (i == 0 &&
+          (lesson.conversation == null ||
+              lesson.conversation!.turnLimit != 3 ||
+              lesson.conversation!.opening.isEmpty ||
+              lesson.conversation!.goal.isEmpty ||
+              lesson.conversation!.successConditions.isEmpty)) {
+        throw const FormatException('Invalid Day-1 conversation');
       }
       for (final p in lesson.prompts) {
         if (!ids.add(p.id) ||

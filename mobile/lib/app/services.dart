@@ -9,6 +9,8 @@ import '../core/storage/progress_store.dart';
 import '../core/storage/sqlite_progress_store.dart';
 import '../core/speech/recognition.dart';
 import '../core/speech/feedback.dart';
+import '../core/speech/conversation.dart';
+import '../features/conversation/conversation_controller.dart';
 import '../features/lesson/feedback_controller.dart';
 import '../features/lesson/microphone_controller.dart';
 import '../features/lesson/transcription_controller.dart';
@@ -19,17 +21,21 @@ class AppServices {
     required this.store,
     required this.progress,
     required this.microphone,
+    required this.conversationMicrophone,
     required this.speech,
     this.recognition = const UnconfiguredSpeechRecognition(),
     this.feedback = const UnconfiguredSpeakingFeedback(),
+    this.conversation = const UnconfiguredKoraConversation(),
   });
   final Curriculum curriculum;
   final ProgressStore store;
   final LearnerProgress progress;
   final Microphone microphone;
+  final Microphone conversationMicrophone;
   final SpeechOutput speech;
   final SpeechRecognition recognition;
   final SpeakingFeedback feedback;
+  final KoraConversation conversation;
 }
 
 final bootstrapProvider = FutureProvider<AppServices>((ref) async {
@@ -37,6 +43,8 @@ final bootstrapProvider = FutureProvider<AppServices>((ref) async {
     await rootBundle.loadString('assets/curriculum/alpha.json'),
   );
   final store = await SqliteProgressStore.open();
+  NativeMicrophone? lessonMic;
+  NativeMicrophone? dialogueMic;
   try {
     final progress = await store.load();
     if (progress.dayOnePrompt >= curriculum.dayOne.prompts.length ||
@@ -46,11 +54,17 @@ final bootstrapProvider = FutureProvider<AppServices>((ref) async {
       throw const FormatException('Invalid local progress');
     }
     final microphone = await NativeMicrophone.create();
+    lessonMic = microphone;
+    final conversationMicrophone = await NativeMicrophone.create(
+      folder: 'speakcraft-conversation-takes',
+    );
+    dialogueMic = conversationMicrophone;
     return AppServices(
       curriculum: curriculum,
       store: store,
       progress: progress,
       microphone: microphone,
+      conversationMicrophone: conversationMicrophone,
       speech: DeviceSpeechOutput(),
       recognition: HttpSpeechRecognition(
         const String.fromEnvironment('SPEAKCRAFT_API_BASE_URL'),
@@ -58,8 +72,13 @@ final bootstrapProvider = FutureProvider<AppServices>((ref) async {
       feedback: HttpSpeakingFeedback(
         const String.fromEnvironment('SPEAKCRAFT_API_BASE_URL'),
       ),
+      conversation: HttpKoraConversation(
+        const String.fromEnvironment('SPEAKCRAFT_API_BASE_URL'),
+      ),
     );
   } catch (_) {
+    await dialogueMic?.dispose();
+    await lessonMic?.dispose();
     await store.close();
     rethrow;
   }
@@ -81,6 +100,15 @@ final microphoneProvider = Provider<MicrophoneController>((ref) {
   ref.onDispose(controller.dispose);
   return controller;
 }, dependencies: [servicesProvider]);
+final conversationMicrophoneProvider = Provider<MicrophoneController>((ref) {
+  final services = ref.watch(servicesProvider);
+  final controller = MicrophoneController(
+    services.conversationMicrophone,
+    services.speech,
+  );
+  ref.onDispose(controller.dispose);
+  return controller;
+}, dependencies: [servicesProvider]);
 final transcriptionProvider = Provider<TranscriptionController>((ref) {
   final controller = TranscriptionController(
     ref.watch(servicesProvider).recognition,
@@ -90,6 +118,18 @@ final transcriptionProvider = Provider<TranscriptionController>((ref) {
 }, dependencies: [servicesProvider]);
 final feedbackProvider = Provider<FeedbackController>((ref) {
   final controller = FeedbackController(ref.watch(servicesProvider).feedback);
+  ref.onDispose(controller.dispose);
+  return controller;
+}, dependencies: [servicesProvider]);
+final conversationProvider = Provider<ConversationController>((ref) {
+  final services = ref.watch(servicesProvider);
+  final authored = services.curriculum.dayOne.conversation!;
+  final controller = ConversationController(
+    provider: services.conversation,
+    lessonId: services.curriculum.dayOne.id,
+    opening: authored.opening,
+    turnLimit: authored.turnLimit,
+  );
   ref.onDispose(controller.dispose);
   return controller;
 }, dependencies: [servicesProvider]);

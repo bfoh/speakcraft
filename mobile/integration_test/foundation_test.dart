@@ -15,18 +15,20 @@ import 'package:speakcraft/core/storage/progress_store.dart';
 import 'package:speakcraft/core/storage/sqlite_progress_store.dart';
 import 'package:speakcraft/core/speech/recognition.dart';
 import 'package:speakcraft/core/speech/feedback.dart';
+import 'package:speakcraft/core/speech/conversation.dart';
 import 'package:speakcraft/features/lesson/microphone_controller.dart';
 import 'package:speakcraft/features/lesson/transcription_controller.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-  testWidgets('native onboarding, local capture and explicit speech upload', (
+  testWidgets('native onboarding, capture, feedback and Kora conversation', (
     tester,
   ) async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     String? receivedAuthorization;
     var receivedBytes = 0;
     String? feedbackBody;
+    String? conversationBody;
     server.listen((request) async {
       final parts = await request.toList();
       request.response.headers.contentType = ContentType.json;
@@ -34,6 +36,11 @@ void main() {
         feedbackBody = String.fromCharCodes(parts.expand((bytes) => bytes));
         request.response.write(
           '{"outcome":"clear","feedback":"I understood you clearly.","example":null}',
+        );
+      } else if (request.uri.path == '/v1/kora/respond') {
+        conversationBody = String.fromCharCodes(parts.expand((bytes) => bytes));
+        request.response.write(
+          '{"reply":"Nice to meet you.","next_question":"Why did you choose it?"}',
         );
       } else {
         receivedAuthorization = request.headers.value(
@@ -56,9 +63,13 @@ void main() {
       store: store,
       progress: await store.load(),
       microphone: await NativeMicrophone.create(),
+      conversationMicrophone: await NativeMicrophone.create(
+        folder: 'speakcraft-conversation-takes',
+      ),
       speech: DeviceSpeechOutput(),
       recognition: HttpSpeechRecognition('http://127.0.0.1:${server.port}'),
       feedback: HttpSpeakingFeedback('http://127.0.0.1:${server.port}'),
+      conversation: HttpKoraConversation('http://127.0.0.1:${server.port}'),
     );
     final container = ProviderContainer(
       overrides: [servicesProvider.overrideWithValue(services)],
@@ -150,6 +161,34 @@ void main() {
     await tap('Back to Home');
     await tap('Open Day 1');
     expect(container.read(microphoneProvider).recordingPath, recording);
+    await tap('Back to Home');
+    await tap('Talk with Kora');
+    await tap('Enable microphone');
+    final conversationMic = container.read(conversationMicrophoneProvider);
+    for (
+      var attempt = 0;
+      attempt < 50 &&
+          conversationMic.state == MicrophoneState.requestingPermission;
+      attempt++
+    ) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(conversationMic.state, MicrophoneState.ready);
+    await tap('Start recording');
+    await tester.pump(const Duration(seconds: 2));
+    await tap('Stop recording');
+    await tap('Hear my words');
+    await tap('Send reply to Kora');
+    expect(
+      find.text('Nice to meet you. Why did you choose it?'),
+      findsOneWidget,
+    );
+    expect(conversationBody, contains('day-1'));
+    expect(conversationBody, contains('I study beauty and cosmetology.'));
+    await tap('Back to Home');
+    await tap('Open Day 1');
+    expect(container.read(microphoneProvider).recordingPath, recording);
+    expect(await File(recording).exists(), isTrue);
     await tap('Delete recording');
     expect(await File(recording).exists(), isFalse);
     await store.close();

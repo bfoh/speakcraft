@@ -10,6 +10,7 @@ import 'package:speakcraft/core/curriculum/curriculum.dart';
 import 'package:speakcraft/core/storage/progress_store.dart';
 import 'package:speakcraft/core/speech/recognition.dart';
 import 'package:speakcraft/core/speech/feedback.dart';
+import 'package:speakcraft/core/speech/conversation.dart';
 
 import 'support/fakes.dart';
 
@@ -24,6 +25,7 @@ void main() {
     LearnerProgress progress = const LearnerProgress(),
     SpeechRecognition recognition = const UnconfiguredSpeechRecognition(),
     SpeakingFeedback feedback = const UnconfiguredSpeakingFeedback(),
+    KoraConversation conversation = const UnconfiguredKoraConversation(),
   }) async {
     store = MemoryProgressStore()..progress = progress;
     mic = FakeMicrophone();
@@ -38,9 +40,11 @@ void main() {
             store: store,
             progress: progress,
             microphone: mic,
+            conversationMicrophone: FakeMicrophone(),
             speech: speech,
             recognition: recognition,
             feedback: feedback,
+            conversation: conversation,
           ),
         ),
       ],
@@ -81,6 +85,7 @@ void main() {
               store: localStore,
               progress: const LearnerProgress(),
               microphone: FakeMicrophone(),
+              conversationMicrophone: FakeMicrophone(),
               speech: FakeSpeech(),
             ),
           ),
@@ -233,6 +238,120 @@ void main() {
     feedback.error = null;
     await tap(tester, 'Help me say it better');
     expect(feedback.calls.length, 2);
+  });
+
+  testWidgets('rejected feedback code can be replaced without rerecording', (
+    tester,
+  ) async {
+    final feedback = FakeFeedback()
+      ..error = const FeedbackException(FeedbackProblem.accessDenied);
+    await launch(
+      tester,
+      progress: returning,
+      recognition: FakeRecognition(),
+      feedback: feedback,
+    );
+    await tap(tester, 'Open Day 1');
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    await tap(tester, 'Hear my words');
+    await tester.enterText(find.byType(TextField), 'old-code');
+    await tap(tester, 'Continue');
+    await tap(tester, 'Help me say it better');
+    expect(find.textContaining('stopped working'), findsOneWidget);
+    feedback.error = null;
+    await tap(tester, 'Help me say it better');
+    expect(find.text('Connect speech recognition'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'new-code');
+    await tap(tester, 'Continue');
+    expect(feedback.calls.last.$4, 'new-code');
+    expect(find.text('Delete recording'), findsOneWidget);
+  });
+
+  testWidgets('learner completes a short spoken Kora exchange', (tester) async {
+    final recognition = FakeRecognition();
+    final conversation = FakeConversation();
+    await launch(
+      tester,
+      progress: returning,
+      recognition: recognition,
+      conversation: conversation,
+    );
+    await tap(tester, 'Talk with Kora');
+    expect(
+      find.text("Hello! I'm Kora. Tell me your name and what you study."),
+      findsOneWidget,
+    );
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    await tap(tester, 'Hear my words');
+    await tester.enterText(find.byType(TextField), 'pilot-access-code');
+    await tap(tester, 'Continue');
+    expect(conversation.calls, isEmpty);
+    await tap(tester, 'Send reply to Kora');
+    expect(conversation.calls.length, 1);
+    expect(conversation.calls.first.$2.first.speaker, ConversationSpeaker.kora);
+    expect(conversation.calls.first.$3, 'My name is Ama.');
+    expect(
+      find.text('Nice to meet you. Why did you choose it?'),
+      findsOneWidget,
+    );
+    conversation.result = const KoraReply('Thank you for sharing.', null);
+    recognition.result = 'I want to help people feel confident.';
+    await tap(tester, 'Prepare next answer');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    await tap(tester, 'Hear my words');
+    await tap(tester, 'Send reply to Kora');
+    expect(conversation.calls.length, 2);
+    expect(conversation.calls.last.$2.length, 3);
+    expect(find.textContaining('Conversation finished'), findsOneWidget);
+    await tap(tester, 'Start conversation again');
+    expect(find.text('Nice to meet you. Why did you choose it?'), findsNothing);
+  });
+
+  testWidgets('offline conversation keeps the answer for retry', (
+    tester,
+  ) async {
+    final conversation = FakeConversation()
+      ..error = const ConversationException(ConversationProblem.offline);
+    await launch(
+      tester,
+      progress: returning,
+      recognition: FakeRecognition(),
+      conversation: conversation,
+    );
+    await tap(tester, 'Talk with Kora');
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    await tap(tester, 'Hear my words');
+    await tester.enterText(find.byType(TextField), 'pilot-access-code');
+    await tap(tester, 'Continue');
+    await tap(tester, 'Send reply to Kora');
+    expect(find.textContaining("couldn't connect"), findsOneWidget);
+    expect(find.text('Delete answer'), findsOneWidget);
+    conversation.error = null;
+    await tap(tester, 'Send reply to Kora');
+    expect(conversation.calls.length, 2);
+  });
+
+  testWidgets('Kora dialogue fits small screens with enlarged text', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 700);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await launch(tester, progress: returning, conversation: FakeConversation());
+    await tap(tester, 'Talk with Kora');
+    expect(tester.takeException(), isNull);
+    await tap(tester, 'Enable microphone');
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('storage failure does not navigate or claim saved state', (

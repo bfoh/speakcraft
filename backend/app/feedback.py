@@ -4,7 +4,7 @@ import json
 from typing import Literal, Protocol
 
 import httpx
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.curriculum import PromptContext
 
@@ -23,6 +23,13 @@ class TeachingFeedback(BaseModel):
     outcome: Literal["clear", "improve", "retry"]
     feedback: str = Field(min_length=1, max_length=240)
     example: str | None = Field(max_length=180)
+
+    @field_validator("feedback", "example")
+    @classmethod
+    def strip_words(cls, value: str | None) -> str | None:
+        if value is not None and not value.strip():
+            raise ValueError("Empty feedback")
+        return value.strip() if value is not None else None
 
     @model_validator(mode="after")
     def require_example_for_improvement(self) -> "TeachingFeedback":
