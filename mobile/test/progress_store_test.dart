@@ -33,6 +33,7 @@ void main() {
             otherDayPrompts: {2: 1, 3: 2, 5: 3},
             attemptedPromptIds: {'introduce-name', 'customer-greeting'},
             salonRehearsalTurns: {'welcome-needs-consultation': 3},
+            salonRecordedSeconds: {'welcome-needs-consultation': 74},
           ),
         );
         await store.saveReview(
@@ -62,6 +63,10 @@ void main() {
         expect(restored.hasAttempted('customer-greeting'), isTrue);
         expect(restored.hasAttempted('introduce-study'), isFalse);
         expect(restored.bestSalonTurns('welcome-needs-consultation'), 3);
+        expect(
+          restored.longestSalonRecordedSeconds('welcome-needs-consultation'),
+          74,
+        );
         expect((await store.loadReview())['my-course']!.easeStage, 1);
       } finally {
         await store.close();
@@ -144,11 +149,98 @@ void main() {
 
   test('shorter salon rehearsal never reduces the best reply count', () {
     final progress = const LearnerProgress()
-        .withSalonTurns('welcome-needs-consultation', 4)
-        .withSalonTurns('welcome-needs-consultation', 2);
+        .withSalonRehearsal('welcome-needs-consultation', 4, 45)
+        .withSalonRehearsal('welcome-needs-consultation', 2, 70);
     expect(progress.bestSalonTurns('welcome-needs-consultation'), 4);
+    expect(
+      progress.longestSalonRecordedSeconds('welcome-needs-consultation'),
+      70,
+    );
     expect(progress.bestSalonTurns('complete-salon-conversation'), 0);
   });
+
+  test(
+    'version 5 preserves salon replies and starts duration unknown',
+    () async {
+      sqfliteFfiInit();
+      final directory = await Directory.systemTemp.createTemp('speakcraft-v5-');
+      final path = '${directory.path}/progress.db';
+      final old = await databaseFactoryFfi.openDatabase(
+        path,
+        options: OpenDatabaseOptions(
+          version: 5,
+          onCreate: (db, version) async {
+            await db.execute('''
+            CREATE TABLE learner_progress (
+              id INTEGER PRIMARY KEY,
+              onboarding_step INTEGER NOT NULL,
+              profession TEXT,
+              support_language TEXT,
+              day_one_prompt INTEGER NOT NULL
+            )
+          ''');
+            await db.execute('''
+            CREATE TABLE lesson_positions (day INTEGER PRIMARY KEY, prompt_index INTEGER NOT NULL)
+          ''');
+            await db.execute('''
+            CREATE TABLE review_state (
+              item_id TEXT PRIMARY KEY,
+              attempts INTEGER NOT NULL,
+              ease_stage INTEGER NOT NULL,
+              last_reviewed_at INTEGER NOT NULL,
+              next_review_at INTEGER NOT NULL
+            )
+          ''');
+            await db.execute(
+              'CREATE TABLE practice_attempts (prompt_id TEXT PRIMARY KEY)',
+            );
+            await db.execute('''
+            CREATE TABLE salon_rehearsals (
+              scenario_id TEXT PRIMARY KEY,
+              best_turns INTEGER NOT NULL
+            )
+          ''');
+          },
+        ),
+      );
+      await old.insert('learner_progress', {
+        'id': 1,
+        'onboarding_step': 5,
+        'profession': 'beauty-cosmetology',
+        'support_language': 'en',
+        'day_one_prompt': 0,
+      });
+      await old.insert('salon_rehearsals', {
+        'scenario_id': 'welcome-needs-consultation',
+        'best_turns': 3,
+      });
+      await old.close();
+      final store = await SqliteProgressStore.open(
+        factory: databaseFactoryFfi,
+        path: path,
+      );
+      try {
+        final progress = await store.load();
+        expect(progress.bestSalonTurns('welcome-needs-consultation'), 3);
+        expect(
+          progress.longestSalonRecordedSeconds('welcome-needs-consultation'),
+          0,
+        );
+        await store.save(
+          progress.withSalonRehearsal('welcome-needs-consultation', 2, 55),
+        );
+        final updated = await store.load();
+        expect(updated.bestSalonTurns('welcome-needs-consultation'), 3);
+        expect(
+          updated.longestSalonRecordedSeconds('welcome-needs-consultation'),
+          55,
+        );
+      } finally {
+        await store.close();
+        await directory.delete(recursive: true);
+      }
+    },
+  );
 
   test(
     'version 3 database gains attempt markers without inferring them',
@@ -379,6 +471,7 @@ void main() {
             otherDayPrompts: {2: 1, 3: 2, 4: 1, 5: 3},
             attemptedPromptIds: {'introduce-name', 'customer-greeting'},
             salonRehearsalTurns: {'welcome-needs-consultation': 3},
+            salonRecordedSeconds: {'welcome-needs-consultation': 74},
           ),
         );
         await store.saveReview(
@@ -408,6 +501,7 @@ void main() {
         expect(await store.database.query('review_state'), isEmpty);
         expect(await store.database.query('practice_attempts'), isEmpty);
         expect(await store.database.query('salon_rehearsals'), isEmpty);
+        expect(progress.salonRecordedSeconds, isEmpty);
       } finally {
         await store.close();
         await directory.delete(recursive: true);

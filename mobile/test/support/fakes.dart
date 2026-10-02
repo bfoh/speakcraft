@@ -10,6 +10,18 @@ import 'package:speakcraft/core/speech/feedback.dart';
 import 'package:speakcraft/core/speech/conversation.dart';
 import 'package:speakcraft/core/speech/expression.dart';
 
+class TestStopwatch extends Stopwatch {
+  Duration value = Duration.zero;
+  @override
+  Duration get elapsed => value;
+  @override
+  void reset() => value = Duration.zero;
+  @override
+  void start() {}
+  @override
+  void stop() {}
+}
+
 /// Test-only adapters; production always uses native recording and SQLite.
 class FakeMicrophone implements Microphone {
   bool permission = true;
@@ -20,6 +32,7 @@ class FakeMicrophone implements Microphone {
   int stops = 0;
   int discards = 0;
   Completer<void>? startGate;
+  Completer<void>? stopGate;
   Completer<bool>? permissionGate;
   final events = StreamController<void>.broadcast();
   @override
@@ -37,6 +50,7 @@ class FakeMicrophone implements Microphone {
   @override
   Future<String> stop() async {
     stops++;
+    if (stopGate != null) await stopGate!.future;
     if (failStop) throw StateError('Test stop failure');
     return '/test/recording.m4a';
   }

@@ -28,6 +28,7 @@ class ConversationController extends ChangeNotifier {
   List<ConversationTurn> turns;
   ConversationState state = ConversationState.idle;
   bool waitingForRecording = false;
+  Duration recordedAnswerTime = Duration.zero;
   int _revision = 0;
   bool _disposed = false;
 
@@ -39,7 +40,11 @@ class ConversationController extends ChangeNotifier {
           state == ConversationState.success &&
           !waitingForRecording);
 
-  Future<void> send(String transcript, String? accessToken) async {
+  Future<void> send(
+    String transcript,
+    String? accessToken, {
+    Duration? recordedDuration,
+  }) async {
     if (sending || waitingForRecording || complete) return;
     if (!provider.configured || accessToken == null) {
       _set(ConversationState.unavailable);
@@ -60,6 +65,9 @@ class ConversationController extends ChangeNotifier {
         ConversationTurn(ConversationSpeaker.learner, transcript),
         ConversationTurn(ConversationSpeaker.kora, response.spokenText),
       ];
+      if (recordedDuration != null && recordedDuration > Duration.zero) {
+        recordedAnswerTime += recordedDuration;
+      }
       waitingForRecording =
           response.nextQuestion != null && learnerTurns < turnLimit;
       _set(ConversationState.success);
@@ -87,6 +95,7 @@ class ConversationController extends ChangeNotifier {
   void reset() {
     _revision++;
     turns = [ConversationTurn(ConversationSpeaker.kora, opening)];
+    recordedAnswerTime = Duration.zero;
     waitingForRecording = false;
     _set(ConversationState.idle);
   }

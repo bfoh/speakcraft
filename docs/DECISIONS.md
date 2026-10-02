@@ -85,3 +85,7 @@ Persist only authored prompt IDs after a nonempty local recording and explicit a
 ## 2026-10-02 — Local AI Salon rehearsal counts
 
 Save the highest number of learner replies completed in one terminal Day-3 or Day-5 AI Salon exchange. Show authored learner objectives at the end for self-review. A provider may end early, so show the actual count without a completion score. Keep dialogue, transcripts and audio transient. A failed local save keeps the finished exchange visible with a retry action. This records participation, not consultation duration or successful customer communication.
+
+## 2026-10-02 — AI Salon recorded-answer time
+
+Measure each take with a monotonic clock from successful microphone start to stop request. Add its duration to a rehearsal only after the learner explicitly sends the transcript and the backend accepts the reply. Save the longest total answer-recording seconds per Day-3/Day-5 scenario on the phone, independently of the best completed-reply count. Label the time as recording, since it can include silence and excludes customer turns. Do not treat it as proof of the blueprint's 90-second consultation goal.

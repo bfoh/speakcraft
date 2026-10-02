@@ -62,6 +62,48 @@ void main() {
     await controller.finish();
     expect(controller.state, MicrophoneState.failure);
     expect(controller.recordingPath, isNull);
+    expect(controller.recordingDuration, isNull);
+  });
+
+  test(
+    'capture time excludes start and stop processing and clears on delete',
+    () async {
+      controller.dispose();
+      final clock = TestStopwatch();
+      controller = MicrophoneController(microphone, FakeSpeech(), clock: clock);
+      microphone.startGate = Completer<void>();
+      await controller.prepare();
+      final pending = controller.start('name');
+      clock.value = const Duration(seconds: 20);
+      expect(controller.recordingDuration, isNull);
+      microphone.startGate!.complete();
+      await pending;
+      clock.value = const Duration(seconds: 7);
+      microphone.stopGate = Completer<void>();
+      final stopping = controller.finish();
+      clock.value = const Duration(seconds: 18);
+      microphone.stopGate!.complete();
+      await stopping;
+      expect(controller.recordingDuration, const Duration(seconds: 7));
+      await controller.discard();
+      expect(controller.recordingDuration, isNull);
+    },
+  );
+
+  test('capture time is capped by the take limit', () async {
+    controller.dispose();
+    final clock = TestStopwatch();
+    controller = MicrophoneController(
+      microphone,
+      FakeSpeech(),
+      clock: clock,
+      maxDuration: const Duration(seconds: 60),
+    );
+    await controller.prepare();
+    await controller.start('name');
+    clock.value = const Duration(seconds: 65);
+    await controller.finish();
+    expect(controller.recordingDuration, const Duration(seconds: 60));
   });
 
   test('repeated starts and stops are serialised', () async {

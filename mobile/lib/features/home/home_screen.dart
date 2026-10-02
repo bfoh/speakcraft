@@ -179,6 +179,10 @@ class HomeScreen extends ConsumerWidget {
                                   'AI Salon replies saved: ${progress.bestSalonTurns(curriculum.scenarioForDay(lesson.day)!.id)} of ${curriculum.scenarioForDay(lesson.day)!.turnLimit}',
                                 ),
                                 const SizedBox(height: 8),
+                                Text(
+                                  'Most time recording answers: ${progress.longestSalonRecordedSeconds(curriculum.scenarioForDay(lesson.day)!.id)} seconds',
+                                ),
+                                const SizedBox(height: 8),
                                 const Text(
                                   'Guided practice. Full challenge is not assessed here.',
                                 ),

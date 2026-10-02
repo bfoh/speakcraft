@@ -129,6 +129,41 @@ void main() {
     await pending;
     expect(controller.state, ConversationState.idle);
     expect(controller.turns.length, 1);
+    expect(controller.recordedAnswerTime, Duration.zero);
+    controller.dispose();
+  });
+
+  test('answer time counts only successful replies and resets', () async {
+    final provider = FakeConversation()
+      ..error = const ConversationException(ConversationProblem.offline);
+    final controller = ConversationController(
+      provider: provider,
+      lessonId: 'welcome-needs-consultation',
+      opening: opening,
+      turnLimit: 4,
+    );
+    await controller.send(
+      'I recommend braids.',
+      'pilot',
+      recordedDuration: const Duration(seconds: 12),
+    );
+    expect(controller.recordedAnswerTime, Duration.zero);
+    provider.error = null;
+    await controller.send(
+      'I recommend braids.',
+      'pilot',
+      recordedDuration: const Duration(seconds: 12),
+    );
+    expect(controller.recordedAnswerTime, const Duration(seconds: 12));
+    controller.beginNewRecording();
+    await controller.send(
+      'I can check the price.',
+      'pilot',
+      recordedDuration: const Duration(seconds: 9),
+    );
+    expect(controller.recordedAnswerTime, const Duration(seconds: 21));
+    controller.reset();
+    expect(controller.recordedAnswerTime, Duration.zero);
     controller.dispose();
   });
 

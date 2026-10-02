@@ -21,7 +21,8 @@ class MicrophoneController extends ChangeNotifier {
     this.microphone,
     this.speech, {
     this.maxDuration = const Duration(seconds: 60),
-  }) {
+    Stopwatch? clock,
+  }) : _clock = clock ?? Stopwatch() {
     _subscription = microphone.interruptions.listen(
       (_) {
         if (state == MicrophoneState.recording) unawaited(finish());
@@ -34,9 +35,11 @@ class MicrophoneController extends ChangeNotifier {
   final Microphone microphone;
   final SpeechOutput speech;
   final Duration maxDuration;
+  final Stopwatch _clock;
   late final StreamSubscription<void> _subscription;
   MicrophoneState state = MicrophoneState.idle;
   String? recordingPath;
+  Duration? recordingDuration;
   String? promptId;
   Timer? _timer;
   bool _backgrounded = false;
@@ -71,6 +74,8 @@ class MicrophoneController extends ChangeNotifier {
       await speech.stop();
       await microphone.discard();
       recordingPath = null;
+      recordingDuration = null;
+      _clock.reset();
       promptId = id;
       await microphone.start();
       if (_backgrounded || _disposed) {
@@ -78,9 +83,12 @@ class MicrophoneController extends ChangeNotifier {
         _set(MicrophoneState.ready);
         return;
       }
+      _clock.start();
       _set(MicrophoneState.recording);
       _timer = Timer(maxDuration, () => unawaited(finish()));
     } catch (_) {
+      _clock.stop();
+      recordingDuration = null;
       // Best effort cleanup; never report a partial file as a successful take.
       try {
         await microphone.discard();
@@ -93,10 +101,16 @@ class MicrophoneController extends ChangeNotifier {
 
   Future<void> finish() async {
     if (state != MicrophoneState.recording) return;
+    _clock.stop();
+    final elapsed = _clock.elapsed;
     _timer?.cancel();
     _set(MicrophoneState.processing);
     try {
       recordingPath = await microphone.stop();
+      if (recordingPath == null || recordingPath!.isEmpty) {
+        throw StateError('Recording has no file');
+      }
+      recordingDuration = elapsed > maxDuration ? maxDuration : elapsed;
       _set(MicrophoneState.success);
     } catch (_) {
       try {
@@ -105,6 +119,7 @@ class MicrophoneController extends ChangeNotifier {
         // Keep the failure visible; retry must attempt cleanup again.
       }
       recordingPath = null;
+      recordingDuration = null;
       _set(MicrophoneState.failure);
     }
   }
@@ -115,6 +130,8 @@ class MicrophoneController extends ChangeNotifier {
     try {
       await microphone.discard();
       recordingPath = null;
+      recordingDuration = null;
+      _clock.reset();
       promptId = null;
       _set(MicrophoneState.idle);
     } catch (_) {
@@ -138,6 +155,8 @@ class MicrophoneController extends ChangeNotifier {
       await speech.stop();
       await microphone.discard();
       recordingPath = null;
+      recordingDuration = null;
+      _clock.reset();
       promptId = null;
       _set(MicrophoneState.idle);
       return true;

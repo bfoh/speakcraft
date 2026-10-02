@@ -54,6 +54,9 @@ class ProgressScreen extends ConsumerWidget {
                     Text(
                       'AI Salon replies saved: ${session.progress.bestSalonTurns(curriculum.scenarioForDay(lesson.day)!.id)} of ${curriculum.scenarioForDay(lesson.day)!.turnLimit}',
                     ),
+                    Text(
+                      'Most time recording answers: ${session.progress.longestSalonRecordedSeconds(curriculum.scenarioForDay(lesson.day)!.id)} seconds',
+                    ),
                   ],
                   const SizedBox(height: 16),
                   SpeakCraftButton(

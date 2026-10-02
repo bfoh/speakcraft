@@ -13,6 +13,7 @@ import 'package:speakcraft/core/speech/recognition.dart';
 import 'package:speakcraft/core/speech/feedback.dart';
 import 'package:speakcraft/core/speech/conversation.dart';
 import 'package:speakcraft/core/speech/expression.dart';
+import 'package:speakcraft/features/lesson/microphone_controller.dart';
 
 import 'support/fakes.dart';
 
@@ -32,14 +33,21 @@ void main() {
     KoraConversation conversation = const UnconfiguredKoraConversation(),
     KoraConversation salon = const UnconfiguredKoraConversation(),
     ExpressionGenerator expression = const UnconfiguredExpressionGenerator(),
+    TestStopwatch? salonClock,
   }) async {
     store = MemoryProgressStore()..progress = progress;
     mic = FakeMicrophone();
     speech = FakeSpeech();
     assessmentCapture = FakeAssessmentCaptureStore();
     baselineMic = FakeMicrophone();
+    final salonController = salonClock == null
+        ? null
+        : MicrophoneController(FakeMicrophone(), speech, clock: salonClock);
+    if (salonController != null) addTearDown(salonController.dispose);
     container = ProviderContainer(
       overrides: [
+        if (salonController != null)
+          conversationMicrophoneProvider.overrideWithValue(salonController),
         servicesProvider.overrideWithValue(
           AppServices(
             curriculum: Curriculum.parse(
@@ -519,6 +527,10 @@ void main() {
     await tap(tester, 'Send reply to customer');
     expect(store.progress.bestSalonTurns('complete-salon-conversation'), 1);
     expect(
+      find.text('You recorded answers for 0 seconds in this rehearsal.'),
+      findsOneWidget,
+    );
+    expect(
       find.text('You answered 1 of 6 customer turns in this rehearsal.'),
       findsOneWidget,
     );
@@ -530,6 +542,48 @@ void main() {
     expect(find.text('AI Salon replies saved: 1 of 6'), findsOneWidget);
     await tap(tester, 'My practice');
     expect(find.text('AI Salon replies saved: 1 of 6'), findsOneWidget);
+  });
+
+  testWidgets('sent salon answer records measured time on this phone', (
+    tester,
+  ) async {
+    final clock = TestStopwatch();
+    final salon = FakeConversation()
+      ..result = const KoraReply('Thank you for your help.', null);
+    await launch(
+      tester,
+      progress: returning,
+      recognition: FakeRecognition(),
+      salon: salon,
+      salonClock: clock,
+    );
+    await tap(tester, 'Open Day 3');
+    await tap(tester, 'Practise in AI Salon');
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    clock.value = const Duration(seconds: 15);
+    await tap(tester, 'Stop recording');
+    await tap(tester, 'Hear my words');
+    await tester.enterText(find.byType(TextField), 'pilot-access-code');
+    await tap(tester, 'Continue');
+    await tap(tester, 'Send reply to customer');
+    expect(
+      store.progress.longestSalonRecordedSeconds('welcome-needs-consultation'),
+      15,
+    );
+    expect(
+      find.text('You recorded answers for 15 seconds in this rehearsal.'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('does not time the whole customer consultation'),
+      findsOneWidget,
+    );
+    await tap(tester, 'Back to Home');
+    expect(
+      find.text('Most time recording answers: 15 seconds'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('failed rehearsal save keeps dialogue and offers retry', (
@@ -556,10 +610,7 @@ void main() {
     expect(store.progress.bestSalonTurns('welcome-needs-consultation'), 0);
     expect(find.text('Save rehearsal'), findsOneWidget);
     expect(find.text('These are practice goals, not a score.'), findsOneWidget);
-    expect(
-      find.textContaining("couldn't save your reply count"),
-      findsOneWidget,
-    );
+    expect(find.textContaining("couldn't save your rehearsal"), findsOneWidget);
     store.failSave = false;
     await tap(tester, 'Save rehearsal');
     expect(store.progress.bestSalonTurns('welcome-needs-consultation'), 1);
@@ -931,6 +982,7 @@ void main() {
           otherDayPrompts: {3: 2},
           attemptedPromptIds: {'introduce-name', 'customer-greeting'},
           salonRehearsalTurns: {'welcome-needs-consultation': 2},
+          salonRecordedSeconds: {'welcome-needs-consultation': 45},
         ),
       );
       await tap(tester, 'Open Day 1');
@@ -952,6 +1004,7 @@ void main() {
       expect(store.progress.promptForDay(3), 0);
       expect(store.progress.attemptedPromptIds, isEmpty);
       expect(store.progress.salonRehearsalTurns, isEmpty);
+      expect(store.progress.salonRecordedSeconds, isEmpty);
       expect(mic.discards, greaterThan(0));
     },
   );

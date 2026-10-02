@@ -10,6 +10,7 @@ class LearnerProgress {
     this.otherDayPrompts = const {},
     this.attemptedPromptIds = const {},
     this.salonRehearsalTurns = const {},
+    this.salonRecordedSeconds = const {},
   });
   final int onboardingStep;
   final String? profession;
@@ -22,6 +23,9 @@ class LearnerProgress {
 
   /// Most learner replies completed in one rehearsal per authored scenario.
   final Map<String, int> salonRehearsalTurns;
+
+  /// Longest total recorded-answer time in a finished rehearsal, per scenario.
+  final Map<String, int> salonRecordedSeconds;
   bool get onboarded => onboardingStep == 5;
 
   int promptForDay(int day) =>
@@ -44,14 +48,36 @@ class LearnerProgress {
 
   int bestSalonTurns(String scenarioId) => salonRehearsalTurns[scenarioId] ?? 0;
 
-  LearnerProgress withSalonTurns(String scenarioId, int turns) {
-    if (scenarioId.isEmpty || turns < 1 || turns > 6) {
+  int longestSalonRecordedSeconds(String scenarioId) =>
+      salonRecordedSeconds[scenarioId] ?? 0;
+
+  LearnerProgress withSalonTurns(String scenarioId, int turns) =>
+      withSalonRehearsal(scenarioId, turns, 0);
+
+  LearnerProgress withSalonRehearsal(
+    String scenarioId,
+    int turns,
+    int recordedSeconds,
+  ) {
+    if (scenarioId.isEmpty ||
+        turns < 1 ||
+        turns > 6 ||
+        recordedSeconds < 0 ||
+        recordedSeconds > 360) {
       throw ArgumentError('Invalid salon rehearsal');
     }
     final best = bestSalonTurns(scenarioId);
-    if (turns <= best) return this;
+    final longest = longestSalonRecordedSeconds(scenarioId);
+    if (turns <= best && recordedSeconds <= longest) return this;
     return copyWith(
-      salonRehearsalTurns: {...salonRehearsalTurns, scenarioId: turns},
+      salonRehearsalTurns: {
+        ...salonRehearsalTurns,
+        scenarioId: turns > best ? turns : best,
+      },
+      salonRecordedSeconds: {
+        ...salonRecordedSeconds,
+        scenarioId: recordedSeconds > longest ? recordedSeconds : longest,
+      },
     );
   }
 
@@ -71,6 +97,7 @@ class LearnerProgress {
     Map<int, int>? otherDayPrompts,
     Set<String>? attemptedPromptIds,
     Map<String, int>? salonRehearsalTurns,
+    Map<String, int>? salonRecordedSeconds,
   }) => LearnerProgress(
     onboardingStep: onboardingStep ?? this.onboardingStep,
     profession: profession ?? this.profession,
@@ -82,6 +109,9 @@ class LearnerProgress {
     ),
     salonRehearsalTurns: Map.unmodifiable(
       salonRehearsalTurns ?? this.salonRehearsalTurns,
+    ),
+    salonRecordedSeconds: Map.unmodifiable(
+      salonRecordedSeconds ?? this.salonRecordedSeconds,
     ),
   );
 }

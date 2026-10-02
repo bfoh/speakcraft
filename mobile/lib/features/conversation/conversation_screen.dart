@@ -89,7 +89,11 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
     if (!await _ensureAccessCode() || !mounted) return;
     final words = _transcription.transcript;
     if (words == null) return;
-    await _conversation.send(words, _transcription.accessToken);
+    await _conversation.send(
+      words,
+      _transcription.accessToken,
+      recordedDuration: _mic.recordingDuration,
+    );
     if (_conversation.state == ConversationState.accessDenied) {
       _transcription.clearAccessToken();
     }
@@ -101,9 +105,10 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
   Future<void> _saveRehearsal() async {
     if (!_conversation.complete || !widget.saveRehearsal) return;
     final session = ref.read(sessionProvider);
-    final next = session.progress.withSalonTurns(
+    final next = session.progress.withSalonRehearsal(
       widget.scenarioId,
       _conversation.learnerTurns,
+      _conversation.recordedAnswerTime.inSeconds,
     );
     if (identical(next, session.progress)) return;
     await session.update(next);
@@ -396,18 +401,39 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
                     'You answered ${_conversation.learnerTurns} of ${_conversation.turnLimit} customer turns in this rehearsal.',
                   ),
                   Text(
+                    'You recorded answers for ${_conversation.recordedAnswerTime.inSeconds} seconds in this rehearsal.',
+                  ),
+                  Text(
                     'Best saved on this phone: ${session.progress.bestSalonTurns(widget.scenarioId)} of ${_conversation.turnLimit} turns.',
                   ),
-                  if (session.error != null &&
-                      _conversation.learnerTurns >
-                          session.progress.bestSalonTurns(widget.scenarioId))
+                  Text(
+                    'Most time recording answers on this phone: ${session.progress.longestSalonRecordedSeconds(widget.scenarioId)} seconds.',
+                  ),
+                  if (widget.scenarioId == 'welcome-needs-consultation')
                     const SpeakCraftNotice(
-                      "We couldn't save your reply count on this phone. Tap Save rehearsal to try again.",
+                      'This counts your recorded answers only. It does not time the whole customer consultation.',
+                      icon: Icons.timer_outlined,
+                    ),
+                  if (session.error != null &&
+                      (_conversation.learnerTurns >
+                              session.progress.bestSalonTurns(
+                                widget.scenarioId,
+                              ) ||
+                          _conversation.recordedAnswerTime.inSeconds >
+                              session.progress.longestSalonRecordedSeconds(
+                                widget.scenarioId,
+                              )))
+                    const SpeakCraftNotice(
+                      "We couldn't save your rehearsal on this phone. Tap Save rehearsal to try again.",
                       icon: Icons.error_outline,
                       live: true,
                     ),
                   if (_conversation.learnerTurns >
-                      session.progress.bestSalonTurns(widget.scenarioId))
+                          session.progress.bestSalonTurns(widget.scenarioId) ||
+                      _conversation.recordedAnswerTime.inSeconds >
+                          session.progress.longestSalonRecordedSeconds(
+                            widget.scenarioId,
+                          ))
                     SpeakCraftButton(
                       label: session.saving
                           ? 'Saving rehearsal…'
@@ -430,7 +456,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
             SpeakCraftNotice(
               widget.salon
                   ? widget.saveRehearsal
-                        ? 'Your voice stays on this phone until you choose Hear my words. Send reply sends the words you see to the simulated customer. Only your completed reply count is saved on this phone.'
+                        ? 'Your voice stays on this phone until you choose Hear my words. Send reply sends the words you see to the simulated customer. Your completed reply count and recorded-answer time are saved on this phone.'
                         : 'Your voice stays on this phone until you choose Hear my words. Send reply sends the words you see to the simulated customer. This practice is not saved.'
                   : 'Your voice stays on this phone until you choose Hear my words. Send reply sends the words you see to Kora. This conversation is not saved.',
               icon: Icons.privacy_tip_outlined,

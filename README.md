@@ -62,6 +62,10 @@ The app now saves a local attempt marker when the learner records a daily prompt
 
 Day-3 and Day-5 AI Salon rehearsals now save the highest number of customer replies completed in one finished exchange. The end screen shows the authored practice goals and the actual reply count, even when a conversation ends early. Home and My practice show the saved count offline. A failed local save leaves the exchange open for retry. Only the count is retained; words, audio and dialogue still clear when leaving. This is practice participation, not a 90-second consultation, communication score or assessed Day-5 challenge. See the [Sprint 14 plan](.agent/plans/sprint-14-salon-rehearsal-progress.md).
 
+## Sprint 15 recorded-answer time
+
+Day-3 and Day-5 AI Salon now show the time spent recording answers in a finished rehearsal and save the longest total on this phone. Only successfully sent customer replies add time; a failed send or discarded take does not. Home and My practice show the saved answer time offline. The timer may include silence and excludes the customer, so it does not measure the full consultation or establish the 90-second goal. No audio or words are added to saved progress. See the [Sprint 15 plan](.agent/plans/sprint-15-recorded-answer-time.md).
+
 ## Repository
 
 ```text

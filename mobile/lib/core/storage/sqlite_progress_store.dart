@@ -15,7 +15,7 @@ class SqliteProgressStore implements ProgressStore, ReviewStore {
     final db = await dbFactory.openDatabase(
       path ?? '${await getDatabasesPath()}/speakcraft.db',
       options: OpenDatabaseOptions(
-        version: 5,
+        version: 6,
         onCreate: (db, version) async {
           await db.execute('''
             CREATE TABLE learner_progress (
@@ -47,7 +47,15 @@ class SqliteProgressStore implements ProgressStore, ReviewStore {
           }
           if (oldVersion < 3) await _createReviewTable(db);
           if (oldVersion < 4) await _createPracticeAttemptsTable(db);
-          if (oldVersion < 5) await _createSalonRehearsalsTable(db);
+          if (oldVersion < 5) {
+            await _createSalonRehearsalsTable(db);
+          } else if (oldVersion < 6) {
+            await db.execute('''
+              ALTER TABLE salon_rehearsals
+              ADD COLUMN longest_recorded_seconds INTEGER NOT NULL DEFAULT 0
+                CHECK (longest_recorded_seconds BETWEEN 0 AND 360)
+            ''');
+          }
         },
       ),
     );
@@ -75,7 +83,9 @@ class SqliteProgressStore implements ProgressStore, ReviewStore {
       db.execute('''
     CREATE TABLE salon_rehearsals (
       scenario_id TEXT PRIMARY KEY NOT NULL CHECK (length(scenario_id) BETWEEN 1 AND 80),
-      best_turns INTEGER NOT NULL CHECK (best_turns BETWEEN 1 AND 6)
+      best_turns INTEGER NOT NULL CHECK (best_turns BETWEEN 1 AND 6),
+      longest_recorded_seconds INTEGER NOT NULL DEFAULT 0
+        CHECK (longest_recorded_seconds BETWEEN 0 AND 360)
     )
   ''');
 
@@ -138,6 +148,11 @@ class SqliteProgressStore implements ProgressStore, ReviewStore {
         for (final rehearsal in rehearsals)
           rehearsal['scenario_id'] as String: rehearsal['best_turns'] as int,
       }),
+      salonRecordedSeconds: Map.unmodifiable({
+        for (final rehearsal in rehearsals)
+          rehearsal['scenario_id'] as String:
+              rehearsal['longest_recorded_seconds'] as int,
+      }),
     );
   }
 
@@ -166,6 +181,9 @@ class SqliteProgressStore implements ProgressStore, ReviewStore {
         await txn.insert('salon_rehearsals', {
           'scenario_id': entry.key,
           'best_turns': entry.value,
+          'longest_recorded_seconds': progress.longestSalonRecordedSeconds(
+            entry.key,
+          ),
         });
       }
     });
