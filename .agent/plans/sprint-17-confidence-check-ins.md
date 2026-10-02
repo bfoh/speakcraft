@@ -89,5 +89,5 @@ Also run `python3 scripts/sync_curriculum.py --check`, backend configured checks
 - [x] Read Blueprint, instructions, skills and current storage/UI.
 - [x] Implement check-ins and tests.
 - [x] Run quality checks and update documentation.
-- [ ] Push and verify CI.
+- [x] Push and verify CI.
 - [ ] Physical-device acceptance remains the final task.

@@ -40,8 +40,8 @@ class ReviewItem {
   );
 }
 
-class BaselineItem {
-  const BaselineItem({
+class CaptureItem {
+  const CaptureItem({
     required this.id,
     required this.part,
     required this.title,
@@ -54,7 +54,7 @@ class BaselineItem {
   final String instruction;
   final String spokenPrompt;
 
-  factory BaselineItem.fromJson(Map<String, dynamic> json) => BaselineItem(
+  factory CaptureItem.fromJson(Map<String, dynamic> json) => CaptureItem(
     id: json['id'] as String,
     part: json['part'] as int,
     title: json['title'] as String,
@@ -177,11 +177,13 @@ class Curriculum {
     this.salonScenarios,
     this.reviewItems,
     this.baselineItems,
+    this.day5ChallengeItems,
   );
   final List<Lesson> lessons;
   final List<SalonScenario> salonScenarios;
   final List<ReviewItem> reviewItems;
-  final List<BaselineItem> baselineItems;
+  final List<CaptureItem> baselineItems;
+  final List<CaptureItem> day5ChallengeItems;
   Lesson get dayOne => lessons.first;
   Lesson? lessonForDay(int day) =>
       day >= 1 && day <= lessons.length ? lessons[day - 1] : null;
@@ -215,7 +217,10 @@ class Curriculum {
         .map((item) => ReviewItem.fromJson(item as Map<String, dynamic>))
         .toList();
     final baselineItems = (json['baseline_items'] as List)
-        .map((item) => BaselineItem.fromJson(item as Map<String, dynamic>))
+        .map((item) => CaptureItem.fromJson(item as Map<String, dynamic>))
+        .toList();
+    final day5ChallengeItems = (json['day5_challenge_items'] as List)
+        .map((item) => CaptureItem.fromJson(item as Map<String, dynamic>))
         .toList();
     const expectedBaseline = [
       ('baseline-introduction', 1),
@@ -240,6 +245,28 @@ class Curriculum {
               item.spokenPrompt.length > 240;
         })) {
       throw const FormatException('Invalid baseline capture items');
+    }
+    const expectedDay5 = [
+      ('day5-need', 1),
+      ('day5-greeting', 2),
+      ('day5-question', 3),
+      ('day5-recommend', 4),
+      ('day5-close', 5),
+    ];
+    if (day5ChallengeItems.length != expectedDay5.length ||
+        List.generate(day5ChallengeItems.length, (index) => index).any((index) {
+          final item = day5ChallengeItems[index];
+          final (id, part) = expectedDay5[index];
+          return item.id != id ||
+              item.part != part ||
+              item.title.trim().isEmpty ||
+              item.title.length > 80 ||
+              item.instruction.trim().isEmpty ||
+              item.instruction.length > 240 ||
+              item.spokenPrompt.trim().isEmpty ||
+              item.spokenPrompt.length > 240;
+        })) {
+      throw const FormatException('Invalid Day-5 challenge items');
     }
     final reviewIds = <String>{};
     if (reviewItems.length != 10 ||
@@ -317,6 +344,7 @@ class Curriculum {
       List.unmodifiable(scenarios),
       List.unmodifiable(reviewItems),
       List.unmodifiable(baselineItems),
+      List.unmodifiable(day5ChallengeItems),
     );
   }
 }

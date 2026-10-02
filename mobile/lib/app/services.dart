@@ -36,6 +36,9 @@ class AppServices {
     required this.assessmentMicrophone,
     required this.assessmentCaptureStore,
     required this.recordingPlayback,
+    required this.day5ChallengeMicrophone,
+    required this.day5ChallengeCaptureStore,
+    required this.day5ChallengeRecordingPlayback,
     required this.speech,
     this.recognition = const UnconfiguredSpeechRecognition(),
     this.feedback = const UnconfiguredSpeakingFeedback(),
@@ -52,6 +55,9 @@ class AppServices {
   final Microphone assessmentMicrophone;
   final AssessmentCaptureStore assessmentCaptureStore;
   final RecordingPlayback recordingPlayback;
+  final Microphone day5ChallengeMicrophone;
+  final AssessmentCaptureStore day5ChallengeCaptureStore;
+  final RecordingPlayback day5ChallengeRecordingPlayback;
   final SpeechOutput speech;
   final SpeechRecognition recognition;
   final SpeakingFeedback feedback;
@@ -66,10 +72,14 @@ final bootstrapProvider = FutureProvider<AppServices>((ref) async {
   );
   // Purge prior-session voice data even if database or microphone setup fails.
   final assessmentCaptureStore = await NativeAssessmentCaptureStore.create();
+  final day5ChallengeCaptureStore = await NativeAssessmentCaptureStore.create(
+    type: 'day5',
+  );
   final store = await SqliteProgressStore.open();
   NativeMicrophone? lessonMic;
   NativeMicrophone? dialogueMic;
   NativeMicrophone? assessmentMic;
+  NativeMicrophone? day5Mic;
   try {
     final progress = await store.load();
     if (curriculum.lessons.any(
@@ -92,6 +102,10 @@ final bootstrapProvider = FutureProvider<AppServices>((ref) async {
       folder: 'speakcraft-baseline-takes',
     );
     assessmentMic = assessmentMicrophone;
+    final day5ChallengeMicrophone = await NativeMicrophone.create(
+      folder: 'speakcraft-day5-takes',
+    );
+    day5Mic = day5ChallengeMicrophone;
     return AppServices(
       curriculum: curriculum,
       store: store,
@@ -102,6 +116,9 @@ final bootstrapProvider = FutureProvider<AppServices>((ref) async {
       assessmentMicrophone: assessmentMicrophone,
       assessmentCaptureStore: assessmentCaptureStore,
       recordingPlayback: DeviceRecordingPlayback(),
+      day5ChallengeMicrophone: day5ChallengeMicrophone,
+      day5ChallengeCaptureStore: day5ChallengeCaptureStore,
+      day5ChallengeRecordingPlayback: DeviceRecordingPlayback(),
       speech: DeviceSpeechOutput(),
       recognition: HttpSpeechRecognition(
         const String.fromEnvironment('SPEAKCRAFT_API_BASE_URL'),
@@ -120,6 +137,7 @@ final bootstrapProvider = FutureProvider<AppServices>((ref) async {
       ),
     );
   } catch (_) {
+    await day5Mic?.dispose();
     await assessmentMic?.dispose();
     await dialogueMic?.dispose();
     await lessonMic?.dispose();
@@ -188,6 +206,36 @@ final assessmentPlaybackProvider = Provider<AssessmentPlaybackController>((
   final services = ref.watch(servicesProvider);
   final controller = AssessmentPlaybackController(
     services.recordingPlayback,
+    services.speech,
+  );
+  ref.onDispose(controller.dispose);
+  return controller;
+}, dependencies: [servicesProvider]);
+final day5ChallengeMicrophoneProvider = Provider<MicrophoneController>((ref) {
+  final services = ref.watch(servicesProvider);
+  final controller = MicrophoneController(
+    services.day5ChallengeMicrophone,
+    services.speech,
+  );
+  ref.onDispose(controller.dispose);
+  return controller;
+}, dependencies: [servicesProvider]);
+final day5ChallengeProvider = Provider<AssessmentController>((ref) {
+  final services = ref.watch(servicesProvider);
+  final controller = AssessmentController(
+    services.day5ChallengeCaptureStore,
+    services.curriculum.day5ChallengeItems,
+    label: 'Day-5 challenge',
+  );
+  ref.onDispose(controller.dispose);
+  return controller;
+}, dependencies: [servicesProvider]);
+final day5ChallengePlaybackProvider = Provider<AssessmentPlaybackController>((
+  ref,
+) {
+  final services = ref.watch(servicesProvider);
+  final controller = AssessmentPlaybackController(
+    services.day5ChallengeRecordingPlayback,
     services.speech,
   );
   ref.onDispose(controller.dispose);

@@ -8,7 +8,7 @@
 - Android debug APK: PASS (`flutter build apk --debug`). Flutter warned that `flutter_tts` still applies the Kotlin Gradle Plugin; track compatibility before a future Flutter upgrade.
 - iOS simulator build: PASS (`flutter build ios --simulator --debug`). Flutter warned that `flutter_tts` lacks Swift Package Manager support; track compatibility before a future Flutter upgrade.
 - Backend Ruff format/lint, strict mypy, pytest (44 passed) and canonical curriculum check: PASS. No backend or curriculum change.
-- GitHub CI: PENDING.
+- GitHub CI: PASS ([Sprint quality run](https://github.com/bfoh/speakcraft/actions/runs/37063095766)).
 
 ## SpeakCraft quality gate
 

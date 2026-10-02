@@ -511,7 +511,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
               ],
               if (widget.day == 5 &&
                   index == lesson.prompts.length - 1 &&
-                  finished)
+                  finished) ...[
                 ConfidenceCheckInCard(
                   current: session.progress.confidenceFor('day5'),
                   saving: session.saving,
@@ -522,6 +522,17 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
                     );
                   },
                 ),
+                const SpeakCraftNotice(
+                  'Try five fixed customer questions. You can hear and record each answer. No score is given.',
+                ),
+                SpeakCraftButton(
+                  label: 'Open Day 5 salon challenge',
+                  icon: Icons.assignment_outlined,
+                  onPressed: _mic.capturing || session.saving
+                      ? null
+                      : () => context.push('/challenge/day-5'),
+                ),
+              ],
               if (widget.day == 3 || widget.day == 5) ...[
                 const SpeakCraftNotice(
                   'For more customer conversation practice, try AI Salon. This lesson does not assess a full consultation or challenge.',

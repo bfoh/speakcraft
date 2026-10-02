@@ -4,16 +4,17 @@ import '../../core/audio/assessment_capture_store.dart';
 import '../../core/curriculum/curriculum.dart';
 
 class AssessmentController extends ChangeNotifier {
-  AssessmentController(this.store, this.items);
+  AssessmentController(this.store, this.items, {this.label = 'starting'});
   final AssessmentCaptureStore store;
-  final List<BaselineItem> items;
+  final List<CaptureItem> items;
+  final String label;
   final Map<String, String> _captures = {};
   int index = 0;
   bool saving = false;
   String? error;
   Future<void>? _pending;
 
-  BaselineItem? get current => index < items.length ? items[index] : null;
+  CaptureItem? get current => index < items.length ? items[index] : null;
   bool get complete => index == items.length;
   int get capturedCount => _captures.length;
   String? pathFor(String itemId) => _captures[itemId];
@@ -56,7 +57,7 @@ class AssessmentController extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (_) {
-      error = "We couldn't clear the starting recordings. Please try again.";
+      error = "We couldn't clear the $label recordings. Please try again.";
       notifyListeners();
       return false;
     }

@@ -58,6 +58,13 @@ void main() {
       5,
     ]);
     expect(curriculum.baselineItems.last.id, 'baseline-customer-3');
+    expect(curriculum.day5ChallengeItems.map((item) => item.id), [
+      'day5-need',
+      'day5-greeting',
+      'day5-question',
+      'day5-recommend',
+      'day5-close',
+    ]);
   });
   test('rejects future incompatible versions rather than misreading them', () {
     final data = jsonDecode(source) as Map<String, dynamic>;
@@ -93,6 +100,14 @@ void main() {
   test('rejects missing or reordered baseline items', () {
     final data = jsonDecode(source) as Map<String, dynamic>;
     data['baseline_items'][4]['id'] = 'baseline-customer-3';
+    expect(() => Curriculum.parse(jsonEncode(data)), throwsFormatException);
+  });
+  test('rejects changed Day-5 challenge identity and empty customer line', () {
+    final data = jsonDecode(source) as Map<String, dynamic>;
+    data['day5_challenge_items'][0]['id'] = 'day5-close';
+    expect(() => Curriculum.parse(jsonEncode(data)), throwsFormatException);
+    data['day5_challenge_items'][0]['id'] = 'day5-need';
+    data['day5_challenge_items'][0]['spoken_prompt'] = '';
     expect(() => Curriculum.parse(jsonEncode(data)), throwsFormatException);
   });
 }

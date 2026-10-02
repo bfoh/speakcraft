@@ -88,6 +88,13 @@ void main() {
       ),
       assessmentCaptureStore: await NativeAssessmentCaptureStore.create(),
       recordingPlayback: DeviceRecordingPlayback(),
+      day5ChallengeMicrophone: await NativeMicrophone.create(
+        folder: 'speakcraft-day5-takes',
+      ),
+      day5ChallengeCaptureStore: await NativeAssessmentCaptureStore.create(
+        type: 'day5',
+      ),
+      day5ChallengeRecordingPlayback: DeviceRecordingPlayback(),
       speech: DeviceSpeechOutput(),
       recognition: HttpSpeechRecognition('http://127.0.0.1:${server.port}'),
       feedback: HttpSpeakingFeedback('http://127.0.0.1:${server.port}'),

@@ -56,7 +56,7 @@ The shared `SpeechOutput` contract accepts an optional slow flag. `DeviceSpeechO
 
 ## Sprint 12 unscored baseline capture slice
 
-Seven validated `baseline_items` in curriculum version 0.1.1 cover the blueprint's five Day-1 parts. The role-play uses three authored customer lines; this flow makes no provider call. A generated salon visual is packaged with the app and labelled as provisional. A dedicated native microphone keeps assessment takes apart from lessons and dialogue. `NativeAssessmentCaptureStore` stages each accepted take in app-private temporary storage, copying to a pending file before rename. `AssessmentController` advances only after staging succeeds. The controller holds the current position and capture paths in memory, so navigation within the app preserves them, while app relaunch deletes old assessment audio. Privacy reset clears both assessment folders before SQLite reset. There is no assessment endpoint, result, score, transcript or durable comparison data.
+Seven validated `baseline_items` (authored in curriculum version 0.1.1) cover the blueprint's five Day-1 parts. The role-play uses three authored customer lines; this flow makes no provider call. A generated salon visual is packaged with the app and labelled as provisional. A dedicated native microphone keeps assessment takes apart from lessons and dialogue. `NativeAssessmentCaptureStore` stages each accepted take in app-private temporary storage, copying to a pending file before rename. `AssessmentController` advances only after staging succeeds. The controller holds the current position and capture paths in memory, so navigation within the app preserves them, while app relaunch deletes old assessment audio. Privacy reset clears both assessment folders before SQLite reset. There is no assessment endpoint, result, score, transcript or durable comparison data.
 
 ## Sprint 13 guided-practice completion slice
 
@@ -78,6 +78,10 @@ The conversation microphone uses a monotonic stopwatch from successful native st
 
 SQLite schema version 7 adds `confidence_check_ins` with the latest 1–5 learner-reported readiness and UTC time for `starting` and `day5`. The same optional question appears after all seven starting recordings and after all Day-5 guided speaking steps. `SessionController` confirms a choice only after the local transaction succeeds. My practice shows each self-rating separately, without a derived change or speaking score. Clear phone data deletes both rows. No audio, transcript or backend request is involved.
 
+## Sprint 18 fixed Day-5 challenge slice
+
+Curriculum version 0.1.2 adds five validated `day5_challenge_items`. After all Day-5 guided steps have saved attempt markers, a separate route reuses the assessment capture screen with its own microphone, playback controller and private temporary cache. It records the customer's need, greeting, question, recommendation with reason and closing through fixed lines. Route guarding prevents opening the challenge before guided practice is finished. Saves are staged before the prompt advances, and local clear/reset failures leave a retry path. The challenge makes no provider call and stores no SQLite completion or score. The recordings expire at next app launch, so it is not yet an English Mirror history.
+
 ## Mobile structure
 
 - `lib/app`: composition, Riverpod providers, GoRouter routes and theme.
@@ -86,7 +90,7 @@ SQLite schema version 7 adds `confidence_check_ins` with the latest 1–5 learne
 - `lib/core/audio`: microphone and playback interfaces, native recording/playback adapters, authored-text speech output.
 - `lib/core/speech`: backend-facing transcription and teaching-feedback contracts.
 - `lib/features/onboarding`: welcome, profession, support language, Kora introduction, assessment introduction.
-- `lib/features/assessment`: unscored seven-task starting capture and private session storage.
+- `lib/features/assessment`: unscored starting and Day-5 fixed capture flows with separate private session storage.
 - `lib/features/home`: five-day entry and practice positions.
 - `lib/features/progress`: saved daily positions and resume navigation.
 - `lib/features/review`: offline My Words listening and self-rated scheduling.
@@ -100,9 +104,9 @@ Riverpod supplies application dependencies. The bootstrap loads native services,
 
 ## Local state
 
-SQLite schema version 6 preserves the original `learner_progress` row and `lesson_positions` for Days 2–5, plus `review_state`, `practice_attempts` and `salon_rehearsals`. It stores onboarding step, profession, support language, current prompt index, review timing, authored attempted-prompt IDs, per-scenario best completed reply counts and longest recorded-answer seconds. The repository uses parameterised queries. Changes become visible only after a successful database write; write failure preserves the previous state and exposes retry. These summaries show participation, not mastery or assessed lesson completion.
+SQLite schema version 7 preserves the original `learner_progress` row and `lesson_positions` for Days 2–5, plus `review_state`, `practice_attempts`, `salon_rehearsals` and `confidence_check_ins`. It stores onboarding step, profession, support language, current prompt index, review timing, authored attempted-prompt IDs, per-scenario best completed reply counts and longest recorded-answer seconds, and two optional 1–5 learner self-ratings. The repository uses parameterised queries. Changes become visible only after a successful database write; write failure preserves the previous state and exposes retry. These summaries show participation or self-report, not mastery or assessed lesson completion.
 
-Reset atomically deletes all five local progress/review/attempt/rehearsal tables. It does not contact the backend or revoke earlier provider processing. Lesson, dialogue and baseline audio caches are cleared before durable deletion, and failure is exposed for retry.
+Reset atomically deletes all six local progress/review/attempt/rehearsal/check-in tables. It does not contact the backend or revoke earlier provider processing. Lesson, dialogue, baseline and Day-5 challenge audio caches are cleared before durable deletion, and failure is exposed for retry.
 
 Future local changes must increment the schema version and provide tested upgrades. No remote database schema or credentials are introduced. Routine audio is separate cache data, excluded from learning history.
 
@@ -110,9 +114,9 @@ Future local changes must increment the schema version and provide tested upgrad
 
 `curriculum/alpha.json` is the editorial source of truth for the five Alpha days. `scripts/sync_curriculum.py` validates it and copies identical content into `mobile/assets/curriculum/alpha.json` and `backend/app/data/alpha.json`. CI checks both copies for drift. No symlinks outside the projects are required for packaging.
 
-Day 1 has four authored prompts, ending in the blueprint's 30–60 second introduction. Days 2–5 contain objectives, target language and short authored practice sequences. Longer consultations and the final challenge remain unassessed. Example sentences are editorial seeds requiring educator review. They are not generated assessment data.
+Day 1 has four authored prompts, ending in the blueprint's 30–60 second introduction. Days 2–5 contain objectives, target language and short authored practice sequences. Longer consultations remain unmeasured, and the fixed final challenge remains unscored. Example sentences are editorial seeds requiring educator review. They are not generated assessment data.
 
-The seven baseline capture prompts and generated salon visual are also provisional teaching/assessment material. The visual is an aid to description, not a reference answer. No measured result is inferred from recording completion.
+The seven baseline and five Day-5 fixed capture prompts are provisional teaching/assessment material. The generated salon visual is an aid to description, not a reference answer. The Day-5 task covers similar customer acts but has not been judged equivalent by educators. No measured result is inferred from recording completion.
 
 ## Voice boundary
 

@@ -23,8 +23,11 @@ void main() {
   late FakeMicrophone mic;
   late FakeSpeech speech;
   late FakeAssessmentCaptureStore assessmentCapture;
+  late FakeAssessmentCaptureStore day5Capture;
   late FakeRecordingPlayback recordingPlayback;
+  late FakeRecordingPlayback day5Playback;
   late FakeMicrophone baselineMic;
+  late FakeMicrophone day5Mic;
   late ProviderContainer container;
 
   Future<void> launch(
@@ -41,8 +44,11 @@ void main() {
     mic = FakeMicrophone();
     speech = FakeSpeech();
     assessmentCapture = FakeAssessmentCaptureStore();
+    day5Capture = FakeAssessmentCaptureStore(folder: 'day5');
     recordingPlayback = FakeRecordingPlayback();
+    day5Playback = FakeRecordingPlayback();
     baselineMic = FakeMicrophone();
+    day5Mic = FakeMicrophone();
     final salonController = salonClock == null
         ? null
         : MicrophoneController(FakeMicrophone(), speech, clock: salonClock);
@@ -64,6 +70,9 @@ void main() {
             assessmentMicrophone: baselineMic,
             assessmentCaptureStore: assessmentCapture,
             recordingPlayback: recordingPlayback,
+            day5ChallengeMicrophone: day5Mic,
+            day5ChallengeCaptureStore: day5Capture,
+            day5ChallengeRecordingPlayback: day5Playback,
             speech: speech,
             recognition: recognition,
             feedback: feedback,
@@ -115,6 +124,9 @@ void main() {
               assessmentMicrophone: FakeMicrophone(),
               assessmentCaptureStore: FakeAssessmentCaptureStore(),
               recordingPlayback: FakeRecordingPlayback(),
+              day5ChallengeMicrophone: FakeMicrophone(),
+              day5ChallengeCaptureStore: FakeAssessmentCaptureStore(),
+              day5ChallengeRecordingPlayback: FakeRecordingPlayback(),
               speech: FakeSpeech(),
             ),
           ),
@@ -1314,6 +1326,116 @@ void main() {
     await tap(tester, 'Back to Home');
     await tap(tester, 'My practice');
     expect(find.text('Day 5: 5 — Very ready'), findsOneWidget);
+  });
+
+  testWidgets('Day 5 fixed challenge records, replays and clears offline', (
+    tester,
+  ) async {
+    final day5 = Curriculum.parse(
+      File('assets/curriculum/alpha.json').readAsStringSync(),
+    ).lessons[4];
+    await launch(
+      tester,
+      progress: returning.copyWith(
+        otherDayPrompts: {5: day5.prompts.length - 1},
+        attemptedPromptIds: day5.prompts.map((p) => p.id).toSet(),
+      ),
+    );
+    await tap(tester, 'Open Day 5');
+    await tap(tester, 'Open Day 5 salon challenge');
+    expect(find.text('Understand the customer'), findsOneWidget);
+    expect(find.textContaining('No score is given'), findsOneWidget);
+    await tap(tester, 'Listen to customer');
+    expect(speech.spoken.last, contains('comfortable for work'));
+    day5Capture.failSave = true;
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    await tap(tester, 'Listen to my answer');
+    expect(day5Playback.paths.last, '/test/recording.m4a');
+    await tap(tester, 'Stop my answer');
+    await tap(tester, 'Save answer and continue');
+    expect(find.text('Understand the customer'), findsOneWidget);
+    expect(find.textContaining('recording is still here'), findsOneWidget);
+    expect(day5Capture.captures, isEmpty);
+    day5Capture.failSave = false;
+    await tap(tester, 'Save answer and continue');
+    for (var i = 1; i < 5; i++) {
+      await tap(tester, 'Enable microphone');
+      await tap(tester, 'Start recording');
+      await tap(tester, 'Stop recording');
+      await tap(tester, 'Save answer and continue');
+    }
+    expect(find.text('5 recordings captured'), findsOneWidget);
+    expect(find.textContaining('No score or progress result'), findsOneWidget);
+    expect(day5Capture.captures.length, 5);
+    expect(assessmentCapture.captures, isEmpty);
+    await tap(tester, 'Play my answer: Understand the customer');
+    expect(day5Playback.paths.last, '/test/day5/day5-need.m4a');
+    await tap(tester, 'Clear these recordings');
+    expect(find.text('Clear Day 5 recordings?'), findsOneWidget);
+    await tap(tester, 'Clear recordings');
+    expect(day5Capture.captures, isEmpty);
+    expect(day5Playback.playing, isFalse);
+    expect(find.text('Understand the customer'), findsOneWidget);
+  });
+
+  testWidgets('Day 5 challenge clear failure preserves phone data for retry', (
+    tester,
+  ) async {
+    await launch(tester, progress: returning);
+    day5Capture.failClear = true;
+    await tap(tester, 'Privacy and phone data');
+    await tap(tester, 'Clear phone data');
+    await tester.tap(find.text('Clear phone data').last);
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining("couldn't clear the Day-5 challenge"),
+      findsOneWidget,
+    );
+    expect(store.progress.onboarded, isTrue);
+    day5Capture.failClear = false;
+    await tap(tester, 'Clear phone data');
+    await tester.tap(find.text('Clear phone data').last);
+    await tester.pumpAndSettle();
+    expect(store.progress.onboarded, isFalse);
+  });
+
+  testWidgets('Day 5 challenge route waits for completed guided practice', (
+    tester,
+  ) async {
+    await launch(tester, progress: returning);
+    container.read(routerProvider).go('/challenge/day-5');
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Practice 1 of 4'), findsWidgets);
+    expect(find.text('Understand the customer'), findsNothing);
+  });
+
+  testWidgets('Day 5 challenge works with denied mic and enlarged text', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 700);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final day5 = Curriculum.parse(
+      File('assets/curriculum/alpha.json').readAsStringSync(),
+    ).lessons[4];
+    await launch(
+      tester,
+      progress: returning.copyWith(
+        otherDayPrompts: {5: day5.prompts.length - 1},
+        attemptedPromptIds: day5.prompts.map((p) => p.id).toSet(),
+      ),
+    );
+    day5Mic.permission = false;
+    await tap(tester, 'Open Day 5');
+    await tap(tester, 'Open Day 5 salon challenge');
+    await tap(tester, 'Enable microphone');
+    expect(find.textContaining('Microphone access is off'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('confidence choices fit a small screen with larger text', (

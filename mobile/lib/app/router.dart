@@ -16,6 +16,7 @@ import 'services.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final session = ref.watch(sessionProvider);
+  final curriculum = ref.watch(servicesProvider).curriculum;
   final router = GoRouter(
     initialLocation: session.progress.onboarded
         ? '/home'
@@ -24,7 +25,16 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final location = state.uri.path;
       final step = onboardingPaths.indexOf(location);
-      if (session.progress.onboarded) return step >= 0 ? '/home' : null;
+      if (session.progress.onboarded) {
+        if (step >= 0) return '/home';
+        if (location == '/challenge/day-5' &&
+            !session.progress.finishedPractice(
+              curriculum.lessons[4].prompts.map((prompt) => prompt.id),
+            )) {
+          return '/lesson/day-5';
+        }
+        return null;
+      }
       if (step == -1 || step > session.progress.onboardingStep) {
         return onboardingPaths[session.progress.onboardingStep];
       }
@@ -40,6 +50,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/baseline',
         builder: (context, state) => const AssessmentScreen(),
+      ),
+      GoRoute(
+        path: '/challenge/day-5',
+        builder: (context, state) =>
+            const AssessmentScreen(day5Challenge: true),
       ),
       GoRoute(
         path: '/progress',
@@ -101,4 +116,4 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
   ref.onDispose(router.dispose);
   return router;
-}, dependencies: [sessionProvider]);
+}, dependencies: [sessionProvider, servicesProvider]);

@@ -46,6 +46,9 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
     final assessmentMic = ref.read(assessmentMicrophoneProvider);
     final assessment = ref.read(assessmentProvider);
     final assessmentPlayback = ref.read(assessmentPlaybackProvider);
+    final day5Mic = ref.read(day5ChallengeMicrophoneProvider);
+    final day5Challenge = ref.read(day5ChallengeProvider);
+    final day5Playback = ref.read(day5ChallengePlaybackProvider);
     final transcription = ref.read(transcriptionProvider);
     final feedback = ref.read(feedbackProvider);
     final conversation = ref.read(conversationProvider);
@@ -58,7 +61,9 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
     final session = ref.read(sessionProvider);
     final review = ref.read(reviewProvider);
 
-    if (!await assessmentPlayback.stop()) {
+    final startingPlaybackStopped = await assessmentPlayback.stop();
+    final day5PlaybackStopped = await day5Playback.stop();
+    if (!startingPlaybackStopped || !day5PlaybackStopped) {
       if (mounted) {
         setState(() {
           _clearing = false;
@@ -73,7 +78,11 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
     final lessonCleared = await lessonMic.clearForPrivacy();
     final dialogueCleared = await dialogueMic.clearForPrivacy();
     final assessmentMicCleared = await assessmentMic.clearForPrivacy();
-    if (!lessonCleared || !dialogueCleared || !assessmentMicCleared) {
+    final day5MicCleared = await day5Mic.clearForPrivacy();
+    if (!lessonCleared ||
+        !dialogueCleared ||
+        !assessmentMicCleared ||
+        !day5MicCleared) {
       if (mounted) {
         setState(() {
           _clearing = false;
@@ -87,6 +96,15 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
         setState(() {
           _clearing = false;
           _error = assessment.error;
+        });
+      }
+      return;
+    }
+    if (!await day5Challenge.clear()) {
+      if (mounted) {
+        setState(() {
+          _clearing = false;
+          _error = day5Challenge.error;
         });
       }
       return;
@@ -129,7 +147,7 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
             Text('Saved on this phone'),
             SizedBox(height: 8),
             Text(
-              'Your course, place in each day, recorded speaking steps, readiness choices, salon reply counts and recording time, and word review schedule. Starting assessment recordings are removed at next launch or when you clear phone data.',
+              'Your course, place in each day, recorded speaking steps, readiness choices, salon reply counts and recording time, and word review schedule. Starting assessment and Day 5 challenge recordings are removed at next launch or when you clear phone data.',
             ),
             SizedBox(height: 16),
             Text('Sent only when you choose'),

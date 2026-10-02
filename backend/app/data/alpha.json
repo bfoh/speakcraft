@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "beauty-alpha",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "profession": "beauty-cosmetology",
   "title": "Beauty & Cosmetology",
   "baseline_items": [
@@ -12,6 +12,13 @@
     {"id": "baseline-customer-1", "part": 5, "title": "Talk with a customer • 1 of 3", "instruction": "Answer the customer.", "spoken_prompt": "Hello. I am thinking about getting braids. Can you help me?"},
     {"id": "baseline-customer-2", "part": 5, "title": "Talk with a customer • 2 of 3", "instruction": "Ask a useful question before recommending a style.", "spoken_prompt": "I would like a style that is easy to care for. What would you ask me?"},
     {"id": "baseline-customer-3", "part": 5, "title": "Talk with a customer • 3 of 3", "instruction": "Recommend a style and give a reason. Do not invent a price.", "spoken_prompt": "I would like something simple. What do you recommend, and why?"}
+  ],
+  "day5_challenge_items": [
+    {"id": "day5-need", "part": 1, "title": "Understand the customer", "instruction": "Tell the customer what you understood. Ask what would help you choose.", "spoken_prompt": "Hello. I want braids that are comfortable for work. I am not sure if I want them long or short. Can you help me?"},
+    {"id": "day5-greeting", "part": 2, "title": "Welcome the customer", "instruction": "Welcome the customer and help them begin.", "spoken_prompt": "Hello. I am looking for a braid style. Can you help me choose?"},
+    {"id": "day5-question", "part": 3, "title": "Ask a useful question", "instruction": "Ask a question before you recommend a style.", "spoken_prompt": "I need a style that is easy to care for at work. What would you like to ask me?"},
+    {"id": "day5-recommend", "part": 4, "title": "Recommend and explain", "instruction": "Recommend a style and give a reason. Do not invent a price.", "spoken_prompt": "I prefer something simple and comfortable. What do you recommend, and why?"},
+    {"id": "day5-close", "part": 5, "title": "Close politely", "instruction": "Finish the conversation politely. Do not promise a booking or price.", "spoken_prompt": "Thank you for your advice. What should I do next?"}
   ],
   "review_items": [
     {"id": "my-course", "day": 1, "text": "I study Beauty and Cosmetology.", "cue": "Tell someone what you study."},

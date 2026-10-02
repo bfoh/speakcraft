@@ -13,7 +13,9 @@ import 'assessment_controller.dart';
 import 'assessment_playback_controller.dart';
 
 class AssessmentScreen extends ConsumerStatefulWidget {
-  const AssessmentScreen({super.key});
+  const AssessmentScreen({super.key, this.day5Challenge = false});
+
+  final bool day5Challenge;
 
   @override
   ConsumerState<AssessmentScreen> createState() => _AssessmentScreenState();
@@ -30,9 +32,19 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen>
   @override
   void initState() {
     super.initState();
-    _mic = ref.read(assessmentMicrophoneProvider);
-    _assessment = ref.read(assessmentProvider);
-    _playback = ref.read(assessmentPlaybackProvider);
+    _mic = ref.read(
+      widget.day5Challenge
+          ? day5ChallengeMicrophoneProvider
+          : assessmentMicrophoneProvider,
+    );
+    _assessment = ref.read(
+      widget.day5Challenge ? day5ChallengeProvider : assessmentProvider,
+    );
+    _playback = ref.read(
+      widget.day5Challenge
+          ? day5ChallengePlaybackProvider
+          : assessmentPlaybackProvider,
+    );
     _session = ref.read(sessionProvider);
     _mic.resume();
     WidgetsBinding.instance.addObserver(this);
@@ -82,7 +94,11 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Clear starting recordings?'),
+        title: Text(
+          widget.day5Challenge
+              ? 'Clear Day 5 recordings?'
+              : 'Clear starting recordings?',
+        ),
         content: const Text(
           'This removes all answers from this phone. You can start again.',
         ),
@@ -132,7 +148,9 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen>
       final item = _assessment.current;
       if (item == null) {
         return SpeakCraftPage(
-          title: 'Starting assessment',
+          title: widget.day5Challenge
+              ? 'Day 5 salon challenge'
+              : 'Starting assessment',
           onBack: _home,
           children: [
             const Icon(Icons.check_circle_outline, size: 64),
@@ -140,8 +158,10 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen>
               '${_assessment.capturedCount} recordings captured',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
-            const SpeakCraftNotice(
-              'No score or assessment result is available yet. These recordings stay on this phone only for this app session and are removed next time you open the app.',
+            SpeakCraftNotice(
+              widget.day5Challenge
+                  ? 'You finished the fixed customer prompts. No score or progress result is available yet. These recordings stay on this phone only for this app session and are removed next time you open the app.'
+                  : 'No score or assessment result is available yet. These recordings stay on this phone only for this app session and are removed next time you open the app.',
             ),
             const Text('Listen to your answers from this app session.'),
             SpeakCraftAudioButton(
@@ -195,13 +215,14 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen>
                 icon: Icons.error_outline,
                 live: true,
               ),
-            ConfidenceCheckInCard(
-              current: _session.progress.confidenceFor('starting'),
-              saving: _session.saving,
-              error: _session.error,
-              enabled: !_playback.busy && !_playback.playing,
-              onSelected: _saveConfidence,
-            ),
+            if (!widget.day5Challenge)
+              ConfidenceCheckInCard(
+                current: _session.progress.confidenceFor('starting'),
+                saving: _session.saving,
+                error: _session.error,
+                enabled: !_playback.busy && !_playback.playing,
+                onSelected: _saveConfidence,
+              ),
             SpeakCraftButton(
               label: 'Go to Home',
               icon: Icons.home_outlined,
@@ -264,11 +285,15 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen>
           if (!didPop) unawaited(_home());
         },
         child: SpeakCraftPage(
-          title: 'Starting assessment',
+          title: widget.day5Challenge
+              ? 'Day 5 salon challenge'
+              : 'Starting assessment',
           onBack: _assessment.saving ? null : _home,
           children: [
             Text(
-              'Part ${item.part} of 5 • Recording ${_assessment.index + 1} of ${_assessment.items.length}',
+              widget.day5Challenge
+                  ? 'Step ${item.part} of 5 • Recording ${_assessment.index + 1} of ${_assessment.items.length}'
+                  : 'Part ${item.part} of 5 • Recording ${_assessment.index + 1} of ${_assessment.items.length}',
             ),
             LinearProgressIndicator(
               value: _assessment.index / _assessment.items.length,
@@ -279,7 +304,7 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen>
               'Your recordings stay on this phone for this app session. No score is given. They are removed next time you open the app.',
             ),
             Text(item.title, style: Theme.of(context).textTheme.headlineMedium),
-            if (item.part == 2) ...[
+            if (!widget.day5Challenge && item.part == 2) ...[
               ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: Image.asset(
@@ -294,7 +319,7 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen>
               item.instruction,
               style: Theme.of(context).textTheme.titleLarge,
             ),
-            if (item.part >= 4)
+            if (widget.day5Challenge || item.part >= 4)
               SpeakCraftCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -308,7 +333,9 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen>
             SpeakCraftAudioButton(
               key: ValueKey(item.id),
               text: item.spokenPrompt,
-              label: item.part >= 4 ? 'Listen to customer' : 'Hear the task',
+              label: widget.day5Challenge || item.part >= 4
+                  ? 'Listen to customer'
+                  : 'Hear the task',
               enabled: !_mic.capturing && !_playback.busy && !_playback.playing,
               allowSlowReplay: true,
             ),

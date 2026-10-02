@@ -50,6 +50,28 @@ def validate(data: dict) -> None:
             value = item.get(key)
             if not isinstance(value, str) or not value.strip() or len(value) > limit:
                 raise ValueError(f"Invalid baseline {key}")
+    challenge = data.get("day5_challenge_items")
+    expected_challenge = [
+        ("day5-need", 1),
+        ("day5-greeting", 2),
+        ("day5-question", 3),
+        ("day5-recommend", 4),
+        ("day5-close", 5),
+    ]
+    if not isinstance(challenge, list) or len(challenge) != len(expected_challenge):
+        raise ValueError("Alpha needs five Day-5 challenge recording items")
+    for index, item in enumerate(challenge):
+        item_id, part = expected_challenge[index]
+        if (
+            not isinstance(item, dict)
+            or item.get("id") != item_id
+            or item.get("part") != part
+        ):
+            raise ValueError("Invalid Day-5 challenge identity or order")
+        for key, limit in (("title", 80), ("instruction", 240), ("spoken_prompt", 240)):
+            value = item.get(key)
+            if not isinstance(value, str) or not value.strip() or len(value) > limit:
+                raise ValueError(f"Invalid Day-5 challenge {key}")
     review_items = data.get("review_items")
     if not isinstance(review_items, list) or len(review_items) != 10:
         raise ValueError("Alpha needs ten authored review items")

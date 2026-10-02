@@ -9,23 +9,30 @@ abstract interface class AssessmentCaptureStore {
 
 /// Temporary, private recordings for the current app session only.
 class NativeAssessmentCaptureStore implements AssessmentCaptureStore {
-  NativeAssessmentCaptureStore(this.directory);
+  NativeAssessmentCaptureStore(this.directory, this.type);
   final Directory directory;
+  final String type;
 
-  static Future<NativeAssessmentCaptureStore> create({Directory? root}) async {
+  static Future<NativeAssessmentCaptureStore> create({
+    Directory? root,
+    String type = 'baseline',
+  }) async {
+    if (type != 'baseline' && type != 'day5') {
+      throw ArgumentError.value(type, 'type', 'Invalid capture type');
+    }
     final directory = Directory(
-      '${(root ?? await getTemporaryDirectory()).path}/speakcraft-baseline-captures',
+      '${(root ?? await getTemporaryDirectory()).path}/speakcraft-$type-captures',
     );
     // Every launch discards the prior session's sensitive audio.
     if (await directory.exists()) await directory.delete(recursive: true);
     await directory.create(recursive: true);
-    return NativeAssessmentCaptureStore(directory);
+    return NativeAssessmentCaptureStore(directory, type);
   }
 
   @override
   Future<String> save(String itemId, String recordingPath) async {
-    if (!RegExp(r'^baseline-[a-z0-9-]{1,40}$').hasMatch(itemId)) {
-      throw ArgumentError.value(itemId, 'itemId', 'Invalid baseline item');
+    if (!RegExp('^$type-[a-z0-9-]{1,40}\$').hasMatch(itemId)) {
+      throw ArgumentError.value(itemId, 'itemId', 'Invalid capture item');
     }
     final source = File(recordingPath);
     if (!await source.exists() || await source.length() == 0) {

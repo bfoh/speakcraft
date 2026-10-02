@@ -94,4 +94,36 @@ void main() {
       expect(await File(again).exists(), isFalse);
     },
   );
+
+  test('Day-5 cache is separate and expires at next launch', () async {
+    final directory = await Directory.systemTemp.createTemp('speakcraft-day5-');
+    addTearDown(() async {
+      if (await directory.exists()) await directory.delete(recursive: true);
+    });
+    final source = File('${directory.path}/source.m4a');
+    await source.writeAsBytes([1, 2, 3]);
+    final baseline = await NativeAssessmentCaptureStore.create(root: directory);
+    final day5 = await NativeAssessmentCaptureStore.create(
+      root: directory,
+      type: 'day5',
+    );
+    final baselinePath = await baseline.save(
+      'baseline-introduction',
+      source.path,
+    );
+    final day5Path = await day5.save('day5-need', source.path);
+    expect(await File(baselinePath).exists(), isTrue);
+    expect(await File(day5Path).exists(), isTrue);
+    await expectLater(
+      day5.save('baseline-introduction', source.path),
+      throwsArgumentError,
+    );
+    await day5.clear();
+    expect(await File(day5Path).exists(), isFalse);
+    expect(await File(baselinePath).exists(), isTrue);
+    final again = await day5.save('day5-need', source.path);
+    await NativeAssessmentCaptureStore.create(root: directory, type: 'day5');
+    expect(await File(again).exists(), isFalse);
+    expect(await File(baselinePath).exists(), isTrue);
+  });
 }

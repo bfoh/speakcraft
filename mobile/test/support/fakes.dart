@@ -89,6 +89,8 @@ class FakeSpeech implements SpeechOutput {
 }
 
 class FakeAssessmentCaptureStore implements AssessmentCaptureStore {
+  FakeAssessmentCaptureStore({this.folder = 'baseline'});
+  final String folder;
   final captures = <String, String>{};
   bool failSave = false;
   bool failClear = false;
@@ -98,7 +100,7 @@ class FakeAssessmentCaptureStore implements AssessmentCaptureStore {
   Future<String> save(String itemId, String recordingPath) async {
     if (saveGate != null) await saveGate!.future;
     if (failSave) throw StateError('Test assessment save failure');
-    final path = '/test/baseline/$itemId.m4a';
+    final path = '/test/$folder/$itemId.m4a';
     captures[itemId] = path;
     return path;
   }

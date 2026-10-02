@@ -101,3 +101,7 @@ Specify task outcomes for the seven existing Day-1 prompts in `docs/ASSESSMENT_R
 ## 2026-10-02 — Optional learner confidence check-ins
 
 Ask the same readiness question after the seven starting recordings and after all Day-5 guided speaking steps. Save the learner's latest 1–5 choice per stage with a UTC timestamp in local SQLite schema version 7. Keep both stages optional and display them separately in My practice. Allow a learner to change a choice, so these values are the latest self-reports rather than immutable baseline measurements. Do not calculate a speaking score or improvement claim from them; clear both with phone data.
+
+## 2026-10-02 — Fixed Day-5 challenge without results
+
+Add five authored customer lines after Day-5 guided practice, using the same record/replay mechanics as Starting assessment but with isolated audio storage. The Day-5 lines cover customer need, greeting, a clarifying question, recommendation with reason and a polite close. Keep all takes only for the current app session, with no upload or score. Prompt similarity is an educator-review hypothesis, not validated equivalence; keep the variable AI Salon as practice.
