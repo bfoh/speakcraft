@@ -268,10 +268,17 @@ void main() {
     await tap('Delete recording');
     expect(await File(recording).exists(), isFalse);
     await tap('Back to Home');
+    await tap('My Words');
+    await tap('Listen and repeat');
+    await tap('Felt easy');
+    expect((await store.loadReview())['my-course']!.attempts, 1);
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
     await tap('Open Day 2');
     expect(find.text('Day 2 • Practice 1 of 3'), findsOneWidget);
     await tap('Next practice');
     expect((await store.load()).promptForDay(2), 1);
+    expect((await store.loadReview())['my-course']!.easeStage, 1);
     await store.close();
     store = await SqliteProgressStore.open(path: path);
     expect((await store.load()).dayOnePrompt, 1);

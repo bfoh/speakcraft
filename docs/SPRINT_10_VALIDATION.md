@@ -7,7 +7,8 @@
 - Flutter formatting and static analysis: PASS. Full Flutter unit/widget suite: PASS (81 tests), including the no-due deck and pending-write coordination. A focused load-failure/retry test added afterward also passes; the next CI run will execute all 82 tests.
 - SQLite version 1 and 2 upgrade tests, persisted review reopen, clear-phone deletion, scheduler intervals, failed write/retry, pending-write coordination, offline screen navigation and large-text layout: PASS.
 - Android debug APK: PASS. `flutter_tts` emits a future Kotlin plugin compatibility warning; current build succeeds.
-- Generic iOS simulator build: pending CI after push. Local native simulator still stalls on the host Xcode credential/toolchain issue recorded in Sprint 7.
+- Generic iOS simulator build: PASS in [CI run 36962465636](https://github.com/bfoh/speakcraft/actions/runs/36962465636), alongside backend and Android/mobile jobs. The subsequent guidance and retry update is undergoing its own CI run. Local native simulator still stalls on the host Xcode credential/toolchain issue recorded in Sprint 7.
+- The native smoke journey now includes My Words audio, a rating and persisted review state. It remains unrun for this slice until the intended device session or a repaired local simulator.
 - `git diff --check` and mobile source secret scan: PASS.
 
 ## Product quality gate
