@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/services.dart';
 import '../app/theme.dart';
+import '../core/audio/speech_output.dart';
 
 class SpeakCraftPage extends StatelessWidget {
   const SpeakCraftPage({
@@ -143,15 +144,22 @@ class SpeakCraftAudioButton extends ConsumerStatefulWidget {
 
 class _AudioButtonState extends ConsumerState<SpeakCraftAudioButton> {
   bool _playing = false;
+  late final SpeechOutput _speech;
+
+  @override
+  void initState() {
+    super.initState();
+    _speech = ref.read(servicesProvider).speech;
+  }
+
   Future<void> _toggle() async {
-    final speech = ref.read(servicesProvider).speech;
     if (_playing) {
-      await speech.stop();
+      await _speech.stop();
       return;
     }
     setState(() => _playing = true);
     try {
-      await speech.speak(widget.text);
+      await _speech.speak(widget.text);
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -171,9 +179,7 @@ class _AudioButtonState extends ConsumerState<SpeakCraftAudioButton> {
   void dispose() {
     // Route changes stop instructions so they cannot leak into a recording.
     if (_playing) {
-      unawaited(
-        ref.read(servicesProvider).speech.stop().catchError((Object _) {}),
-      );
+      unawaited(_speech.stop().catchError((Object _) {}));
     }
     super.dispose();
   }

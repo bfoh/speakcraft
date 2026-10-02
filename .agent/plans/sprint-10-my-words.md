@@ -88,6 +88,7 @@ flutter build ios --simulator --debug
 - 2026-10-02: Schedule More practice after four hours and repeated Felt easy choices after one, three and seven days. Keep these intervals deterministic and testable until pilot evidence suggests changes.
 - 2026-10-02: Migrate SQLite to version 3 for local review state. The existing confirmed phone reset deletes review state in the same transaction as onboarding and daily positions.
 - 2026-10-02: Wait for an in-flight review write before confirmed local deletion so it cannot recreate a review row afterward.
+- 2026-10-02: Cache the shared audio service in the widget before disposal. The native simulator journey caught an unsafe Riverpod read while an audio button was unmounting.
 
 ## Progress
 
@@ -95,6 +96,7 @@ flutter build ios --simulator --debug
 - [x] Author and validate review items.
 - [x] Add persistence, scheduler and version 1/2 migration tests.
 - [x] Add UI and widget tests, including empty due list, write retry and large text.
-- [x] Backend checks, mobile format/analyze, full 82-test suite, wheel asset packaging and Android debug build.
-- [x] Generic iOS CI build and final source quality record. Native simulator test remains blocked by local Xcode.
+- [x] Backend checks, mobile format/analyze, full 83-test suite, wheel asset packaging and Android debug build after the audio fix.
+- [x] Generic iOS CI build and source quality record for the pre-fix commit.
+- [x] Local iOS simulator build and native journey, including My Words. Final regression fix CI remains to run.
 - [ ] Educator review, physical devices and live provider verification before pilot.

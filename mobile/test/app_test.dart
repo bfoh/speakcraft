@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -837,6 +838,21 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  testWidgets('leaving a phrase stops active audio without a disposed ref', (
+    tester,
+  ) async {
+    await launch(tester, progress: returning);
+    await tap(tester, 'My Words');
+    speech.speakGate = Completer<void>();
+    await tester.tap(find.text('Listen and repeat'));
+    await tester.pump();
+    await tap(tester, 'Felt easy');
+    expect(speech.stops, greaterThan(0));
+    expect(tester.takeException(), isNull);
+    speech.speakGate!.complete();
+    await tester.pumpAndSettle();
   });
 
   testWidgets('review write failure preserves the phrase and offers retry', (
