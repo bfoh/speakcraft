@@ -821,8 +821,11 @@ void main() {
     await tap(tester, 'My Words');
     expect(find.text('10 words or phrases to review now'), findsOneWidget);
     expect(find.text('I study Beauty and Cosmetology.'), findsOneWidget);
-    await tap(tester, 'Listen to phrase');
-    expect(speech.spoken.last, 'I study Beauty and Cosmetology.');
+    await tap(tester, 'Listen and repeat');
+    expect(
+      speech.spoken.last,
+      'Tell someone what you study. I study Beauty and Cosmetology.',
+    );
     await tap(tester, 'Felt easy');
     expect(find.text('9 words or phrases to review now'), findsOneWidget);
     expect(store.review['my-course']!.attempts, 1);

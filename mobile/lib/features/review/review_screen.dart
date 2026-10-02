@@ -138,7 +138,11 @@ class _ReviewCard extends StatelessWidget {
         const SizedBox(height: 12),
         Text(item.text, style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 16),
-        SpeakCraftAudioButton(text: item.text, label: 'Listen to phrase'),
+        SpeakCraftAudioButton(
+          key: ValueKey(item.id),
+          text: '${item.cue} ${item.text}',
+          label: 'Listen and repeat',
+        ),
         const SizedBox(height: 16),
         SpeakCraftButton(
           label: saving ? 'Saving…' : 'More practice',

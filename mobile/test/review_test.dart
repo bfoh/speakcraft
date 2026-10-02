@@ -47,6 +47,22 @@ void main() {
     expect(store.review[item.id]!.attempts, 1);
   });
 
+  test(
+    'review load failure can be retried without losing local data',
+    () async {
+      final store = MemoryProgressStore()..failReviewLoad = true;
+      final controller = ReviewController(store, [item], () => start);
+      addTearDown(controller.dispose);
+      expect(await controller.load(), isFalse);
+      expect(controller.loaded, isFalse);
+      expect(controller.error, contains("couldn't open"));
+      store.failReviewLoad = false;
+      expect(await controller.load(), isTrue);
+      expect(controller.loaded, isTrue);
+      expect(controller.dueItems(), [item]);
+    },
+  );
+
   test('local erasure can wait for an unfinished review write', () async {
     final store = MemoryProgressStore()..reviewSaveGate = Completer<void>();
     final controller = ReviewController(store, [item], () => start);

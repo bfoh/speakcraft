@@ -154,6 +154,7 @@ class MemoryProgressStore implements ProgressStore, ReviewStore {
   bool failSave = false;
   bool failClear = false;
   bool failReviewSave = false;
+  bool failReviewLoad = false;
   Completer<void>? reviewSaveGate;
   Completer<void>? saveGate;
   @override
@@ -173,7 +174,10 @@ class MemoryProgressStore implements ProgressStore, ReviewStore {
   }
 
   @override
-  Future<Map<String, ReviewProgress>> loadReview() async => Map.of(review);
+  Future<Map<String, ReviewProgress>> loadReview() async {
+    if (failReviewLoad) throw StateError('Test review read failure');
+    return Map.of(review);
+  }
 
   @override
   Future<void> saveReview(String itemId, ReviewProgress next) async {

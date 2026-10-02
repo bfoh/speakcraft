@@ -48,7 +48,7 @@ class OnboardingScreen extends ConsumerWidget {
       ),
       _ => (
         'Let’s begin gently',
-        'A short conversation will help us understand your English. It is not an exam.',
+        'Your first practice is ready. A full starting assessment is being prepared.',
         'Go to Home',
         Icons.record_voice_over,
       ),
@@ -98,7 +98,7 @@ class OnboardingScreen extends ConsumerWidget {
           ],
           if (step == 3)
             const SpeakCraftNotice(
-              'For now, you can listen to examples and practise speaking. Live Kora conversations are not ready yet.',
+              'From Home, you can practise a short conversation with Kora. Record and send each reply when you are ready.',
             ),
           if (step == 4)
             const SpeakCraftNotice(

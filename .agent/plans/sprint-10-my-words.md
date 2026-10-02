@@ -95,6 +95,6 @@ flutter build ios --simulator --debug
 - [x] Author and validate review items.
 - [x] Add persistence, scheduler and version 1/2 migration tests.
 - [x] Add UI and widget tests, including empty due list, write retry and large text.
-- [x] Backend checks, mobile format/analyze, full 81-test suite, wheel asset packaging and Android debug build.
+- [x] Backend checks, mobile format/analyze, full 81-test suite plus a focused load-retry test, wheel asset packaging and Android debug build.
 - [~] Generic iOS CI build and final source quality record. Native simulator test remains blocked by local Xcode.
 - [ ] Educator review, physical devices and live provider verification before pilot.
