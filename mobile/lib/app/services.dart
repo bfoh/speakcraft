@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -6,6 +8,7 @@ import '../core/audio/native_microphone.dart';
 import '../core/audio/speech_output.dart';
 import '../core/curriculum/curriculum.dart';
 import '../core/storage/progress_store.dart';
+import '../core/storage/review_store.dart';
 import '../core/storage/sqlite_progress_store.dart';
 import '../core/speech/recognition.dart';
 import '../core/speech/feedback.dart';
@@ -22,6 +25,7 @@ class AppServices {
   const AppServices({
     required this.curriculum,
     required this.store,
+    required this.reviewStore,
     required this.progress,
     required this.microphone,
     required this.conversationMicrophone,
@@ -34,6 +38,7 @@ class AppServices {
   });
   final Curriculum curriculum;
   final ProgressStore store;
+  final ReviewStore reviewStore;
   final LearnerProgress progress;
   final Microphone microphone;
   final Microphone conversationMicrophone;
@@ -73,6 +78,7 @@ final bootstrapProvider = FutureProvider<AppServices>((ref) async {
     return AppServices(
       curriculum: curriculum,
       store: store,
+      reviewStore: store,
       progress: progress,
       microphone: microphone,
       conversationMicrophone: conversationMicrophone,
@@ -110,6 +116,17 @@ final sessionProvider = Provider<SessionController>((ref) {
   final session = SessionController(services.store, services.progress);
   ref.onDispose(session.dispose);
   return session;
+}, dependencies: [servicesProvider]);
+final reviewProvider = Provider<ReviewController>((ref) {
+  final services = ref.watch(servicesProvider);
+  final controller = ReviewController(
+    services.reviewStore,
+    services.curriculum.reviewItems,
+    DateTime.now,
+  );
+  unawaited(controller.load());
+  ref.onDispose(controller.dispose);
+  return controller;
 }, dependencies: [servicesProvider]);
 final microphoneProvider = Provider<MicrophoneController>((ref) {
   final services = ref.watch(servicesProvider);

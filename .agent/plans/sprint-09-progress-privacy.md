@@ -92,5 +92,5 @@ flutter build ios --simulator --debug
 - [x] Storage clear operation and reopen/failure tests.
 - [x] Progress and Privacy screens.
 - [x] Flutter format/analyze, 70-test suite plus a focused scaled-screen test, Android debug build and source checks.
-- [~] Generic iOS CI build and final quality record. Native simulator test remains blocked by local Xcode.
+- [x] Generic iOS CI build and final source quality record. Native simulator test remains blocked by local Xcode.
 - [ ] Physical Android/iOS, live provider and educator review before pilot.

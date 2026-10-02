@@ -8,6 +8,7 @@ import '../features/help_me_say_it/expression_screen.dart';
 import '../features/lesson/lesson_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/progress/progress_screen.dart';
+import '../features/review/review_screen.dart';
 import '../features/settings/privacy_screen.dart';
 import '../shared/components.dart';
 import 'services.dart';
@@ -38,6 +39,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/progress',
         builder: (context, state) => const ProgressScreen(),
+      ),
+      GoRoute(
+        path: '/review',
+        builder: (context, state) => const ReviewScreen(),
       ),
       GoRoute(
         path: '/settings/privacy',

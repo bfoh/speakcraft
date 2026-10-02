@@ -26,6 +26,26 @@ def validate(data: dict) -> None:
     lessons = data["lessons"]
     if [x["title"] for x in lessons] != TITLES:
         raise ValueError("Alpha needs the five blueprint lessons in order")
+    review_items = data.get("review_items")
+    if not isinstance(review_items, list) or len(review_items) != 10:
+        raise ValueError("Alpha needs ten authored review items")
+    review_ids = set()
+    for item in review_items:
+        if not isinstance(item, dict) or not isinstance(item.get("day"), int):
+            raise ValueError("Invalid review item")
+        if not 1 <= item["day"] <= 5:
+            raise ValueError("Invalid review day")
+        for key, max_length in (("id", 48), ("text", 160), ("cue", 120)):
+            value = item.get(key)
+            if (
+                not isinstance(value, str)
+                or not value.strip()
+                or len(value) > max_length
+            ):
+                raise ValueError(f"Invalid review {key}")
+        if item["id"] in review_ids:
+            raise ValueError("Duplicate review ID")
+        review_ids.add(item["id"])
     scenarios = data.get("salon_scenarios")
     if not isinstance(scenarios, list) or len(scenarios) != 3:
         raise ValueError("Alpha needs three authored salon scenarios")

@@ -22,7 +22,7 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
       builder: (dialogContext) => AlertDialog(
         title: const Text('Clear phone data?'),
         content: const Text(
-          'This erases your choices, saved practice places and current recordings on this phone. You will start again at Welcome.',
+          'This erases your choices, saved practice places, word reviews and current recordings on this phone. You will start again at Welcome.',
         ),
         actions: [
           TextButton(
@@ -53,6 +53,7 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
         ref.read(salonConversationProvider(scenario.id)),
     ];
     final session = ref.read(sessionProvider);
+    final review = ref.read(reviewProvider);
 
     // Attempt both caches even when one fails. Durable data is cleared only
     // after both recorders confirm that their current take is gone.
@@ -76,7 +77,9 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
     for (final salon in salonConversations) {
       salon.reset();
     }
+    await review.settleWrites();
     final cleared = await session.reset();
+    if (cleared) review.clearLocal();
     if (!mounted) return;
     if (cleared) {
       context.go('/welcome');
@@ -102,7 +105,9 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
           children: [
             Text('Saved on this phone'),
             SizedBox(height: 8),
-            Text('Your course choice and place in each day.'),
+            Text(
+              'Your course choice, place in each day and word review schedule.',
+            ),
             SizedBox(height: 16),
             Text('Sent only when you choose'),
             SizedBox(height: 8),

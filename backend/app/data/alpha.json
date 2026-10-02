@@ -4,6 +4,18 @@
   "version": "0.1.0",
   "profession": "beauty-cosmetology",
   "title": "Beauty & Cosmetology",
+  "review_items": [
+    {"id": "my-course", "day": 1, "text": "I study Beauty and Cosmetology.", "cue": "Tell someone what you study."},
+    {"id": "my-reason", "day": 1, "text": "I chose this course because I enjoy helping people.", "cue": "Say why you chose your course."},
+    {"id": "comb", "day": 2, "text": "This is a comb.", "cue": "Name a tool for hair."},
+    {"id": "wig", "day": 2, "text": "I use a wig to create a new look.", "cue": "Talk about a salon item."},
+    {"id": "welcome", "day": 3, "text": "Welcome. How can I help you?", "cue": "Greet a customer."},
+    {"id": "ask-style", "day": 3, "text": "What hairstyle would you like?", "cue": "Ask about a customer's choice."},
+    {"id": "recommend", "day": 4, "text": "I recommend braids because they are easy to maintain.", "cue": "Give a recommendation and reason."},
+    {"id": "check-price", "day": 4, "text": "Let me check the price for that style.", "cue": "Answer a price question honestly."},
+    {"id": "clarify", "day": 5, "text": "Would you like it long or short?", "cue": "Ask a follow-up question."},
+    {"id": "close", "day": 5, "text": "Thank you for visiting.", "cue": "Close the conversation politely."}
+  ],
   "salon_scenarios": [
     {
       "id": "friendly-braids-price",

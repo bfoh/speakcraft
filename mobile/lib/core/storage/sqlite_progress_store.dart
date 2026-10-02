@@ -1,8 +1,9 @@
 import 'package:sqflite/sqflite.dart';
 
 import 'progress_store.dart';
+import 'review_store.dart';
 
-class SqliteProgressStore implements ProgressStore {
+class SqliteProgressStore implements ProgressStore, ReviewStore {
   SqliteProgressStore(this.database);
   final Database database;
 
@@ -14,7 +15,7 @@ class SqliteProgressStore implements ProgressStore {
     final db = await dbFactory.openDatabase(
       path ?? '${await getDatabasesPath()}/speakcraft.db',
       options: OpenDatabaseOptions(
-        version: 2,
+        version: 3,
         onCreate: (db, version) async {
           await db.execute('''
             CREATE TABLE learner_progress (
@@ -31,6 +32,7 @@ class SqliteProgressStore implements ProgressStore {
               prompt_index INTEGER NOT NULL CHECK (prompt_index >= 0)
             )
           ''');
+          await _createReviewTable(db);
         },
         onUpgrade: (db, oldVersion, newVersion) async {
           if (oldVersion < 2) {
@@ -41,10 +43,52 @@ class SqliteProgressStore implements ProgressStore {
               )
             ''');
           }
+          if (oldVersion < 3) await _createReviewTable(db);
         },
       ),
     );
     return SqliteProgressStore(db);
+  }
+
+  static Future<void> _createReviewTable(DatabaseExecutor db) => db.execute('''
+    CREATE TABLE review_state (
+      item_id TEXT PRIMARY KEY,
+      attempts INTEGER NOT NULL CHECK (attempts >= 1),
+      ease_stage INTEGER NOT NULL CHECK (ease_stage BETWEEN 0 AND 3),
+      last_reviewed_at INTEGER NOT NULL,
+      next_review_at INTEGER NOT NULL
+    )
+  ''');
+
+  @override
+  Future<Map<String, ReviewProgress>> loadReview() async {
+    final rows = await database.query('review_state');
+    return Map.unmodifiable({
+      for (final row in rows)
+        row['item_id'] as String: ReviewProgress(
+          attempts: row['attempts'] as int,
+          easeStage: row['ease_stage'] as int,
+          lastReviewedAt: DateTime.fromMillisecondsSinceEpoch(
+            row['last_reviewed_at'] as int,
+            isUtc: true,
+          ),
+          nextReviewAt: DateTime.fromMillisecondsSinceEpoch(
+            row['next_review_at'] as int,
+            isUtc: true,
+          ),
+        ),
+    });
+  }
+
+  @override
+  Future<void> saveReview(String itemId, ReviewProgress progress) async {
+    await database.insert('review_state', {
+      'item_id': itemId,
+      'attempts': progress.attempts,
+      'ease_stage': progress.easeStage,
+      'last_reviewed_at': progress.lastReviewedAt.millisecondsSinceEpoch,
+      'next_review_at': progress.nextReviewAt.millisecondsSinceEpoch,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   @override
@@ -91,6 +135,7 @@ class SqliteProgressStore implements ProgressStore {
   @override
   Future<void> clear() async {
     await database.transaction((txn) async {
+      await txn.delete('review_state');
       await txn.delete('lesson_positions');
       await txn.delete('learner_progress');
     });

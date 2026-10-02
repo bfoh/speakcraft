@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:speakcraft/core/audio/microphone.dart';
 import 'package:speakcraft/core/audio/speech_output.dart';
 import 'package:speakcraft/core/storage/progress_store.dart';
+import 'package:speakcraft/core/storage/review_store.dart';
 import 'package:speakcraft/core/speech/recognition.dart';
 import 'package:speakcraft/core/speech/feedback.dart';
 import 'package:speakcraft/core/speech/conversation.dart';
@@ -147,10 +148,13 @@ class FakeExpression implements ExpressionGenerator {
   }
 }
 
-class MemoryProgressStore implements ProgressStore {
+class MemoryProgressStore implements ProgressStore, ReviewStore {
   LearnerProgress progress = const LearnerProgress();
+  Map<String, ReviewProgress> review = {};
   bool failSave = false;
   bool failClear = false;
+  bool failReviewSave = false;
+  Completer<void>? reviewSaveGate;
   Completer<void>? saveGate;
   @override
   Future<LearnerProgress> load() async => progress;
@@ -165,6 +169,17 @@ class MemoryProgressStore implements ProgressStore {
   Future<void> clear() async {
     if (failClear) throw StateError('Test disk failure');
     progress = const LearnerProgress();
+    review = {};
+  }
+
+  @override
+  Future<Map<String, ReviewProgress>> loadReview() async => Map.of(review);
+
+  @override
+  Future<void> saveReview(String itemId, ReviewProgress next) async {
+    if (reviewSaveGate != null) await reviewSaveGate!.future;
+    if (failReviewSave) throw StateError('Test review write failure');
+    review = {...review, itemId: next};
   }
 
   @override

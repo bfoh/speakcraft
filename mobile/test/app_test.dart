@@ -41,6 +41,7 @@ void main() {
               File('assets/curriculum/alpha.json').readAsStringSync(),
             ),
             store: store,
+            reviewStore: store,
             progress: progress,
             microphone: mic,
             conversationMicrophone: FakeMicrophone(),
@@ -88,6 +89,7 @@ void main() {
                 File('assets/curriculum/alpha.json').readAsStringSync(),
               ),
               store: localStore,
+              reviewStore: localStore,
               progress: const LearnerProgress(),
               microphone: FakeMicrophone(),
               conversationMicrophone: FakeMicrophone(),
@@ -810,5 +812,90 @@ void main() {
     expect(tester.takeException(), isNull);
     await tap(tester, 'Clear phone data');
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('My Words reads a phrase and saves a self-rated review', (
+    tester,
+  ) async {
+    await launch(tester, progress: returning);
+    await tap(tester, 'My Words');
+    expect(find.text('10 words or phrases to review now'), findsOneWidget);
+    expect(find.text('I study Beauty and Cosmetology.'), findsOneWidget);
+    await tap(tester, 'Listen to phrase');
+    expect(speech.spoken.last, 'I study Beauty and Cosmetology.');
+    await tap(tester, 'Felt easy');
+    expect(find.text('9 words or phrases to review now'), findsOneWidget);
+    expect(store.review['my-course']!.attempts, 1);
+    await tap(tester, 'Show all words');
+    expect(find.text('I study Beauty and Cosmetology.'), findsOneWidget);
+    expect(
+      find.text(
+        'Your choice sets the next review. It is not a speaking score.',
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('review write failure preserves the phrase and offers retry', (
+    tester,
+  ) async {
+    await launch(tester, progress: returning);
+    store.failReviewSave = true;
+    await tap(tester, 'My Words');
+    await tap(tester, 'More practice');
+    expect(find.textContaining("couldn't save that word"), findsOneWidget);
+    expect(find.text('10 words or phrases to review now'), findsOneWidget);
+    store.failReviewSave = false;
+    await tap(tester, 'More practice');
+    expect(find.text('9 words or phrases to review now'), findsOneWidget);
+  });
+
+  testWidgets('confirmed phone reset also clears word review history', (
+    tester,
+  ) async {
+    await launch(tester, progress: returning);
+    await tap(tester, 'My Words');
+    await tap(tester, 'Felt easy');
+    expect(store.review, isNotEmpty);
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+    await tap(tester, 'Privacy and phone data');
+    await tap(tester, 'Clear phone data');
+    await tester.tap(find.text('Clear phone data').last);
+    await tester.pumpAndSettle();
+    expect(store.review, isEmpty);
+    expect(store.progress.onboarded, isFalse);
+  });
+
+  testWidgets('My Words fits a small screen with enlarged text', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 700);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await launch(tester, progress: returning);
+    await tap(tester, 'My Words');
+    expect(tester.takeException(), isNull);
+    await tap(tester, 'More practice');
+    expect(tester.takeException(), isNull);
+    await tap(tester, 'Show all words');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('all reviewed words can still be opened from an empty due list', (
+    tester,
+  ) async {
+    await launch(tester, progress: returning);
+    await tap(tester, 'My Words');
+    for (var i = 0; i < 10; i++) {
+      await tap(tester, 'Felt easy');
+    }
+    expect(find.text('0 words or phrases to review now'), findsOneWidget);
+    expect(find.textContaining('All done for now'), findsOneWidget);
+    await tap(tester, 'Show all words');
+    expect(find.text('I study Beauty and Cosmetology.'), findsOneWidget);
   });
 }

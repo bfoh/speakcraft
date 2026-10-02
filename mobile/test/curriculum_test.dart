@@ -41,6 +41,12 @@ void main() {
       6,
     );
     expect(curriculum.scenarioForId('unknown'), isNull);
+    expect(curriculum.reviewItems.length, 10);
+    expect(
+      curriculum.reviewItems.first.text,
+      'I study Beauty and Cosmetology.',
+    );
+    expect(curriculum.reviewItems.last.day, 5);
   });
   test('rejects future incompatible versions rather than misreading them', () {
     final data = jsonDecode(source) as Map<String, dynamic>;
@@ -66,6 +72,11 @@ void main() {
   test('rejects an unbounded salon scenario', () {
     final data = jsonDecode(source) as Map<String, dynamic>;
     data['salon_scenarios'][0]['turn_limit'] = 40;
+    expect(() => Curriculum.parse(jsonEncode(data)), throwsFormatException);
+  });
+  test('rejects duplicate review identities', () {
+    final data = jsonDecode(source) as Map<String, dynamic>;
+    data['review_items'][1]['id'] = data['review_items'][0]['id'];
     expect(() => Curriculum.parse(jsonEncode(data)), throwsFormatException);
   });
 }

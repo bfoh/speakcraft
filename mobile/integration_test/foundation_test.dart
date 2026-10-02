@@ -75,6 +75,7 @@ void main() {
         await rootBundle.loadString('assets/curriculum/alpha.json'),
       ),
       store: store,
+      reviewStore: store,
       progress: await store.load(),
       microphone: await NativeMicrophone.create(),
       conversationMicrophone: await NativeMicrophone.create(

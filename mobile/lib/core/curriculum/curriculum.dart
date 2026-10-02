@@ -20,6 +20,26 @@ class LessonPrompt {
   );
 }
 
+class ReviewItem {
+  const ReviewItem({
+    required this.id,
+    required this.day,
+    required this.text,
+    required this.cue,
+  });
+  final String id;
+  final int day;
+  final String text;
+  final String cue;
+
+  factory ReviewItem.fromJson(Map<String, dynamic> json) => ReviewItem(
+    id: json['id'] as String,
+    day: json['day'] as int,
+    text: json['text'] as String,
+    cue: json['cue'] as String,
+  );
+}
+
 class LessonConversation {
   const LessonConversation({
     required this.opening,
@@ -129,9 +149,10 @@ class Lesson {
 }
 
 class Curriculum {
-  const Curriculum(this.lessons, this.salonScenarios);
+  const Curriculum(this.lessons, this.salonScenarios, this.reviewItems);
   final List<Lesson> lessons;
   final List<SalonScenario> salonScenarios;
+  final List<ReviewItem> reviewItems;
   Lesson get dayOne => lessons.first;
   Lesson? lessonForDay(int day) =>
       day >= 1 && day <= lessons.length ? lessons[day - 1] : null;
@@ -155,6 +176,25 @@ class Curriculum {
     final scenarios = (json['salon_scenarios'] as List)
         .map((s) => SalonScenario.fromJson(s as Map<String, dynamic>))
         .toList();
+    final reviewItems = (json['review_items'] as List)
+        .map((item) => ReviewItem.fromJson(item as Map<String, dynamic>))
+        .toList();
+    final reviewIds = <String>{};
+    if (reviewItems.length != 10 ||
+        reviewItems.any(
+          (item) =>
+              item.day < 1 ||
+              item.day > 5 ||
+              item.id.isEmpty ||
+              item.id.length > 48 ||
+              !reviewIds.add(item.id) ||
+              item.text.trim().isEmpty ||
+              item.text.length > 160 ||
+              item.cue.trim().isEmpty ||
+              item.cue.length > 120,
+        )) {
+      throw const FormatException('Invalid review deck');
+    }
     const expected = [
       ('friendly-braids-price', 1, 4),
       ('welcome-needs-consultation', 2, 4),
@@ -210,6 +250,10 @@ class Curriculum {
         }
       }
     }
-    return Curriculum(List.unmodifiable(lessons), List.unmodifiable(scenarios));
+    return Curriculum(
+      List.unmodifiable(lessons),
+      List.unmodifiable(scenarios),
+      List.unmodifiable(reviewItems),
+    );
   }
 }

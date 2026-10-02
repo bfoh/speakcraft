@@ -65,3 +65,7 @@ Extend the existing stateless AI Salon contract to three authored scenarios. Use
 ## 2026-10-02 — Saved practice and local erasure
 
 Show the saved prompt index for each Alpha day in a dedicated screen, without treating it as mastery or completion. Let the learner confirm erasure of local choices, positions, current recordings and transient dialogue. Clear both audio caches before publishing a SQLite reset, and show retry if either stage fails. Do not imply that local erasure revokes previous provider requests or device backups.
+
+## 2026-10-02 — Offline self-rated word review
+
+Use ten authored phrases from the five-day pathway as a small My Words deck. Schedule them from explicit learner self-report rather than model-inferred weakness: four hours after More practice, then one, three and seven days after repeated Felt easy choices. Store only item ID, attempts, stage and review times in local SQLite. Treat the intervals as pilot assumptions and avoid a mastery score. Clear review state with other phone data.

@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:speakcraft/core/storage/progress_store.dart';
+import 'package:speakcraft/core/storage/review_store.dart';
 import 'package:speakcraft/core/storage/sqlite_progress_store.dart';
 
 import 'support/fakes.dart';
@@ -32,6 +33,15 @@ void main() {
             otherDayPrompts: {2: 1, 3: 2, 5: 3},
           ),
         );
+        await store.saveReview(
+          'my-course',
+          ReviewProgress(
+            attempts: 1,
+            easeStage: 1,
+            lastReviewedAt: DateTime.utc(2026, 10, 2),
+            nextReviewAt: DateTime.utc(2026, 10, 3),
+          ),
+        );
         await store.close();
         store = await SqliteProgressStore.open(
           factory: databaseFactoryFfi,
@@ -46,6 +56,7 @@ void main() {
         expect(restored.promptForDay(3), 2);
         expect(restored.promptForDay(4), 0);
         expect(restored.promptForDay(5), 3);
+        expect((await store.loadReview())['my-course']!.easeStage, 1);
       } finally {
         await store.close();
         await directory.delete(recursive: true);
@@ -90,6 +101,7 @@ void main() {
       final progress = await upgraded.load();
       expect(progress.dayOnePrompt, 3);
       expect(progress.promptForDay(2), 0);
+      expect(await upgraded.loadReview(), isEmpty);
       await upgraded.save(progress.withPromptForDay(2, 1));
       expect((await upgraded.load()).promptForDay(2), 1);
     } finally {
@@ -97,6 +109,68 @@ void main() {
       await directory.delete(recursive: true);
     }
   });
+
+  test(
+    'version 2 database gains review table without losing daily place',
+    () async {
+      sqfliteFfiInit();
+      final directory = await Directory.systemTemp.createTemp('speakcraft-v2-');
+      final path = '${directory.path}/progress.db';
+      final old = await databaseFactoryFfi.openDatabase(
+        path,
+        options: OpenDatabaseOptions(
+          version: 2,
+          onCreate: (db, version) async {
+            await db.execute('''
+            CREATE TABLE learner_progress (
+              id INTEGER PRIMARY KEY CHECK (id = 1),
+              onboarding_step INTEGER NOT NULL CHECK (onboarding_step BETWEEN 0 AND 5),
+              profession TEXT,
+              support_language TEXT,
+              day_one_prompt INTEGER NOT NULL CHECK (day_one_prompt >= 0)
+            )
+          ''');
+            await db.execute('''
+            CREATE TABLE lesson_positions (
+              day INTEGER PRIMARY KEY CHECK (day BETWEEN 2 AND 5),
+              prompt_index INTEGER NOT NULL CHECK (prompt_index >= 0)
+            )
+          ''');
+          },
+        ),
+      );
+      await old.insert('learner_progress', {
+        'id': 1,
+        'onboarding_step': 5,
+        'profession': 'beauty-cosmetology',
+        'support_language': 'en',
+        'day_one_prompt': 1,
+      });
+      await old.insert('lesson_positions', {'day': 3, 'prompt_index': 2});
+      await old.close();
+      final upgraded = await SqliteProgressStore.open(
+        factory: databaseFactoryFfi,
+        path: path,
+      );
+      try {
+        expect((await upgraded.load()).promptForDay(3), 2);
+        expect(await upgraded.loadReview(), isEmpty);
+        await upgraded.saveReview(
+          'welcome',
+          ReviewProgress(
+            attempts: 1,
+            easeStage: 1,
+            lastReviewedAt: DateTime.utc(2026, 10, 2),
+            nextReviewAt: DateTime.utc(2026, 10, 3),
+          ),
+        );
+        expect((await upgraded.loadReview())['welcome']!.attempts, 1);
+      } finally {
+        await upgraded.close();
+        await directory.delete(recursive: true);
+      }
+    },
+  );
 
   test('save failure preserves previous state and permits retry', () async {
     final store = MemoryProgressStore()..failSave = true;
@@ -139,6 +213,15 @@ void main() {
             otherDayPrompts: {2: 1, 3: 2, 4: 1, 5: 3},
           ),
         );
+        await store.saveReview(
+          'my-course',
+          ReviewProgress(
+            attempts: 2,
+            easeStage: 0,
+            lastReviewedAt: DateTime.utc(2026, 10, 2),
+            nextReviewAt: DateTime.utc(2026, 10, 2, 4),
+          ),
+        );
         await store.clear();
         await store.close();
         store = await SqliteProgressStore.open(
@@ -154,6 +237,7 @@ void main() {
         }
         expect(await store.database.query('learner_progress'), isEmpty);
         expect(await store.database.query('lesson_positions'), isEmpty);
+        expect(await store.database.query('review_state'), isEmpty);
       } finally {
         await store.close();
         await directory.delete(recursive: true);

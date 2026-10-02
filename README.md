@@ -42,6 +42,10 @@ Days 3 and 5 now open their own structured AI Salon scenarios. Day 3 practises g
 
 **My practice** shows the saved place in each of the five days and opens the selected day. It does not present a speaking score or claim lesson completion. **Privacy and phone data** explains the local and explicit-send boundaries. A confirmed clear removes onboarding choices, daily positions and current recordings, then returns to Welcome. If audio cleanup or SQLite deletion fails, the learner sees a retry message. See the [Sprint 9 plan](.agent/plans/sprint-09-progress-privacy.md).
 
+## Sprint 10 My Words review
+
+**My Words** is an offline deck of ten authored Beauty & Cosmetology phrases from the five-day pathway. The learner can listen, repeat aloud and choose **More practice** or **Felt easy**. That self-report schedules the next review after four hours, or after one, three or seven days as ease builds. The screen shows due phrases and can browse all phrases at any time. It does not assess speech or display mastery. Review timing stays in local SQLite and is removed by **Clear phone data**. See the [Sprint 10 plan](.agent/plans/sprint-10-my-words.md).
+
 ## Repository
 
 ```text
@@ -149,7 +153,7 @@ cd mobile
 flutter test integration_test/foundation_test.dart -d <device-id>
 ```
 
-The native smoke test uses real SQLite and recording, a separate test database, and a local test HTTP server for speech, feedback, Kora, AI Salon and Help Me Say It contracts. It does not call OpenAI or establish teaching quality. See the [Sprint 1](docs/SPRINT_1_VALIDATION.md), [Sprint 2](docs/SPRINT_2_VALIDATION.md), [Sprint 3](docs/SPRINT_3_VALIDATION.md), [Sprint 4](docs/SPRINT_4_VALIDATION.md), [Sprint 5](docs/SPRINT_5_VALIDATION.md), [Sprint 6](docs/SPRINT_6_VALIDATION.md), [Sprint 7](docs/SPRINT_7_VALIDATION.md), [Sprint 8](docs/SPRINT_8_VALIDATION.md) and [Sprint 9](docs/SPRINT_9_VALIDATION.md) validation records.
+The native smoke test uses real SQLite and recording, a separate test database, and a local test HTTP server for speech, feedback, Kora, AI Salon and Help Me Say It contracts. It does not call OpenAI or establish teaching quality. See the [Sprint 1](docs/SPRINT_1_VALIDATION.md), [Sprint 2](docs/SPRINT_2_VALIDATION.md), [Sprint 3](docs/SPRINT_3_VALIDATION.md), [Sprint 4](docs/SPRINT_4_VALIDATION.md), [Sprint 5](docs/SPRINT_5_VALIDATION.md), [Sprint 6](docs/SPRINT_6_VALIDATION.md), [Sprint 7](docs/SPRINT_7_VALIDATION.md), [Sprint 8](docs/SPRINT_8_VALIDATION.md), [Sprint 9](docs/SPRINT_9_VALIDATION.md) and [Sprint 10](docs/SPRINT_10_VALIDATION.md) validation records.
 
 ## Next build milestone
 

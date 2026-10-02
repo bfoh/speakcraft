@@ -46,6 +46,10 @@ The canonical curriculum now contains three structured scenarios: first braids-a
 
 A dedicated Progress screen reads the five prompt positions from `SessionController` and opens each day. It labels these as saved places, not assessment. A Privacy screen explains current local storage and explicit network actions. Confirmed reset first stops and discards both current recorder takes, clears transient transcript/feedback/dialogue and the in-memory pilot code, then deletes both SQLite progress tables in one transaction. The session publishes default onboarding only after durable deletion. Cleanup and SQLite deletion remain separate operations, so any failure reports retry without claiming complete erasure. The reset works offline and makes no backend request.
 
+## Sprint 10 offline review slice
+
+Ten stable, authored review items live in canonical curriculum data and are packaged into the mobile and backend assets. `ReviewController` shows due phrases, plays them through the existing device speech output, and saves only an explicit self-rating. The deterministic scheduler returns a phrase in four hours after **More practice**, or after one, three or seven days across repeated **Felt easy** choices. These intervals are a starting rule, not a validated mastery model. SQLite schema version 3 adds `review_state` without losing older progress; confirmed local reset deletes that table in the same transaction. No review endpoint, transcript or audio history is added.
+
 ## Mobile structure
 
 - `lib/app`: composition, Riverpod providers, GoRouter routes and theme.
@@ -56,6 +60,7 @@ A dedicated Progress screen reads the five prompt positions from `SessionControl
 - `lib/features/onboarding`: welcome, profession, support language, Kora introduction, assessment introduction.
 - `lib/features/home`: five-day entry and practice positions.
 - `lib/features/progress`: saved daily positions and resume navigation.
+- `lib/features/review`: offline My Words listening and self-rated scheduling.
 - `lib/features/settings`: local privacy explanation and confirmed phone-data reset.
 - `lib/features/lesson`: phrase practice, microphone state controller and UI.
 - `lib/features/conversation`: bounded Day-1 dialogue controller and screen.
@@ -66,9 +71,9 @@ Riverpod supplies application dependencies. The bootstrap loads native services,
 
 ## Local state
 
-SQLite schema version 2 preserves the original `learner_progress` row and adds `lesson_positions` for Days 2–5. It stores onboarding step, profession, support language and current prompt index for each day. The repository uses parameterised queries. Changes become visible only after a successful database write; write failure preserves the previous state and exposes retry. This is navigation progress, not evidence of mastery or lesson completion.
+SQLite schema version 3 preserves the original `learner_progress` row, the `lesson_positions` table for Days 2–5, and adds `review_state` for self-rated phrase timing. It stores onboarding step, profession, support language and current prompt index for each day, plus review attempts and times. The repository uses parameterised queries. Changes become visible only after a successful database write; write failure preserves the previous state and exposes retry. This is navigation and self-report progress, not evidence of mastery or lesson completion.
 
-Reset atomically deletes the two progress tables. It does not contact the backend or revoke earlier provider processing. The current audio cache is cleared before durable deletion, and failure is exposed for retry.
+Reset atomically deletes the three local progress/review tables. It does not contact the backend or revoke earlier provider processing. The current audio cache is cleared before durable deletion, and failure is exposed for retry.
 
 Future local changes must increment the schema version and provide tested upgrades. No remote database schema or credentials are introduced. Routine audio is separate cache data, excluded from learning history.
 

@@ -95,6 +95,11 @@ class HomeScreen extends ConsumerWidget {
           icon: Icons.route_outlined,
           onPressed: () => context.push('/progress'),
         ),
+        SpeakCraftButton(
+          label: 'My Words',
+          icon: Icons.record_voice_over_outlined,
+          onPressed: () => context.push('/review'),
+        ),
         OutlinedButton.icon(
           onPressed: () => context.push('/settings/privacy'),
           icon: const Icon(Icons.privacy_tip_outlined),
