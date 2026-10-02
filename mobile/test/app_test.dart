@@ -126,6 +126,10 @@ void main() {
       await tap(tester, 'Open Day 1');
       await tap(tester, 'Listen to example');
       expect(speech.spoken.last, 'My name is Ama.');
+      expect(speech.slowFlags.last, isFalse);
+      await tap(tester, 'Listen slowly');
+      expect(speech.spoken.last, 'My name is Ama.');
+      expect(speech.slowFlags.last, isTrue);
       await tap(tester, 'Enable microphone');
       expect(mic.starts, 0);
       await tap(tester, 'Start recording');
@@ -853,6 +857,30 @@ void main() {
     expect(tester.takeException(), isNull);
     speech.speakGate!.complete();
     await tester.pumpAndSettle();
+  });
+
+  testWidgets('slow replay disables normal playback until it finishes', (
+    tester,
+  ) async {
+    await launch(tester, progress: returning);
+    await tap(tester, 'My Words');
+    speech.speakGate = Completer<void>();
+    await tester.ensureVisible(find.text('Listen slowly'));
+    await tester.tap(find.text('Listen slowly'));
+    await tester.pump();
+    expect(speech.slowFlags.last, isTrue);
+    expect(find.text('Stop audio'), findsOneWidget);
+    final normalButton = tester.widget<OutlinedButton>(
+      find.ancestor(
+        of: find.text('Listen and repeat'),
+        matching: find.byType(OutlinedButton),
+      ),
+    );
+    expect(normalButton.onPressed, isNull);
+    speech.speakGate!.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('Listen slowly'), findsOneWidget);
+    expect(find.text('Listen and repeat'), findsOneWidget);
   });
 
   testWidgets('review write failure preserves the phrase and offers retry', (

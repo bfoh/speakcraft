@@ -69,3 +69,7 @@ Show the saved prompt index for each Alpha day in a dedicated screen, without tr
 ## 2026-10-02 — Offline self-rated word review
 
 Use ten authored phrases from the five-day pathway as a small My Words deck. Schedule them from explicit learner self-report rather than model-inferred weakness: four hours after More practice, then one, three and seven days after repeated Felt easy choices. Store only item ID, attempts, stage and review times in local SQLite. Treat the intervals as pilot assumptions and avoid a mastery score. Clear review state with other phone data.
+
+## 2026-10-02 — Slower device-voice replay
+
+Add slow replay to examples and conversational phrases through the existing device speech abstraction. Keep normal and slow actions in one shared control so their visible playback state remains coordinated. Keep text visible and preserve the normal rate as the default. The rate is transient and is not learner data or a pronunciation standard.

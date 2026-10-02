@@ -50,6 +50,10 @@ A dedicated Progress screen reads the five prompt positions from `SessionControl
 
 Ten stable, authored review items live in canonical curriculum data and are packaged into the mobile and backend assets. `ReviewController` shows due phrases, plays them through the existing device speech output, and saves only an explicit self-rating. The deterministic scheduler returns a phrase in four hours after **More practice**, or after one, three or seven days across repeated **Felt easy** choices. These intervals are a starting rule, not a validated mastery model. SQLite schema version 3 adds `review_state` without losing older progress; confirmed local reset deletes that table in the same transaction. No review endpoint, transcript or audio history is added.
 
+## Sprint 11 slower replay slice
+
+The shared `SpeechOutput` contract accepts an optional slow flag. `DeviceSpeechOutput` maps it to a gentler device TTS rate and retains the existing English voice preference. A phrase's shared audio component coordinates its normal and slow controls, so only one can be active in that component. This adds no persistence, network request or pronunciation judgement; the native voice and audio route vary by device.
+
 ## Mobile structure
 
 - `lib/app`: composition, Riverpod providers, GoRouter routes and theme.

@@ -1,7 +1,7 @@
 import 'package:flutter_tts/flutter_tts.dart';
 
 abstract interface class SpeechOutput {
-  Future<void> speak(String text);
+  Future<void> speak(String text, {bool slow = false});
   Future<void> stop();
 }
 
@@ -10,7 +10,7 @@ class DeviceSpeechOutput implements SpeechOutput {
   final FlutterTts _tts = FlutterTts();
 
   @override
-  Future<void> speak(String text) async {
+  Future<void> speak(String text, {bool slow = false}) async {
     await _tts.stop();
     final reported = await _tts.getLanguages;
     final languages = reported is List
@@ -33,7 +33,7 @@ class DeviceSpeechOutput implements SpeechOutput {
       if (voice != null) break;
     }
     await _tts.setLanguage(voice ?? english.first);
-    await _tts.setSpeechRate(0.4);
+    await _tts.setSpeechRate(slow ? 0.3 : 0.4);
     await _tts.awaitSpeakCompletion(true);
     final result = await _tts.speak(text);
     if (result != 1) throw StateError('Audio unavailable');

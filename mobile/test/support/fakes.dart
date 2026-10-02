@@ -54,13 +54,15 @@ class FakeMicrophone implements Microphone {
 
 class FakeSpeech implements SpeechOutput {
   final spoken = <String>[];
+  final slowFlags = <bool>[];
   bool unavailable = false;
   Completer<void>? speakGate;
   int stops = 0;
   @override
-  Future<void> speak(String text) async {
+  Future<void> speak(String text, {bool slow = false}) async {
     if (unavailable) throw StateError('No test voice');
     spoken.add(text);
+    slowFlags.add(slow);
     if (speakGate != null) await speakGate!.future;
   }
 

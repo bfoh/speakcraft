@@ -207,6 +207,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
                             ? 'Listen to customer'
                             : 'Listen to Kora',
                         enabled: !controlsBusy,
+                        allowSlowReplay: true,
                       ),
                     ],
                   ],

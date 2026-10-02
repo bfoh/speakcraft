@@ -158,6 +158,7 @@ class _ExpressionScreenState extends ConsumerState<ExpressionScreen>
                       text: result.expression,
                       label: 'Listen to phrase',
                       enabled: !busy && _mic.state != MicrophoneState.recording,
+                      allowSlowReplay: true,
                     ),
                   ],
                 ),
@@ -182,6 +183,7 @@ class _ExpressionScreenState extends ConsumerState<ExpressionScreen>
                         label: 'Listen to customer',
                         enabled:
                             !busy && _mic.state != MicrophoneState.recording,
+                        allowSlowReplay: true,
                       ),
                     ],
                   ),

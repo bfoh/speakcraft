@@ -134,16 +134,19 @@ class SpeakCraftAudioButton extends ConsumerStatefulWidget {
     required this.text,
     this.label = 'Listen',
     this.enabled = true,
+    this.allowSlowReplay = false,
   });
   final String text;
   final String label;
   final bool enabled;
+  final bool allowSlowReplay;
   @override
   ConsumerState<SpeakCraftAudioButton> createState() => _AudioButtonState();
 }
 
 class _AudioButtonState extends ConsumerState<SpeakCraftAudioButton> {
   bool _playing = false;
+  bool _slowPlaying = false;
   late final SpeechOutput _speech;
 
   @override
@@ -152,14 +155,17 @@ class _AudioButtonState extends ConsumerState<SpeakCraftAudioButton> {
     _speech = ref.read(servicesProvider).speech;
   }
 
-  Future<void> _toggle() async {
+  Future<void> _toggle(bool slow) async {
     if (_playing) {
       await _speech.stop();
       return;
     }
-    setState(() => _playing = true);
+    setState(() {
+      _playing = true;
+      _slowPlaying = slow;
+    });
     try {
-      await _speech.speak(widget.text);
+      await _speech.speak(widget.text, slow: slow);
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -185,15 +191,46 @@ class _AudioButtonState extends ConsumerState<SpeakCraftAudioButton> {
   }
 
   @override
-  Widget build(BuildContext context) => OutlinedButton(
-    onPressed: widget.enabled ? _toggle : null,
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(_playing ? Icons.stop_circle_outlined : Icons.volume_up_outlined),
-        const SizedBox(width: 12),
-        Flexible(child: Text(_playing ? 'Stop audio' : widget.label)),
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      _control(slow: false),
+      if (widget.allowSlowReplay) ...[
+        const SizedBox(height: 8),
+        _control(slow: true),
       ],
-    ),
+    ],
   );
+
+  Widget _control({required bool slow}) {
+    final active = _playing && _slowPlaying == slow;
+    return OutlinedButton(
+      onPressed: widget.enabled && (!_playing || active)
+          ? () => _toggle(slow)
+          : null,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            active
+                ? Icons.stop_circle_outlined
+                : slow
+                ? Icons.slow_motion_video_outlined
+                : Icons.volume_up_outlined,
+          ),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Text(
+              active
+                  ? 'Stop audio'
+                  : slow
+                  ? 'Listen slowly'
+                  : widget.label,
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

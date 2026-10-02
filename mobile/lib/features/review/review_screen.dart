@@ -142,6 +142,7 @@ class _ReviewCard extends StatelessWidget {
           key: ValueKey(item.id),
           text: '${item.cue} ${item.text}',
           label: 'Listen and repeat',
+          allowSlowReplay: true,
         ),
         const SizedBox(height: 16),
         SpeakCraftButton(
