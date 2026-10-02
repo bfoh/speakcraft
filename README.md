@@ -6,7 +6,7 @@
 
 Welcome → Profession → Support Language → Meet Kora → Assessment Introduction → Home → Day 1: This Is Me → local microphone practice.
 
-Sprint 1 established shared Android/iOS screens, a small accessible design system, saved onboarding and phrase position, authored audio instructions through device speech, and real local recording. Later sprints added guided practice for Days 2–5 and bounded AI interactions. Scored assessment and verified lesson completion remain unavailable.
+Sprint 1 established shared Android/iOS screens, a small accessible design system, saved onboarding and phrase position, authored audio instructions through device speech, and real local recording. Later sprints added guided practice for Days 2–5 and bounded AI interactions. Scored assessment and validated communication outcomes remain unavailable.
 
 The app works without the backend. Routine recordings stay in private cache for the running session, and are removed on replacement, deletion, phrase change or next launch. Installed device voices determine whether audio instructions work offline.
 
@@ -53,6 +53,10 @@ Lesson examples, My Words phrases, Help Me Say It phrases and Kora/customer turn
 ## Sprint 12 starting assessment capture
 
 **Starting assessment** now offers the blueprint's five parts through seven separate recordings: introduction, salon-scene description, procedure explanation, listening response and three customer replies. The scene is a generated provisional visual and the prompts need educator review. Each answer is copied into private temporary storage before the learner advances. Captures remain available during the current app session, are removed on the next app launch, and can be cleared from the assessment or Privacy screen. Nothing is uploaded or scored. This is a recording journey, not a durable or comparable baseline result. See the [Sprint 12 plan](.agent/plans/sprint-12-baseline-capture.md).
+
+## Sprint 13 guided-practice completion
+
+The app now saves a local attempt marker when the learner records a daily prompt and advances or saves the final step. Home and My practice show how many speaking steps were recorded and mark a day as finished only when all its authored prompts have attempt markers. Skipped steps remain unfinished; a learner can practise from the start to fill them. This records participation, not speech quality or completion of the Day-3/Day-5 challenges. The markers survive relaunch, work offline and are removed by Clear phone data. See the [Sprint 13 plan](.agent/plans/sprint-13-practice-completion.md).
 
 ## Repository
 
@@ -161,7 +165,7 @@ cd mobile
 flutter test integration_test/foundation_test.dart -d <device-id>
 ```
 
-The native smoke test uses real SQLite and recording, a separate test database, local My Words review, a private starting-assessment capture, and a local test HTTP server for speech, feedback, Kora, AI Salon and Help Me Say It contracts. It does not call OpenAI or establish teaching quality. See the [Sprint 1](docs/SPRINT_1_VALIDATION.md), [Sprint 2](docs/SPRINT_2_VALIDATION.md), [Sprint 3](docs/SPRINT_3_VALIDATION.md), [Sprint 4](docs/SPRINT_4_VALIDATION.md), [Sprint 5](docs/SPRINT_5_VALIDATION.md), [Sprint 6](docs/SPRINT_6_VALIDATION.md), [Sprint 7](docs/SPRINT_7_VALIDATION.md), [Sprint 8](docs/SPRINT_8_VALIDATION.md), [Sprint 9](docs/SPRINT_9_VALIDATION.md), [Sprint 10](docs/SPRINT_10_VALIDATION.md), [Sprint 11](docs/SPRINT_11_VALIDATION.md) and [Sprint 12](docs/SPRINT_12_VALIDATION.md) validation records.
+The native smoke test uses real SQLite and recording, a separate test database, local My Words review, a private starting-assessment capture, and a local test HTTP server for speech, feedback, Kora, AI Salon and Help Me Say It contracts. It does not call OpenAI or establish teaching quality. See the [Sprint 1](docs/SPRINT_1_VALIDATION.md), [Sprint 2](docs/SPRINT_2_VALIDATION.md), [Sprint 3](docs/SPRINT_3_VALIDATION.md), [Sprint 4](docs/SPRINT_4_VALIDATION.md), [Sprint 5](docs/SPRINT_5_VALIDATION.md), [Sprint 6](docs/SPRINT_6_VALIDATION.md), [Sprint 7](docs/SPRINT_7_VALIDATION.md), [Sprint 8](docs/SPRINT_8_VALIDATION.md), [Sprint 9](docs/SPRINT_9_VALIDATION.md), [Sprint 10](docs/SPRINT_10_VALIDATION.md), [Sprint 11](docs/SPRINT_11_VALIDATION.md), [Sprint 12](docs/SPRINT_12_VALIDATION.md) and [Sprint 13](docs/SPRINT_13_VALIDATION.md) validation records.
 
 ## Next build milestone
 

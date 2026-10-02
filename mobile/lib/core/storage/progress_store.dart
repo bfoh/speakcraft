@@ -8,16 +8,35 @@ class LearnerProgress {
     this.supportLanguage,
     this.dayOnePrompt = 0,
     this.otherDayPrompts = const {},
+    this.attemptedPromptIds = const {},
   });
   final int onboardingStep;
   final String? profession;
   final String? supportLanguage;
   final int dayOnePrompt;
   final Map<int, int> otherDayPrompts;
+
+  /// Authored prompts with a saved local speaking attempt; never a quality score.
+  final Set<String> attemptedPromptIds;
   bool get onboarded => onboardingStep == 5;
 
   int promptForDay(int day) =>
       day == 1 ? dayOnePrompt : (otherDayPrompts[day] ?? 0);
+
+  bool hasAttempted(String promptId) => attemptedPromptIds.contains(promptId);
+
+  int attemptedCount(Iterable<String> promptIds) =>
+      promptIds.where(hasAttempted).length;
+
+  bool finishedPractice(Iterable<String> promptIds) {
+    final ids = promptIds.toList();
+    return ids.isNotEmpty && ids.every(hasAttempted);
+  }
+
+  LearnerProgress withAttemptedPrompt(String promptId) {
+    if (promptId.isEmpty) throw ArgumentError('Invalid prompt ID');
+    return copyWith(attemptedPromptIds: {...attemptedPromptIds, promptId});
+  }
 
   LearnerProgress withPromptForDay(int day, int index) {
     if (day == 1) return copyWith(dayOnePrompt: index);
@@ -33,12 +52,16 @@ class LearnerProgress {
     String? supportLanguage,
     int? dayOnePrompt,
     Map<int, int>? otherDayPrompts,
+    Set<String>? attemptedPromptIds,
   }) => LearnerProgress(
     onboardingStep: onboardingStep ?? this.onboardingStep,
     profession: profession ?? this.profession,
     supportLanguage: supportLanguage ?? this.supportLanguage,
     dayOnePrompt: dayOnePrompt ?? this.dayOnePrompt,
     otherDayPrompts: Map.unmodifiable(otherDayPrompts ?? this.otherDayPrompts),
+    attemptedPromptIds: Set.unmodifiable(
+      attemptedPromptIds ?? this.attemptedPromptIds,
+    ),
   );
 }
 

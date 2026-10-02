@@ -31,6 +31,7 @@ void main() {
             supportLanguage: 'en',
             dayOnePrompt: 2,
             otherDayPrompts: {2: 1, 3: 2, 5: 3},
+            attemptedPromptIds: {'introduce-name', 'customer-greeting'},
           ),
         );
         await store.saveReview(
@@ -56,6 +57,9 @@ void main() {
         expect(restored.promptForDay(3), 2);
         expect(restored.promptForDay(4), 0);
         expect(restored.promptForDay(5), 3);
+        expect(restored.hasAttempted('introduce-name'), isTrue);
+        expect(restored.hasAttempted('customer-greeting'), isTrue);
+        expect(restored.hasAttempted('introduce-study'), isFalse);
         expect((await store.loadReview())['my-course']!.easeStage, 1);
       } finally {
         await store.close();
@@ -63,6 +67,86 @@ void main() {
       }
     },
   );
+
+  test(
+    'version 3 database gains attempt markers without inferring them',
+    () async {
+      sqfliteFfiInit();
+      final directory = await Directory.systemTemp.createTemp('speakcraft-v3-');
+      final path = '${directory.path}/progress.db';
+      final old = await databaseFactoryFfi.openDatabase(
+        path,
+        options: OpenDatabaseOptions(
+          version: 3,
+          onCreate: (db, version) async {
+            await db.execute('''
+            CREATE TABLE learner_progress (
+              id INTEGER PRIMARY KEY CHECK (id = 1),
+              onboarding_step INTEGER NOT NULL,
+              profession TEXT,
+              support_language TEXT,
+              day_one_prompt INTEGER NOT NULL
+            )
+          ''');
+            await db.execute('''
+            CREATE TABLE lesson_positions (
+              day INTEGER PRIMARY KEY,
+              prompt_index INTEGER NOT NULL
+            )
+          ''');
+            await db.execute('''
+            CREATE TABLE review_state (
+              item_id TEXT PRIMARY KEY,
+              attempts INTEGER NOT NULL,
+              ease_stage INTEGER NOT NULL,
+              last_reviewed_at INTEGER NOT NULL,
+              next_review_at INTEGER NOT NULL
+            )
+          ''');
+          },
+        ),
+      );
+      await old.insert('learner_progress', {
+        'id': 1,
+        'onboarding_step': 5,
+        'profession': 'beauty-cosmetology',
+        'support_language': 'en',
+        'day_one_prompt': 3,
+      });
+      await old.insert('lesson_positions', {'day': 3, 'prompt_index': 2});
+      await old.close();
+      final upgraded = await SqliteProgressStore.open(
+        factory: databaseFactoryFfi,
+        path: path,
+      );
+      try {
+        final progress = await upgraded.load();
+        expect(progress.promptForDay(1), 3);
+        expect(progress.promptForDay(3), 2);
+        expect(progress.attemptedPromptIds, isEmpty);
+        await upgraded.save(progress.withAttemptedPrompt('customer-greeting'));
+        expect(
+          (await upgraded.load()).hasAttempted('customer-greeting'),
+          isTrue,
+        );
+      } finally {
+        await upgraded.close();
+        await directory.delete(recursive: true);
+      }
+    },
+  );
+
+  test('practice finishes only after all authored prompts have attempts', () {
+    const ids = ['one', 'two', 'three'];
+    var progress = const LearnerProgress();
+    expect(progress.finishedPractice(ids), isFalse);
+    progress = progress.withAttemptedPrompt('one');
+    expect(progress.attemptedCount(ids), 1);
+    expect(progress.finishedPractice(ids), isFalse);
+    progress = progress.withAttemptedPrompt('two').withAttemptedPrompt('three');
+    expect(progress.finishedPractice(ids), isTrue);
+    expect(progress.finishedPractice([...ids, 'new-prompt']), isFalse);
+  });
 
   test('version 1 database upgrades without losing Day-1 position', () async {
     sqfliteFfiInit();
@@ -211,6 +295,7 @@ void main() {
             supportLanguage: 'en',
             dayOnePrompt: 2,
             otherDayPrompts: {2: 1, 3: 2, 4: 1, 5: 3},
+            attemptedPromptIds: {'introduce-name', 'customer-greeting'},
           ),
         );
         await store.saveReview(
@@ -238,6 +323,7 @@ void main() {
         expect(await store.database.query('learner_progress'), isEmpty);
         expect(await store.database.query('lesson_positions'), isEmpty);
         expect(await store.database.query('review_state'), isEmpty);
+        expect(await store.database.query('practice_attempts'), isEmpty);
       } finally {
         await store.close();
         await directory.delete(recursive: true);

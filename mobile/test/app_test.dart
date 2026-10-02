@@ -595,6 +595,74 @@ void main() {
     expect(find.text('Practise in AI Salon'), findsOneWidget);
   });
 
+  testWidgets('a skipped step stays unfinished until its recording is saved', (
+    tester,
+  ) async {
+    await launch(tester, progress: returning);
+    await tap(tester, 'Open Day 2');
+    await tap(tester, 'Next practice');
+    expect(store.progress.attemptedPromptIds, isEmpty);
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    await tap(tester, 'Next practice');
+    expect(store.progress.attemptedPromptIds, {'salon-product'});
+    expect(find.text('1 of 3 speaking steps saved'), findsOneWidget);
+    expect(find.text('Practice steps finished'), findsNothing);
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    await tap(tester, 'Save this practice');
+    expect(store.progress.attemptedPromptIds, {
+      'salon-product',
+      'salon-object-purpose',
+    });
+    expect(find.text('Practice steps finished'), findsNothing);
+    await tap(tester, 'Practise from the start');
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    await tap(tester, 'Next practice');
+    expect(
+      store.progress.finishedPractice([
+        'salon-object',
+        'salon-product',
+        'salon-object-purpose',
+      ]),
+      isTrue,
+    );
+    expect(
+      find.text('Practice steps finished. You can practise again.'),
+      findsOneWidget,
+    );
+    await tap(tester, 'Back to Home');
+    expect(find.text('Practice steps finished'), findsOneWidget);
+    await tap(tester, 'My practice');
+    expect(
+      find.text('1 of 5 days of guided practice finished'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('failed attempt save keeps current take and position', (
+    tester,
+  ) async {
+    await launch(tester, progress: returning);
+    await tap(tester, 'Open Day 2');
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    store.failSave = true;
+    await tap(tester, 'Next practice');
+    expect(store.progress.promptForDay(2), 0);
+    expect(store.progress.attemptedPromptIds, isEmpty);
+    expect(find.text('Delete recording'), findsOneWidget);
+    store.failSave = false;
+    await tap(tester, 'Next practice');
+    expect(store.progress.promptForDay(2), 1);
+    expect(store.progress.hasAttempted('salon-object'), isTrue);
+  });
+
   testWidgets('switching days clears another day’s recording and transcript', (
     tester,
   ) async {
@@ -724,7 +792,9 @@ void main() {
     );
     await tap(tester, 'My practice');
     expect(
-      find.text('This shows where to continue. It is not a speaking score.'),
+      find.text(
+        'Finished means you recorded every speaking step. It is not a speaking score.',
+      ),
       findsOneWidget,
     );
     expect(find.text('Practice 2 of 4'), findsOneWidget);
@@ -744,6 +814,7 @@ void main() {
           supportLanguage: 'en',
           dayOnePrompt: 1,
           otherDayPrompts: {3: 2},
+          attemptedPromptIds: {'introduce-name', 'customer-greeting'},
         ),
       );
       await tap(tester, 'Open Day 1');
@@ -763,6 +834,7 @@ void main() {
       expect(store.progress.onboarded, isFalse);
       expect(store.progress.promptForDay(1), 0);
       expect(store.progress.promptForDay(3), 0);
+      expect(store.progress.attemptedPromptIds, isEmpty);
       expect(mic.discards, greaterThan(0));
     },
   );

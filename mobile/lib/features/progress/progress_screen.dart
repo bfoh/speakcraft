@@ -22,7 +22,11 @@ class ProgressScreen extends ConsumerWidget {
             text: 'Your place is saved on this phone. Choose a day to keep practising.',
           ),
           const SpeakCraftNotice(
-            'This shows where to continue. It is not a speaking score.',
+            'Finished means you recorded every speaking step. It is not a speaking score.',
+          ),
+          Text(
+            '${curriculum.lessons.where((lesson) => session.progress.finishedPractice(lesson.prompts.map((p) => p.id))).length} of ${curriculum.lessons.length} days of guided practice finished',
+            style: Theme.of(context).textTheme.titleLarge,
           ),
           for (final lesson in curriculum.lessons)
             SpeakCraftCard(
@@ -36,6 +40,14 @@ class ProgressScreen extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Text(
                     'Practice ${session.progress.promptForDay(lesson.day) + 1} of ${lesson.prompts.length}',
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    session.progress.finishedPractice(
+                          lesson.prompts.map((p) => p.id),
+                        )
+                        ? 'Practice steps finished'
+                        : '${session.progress.attemptedCount(lesson.prompts.map((p) => p.id))} of ${lesson.prompts.length} speaking steps saved',
                   ),
                   const SizedBox(height: 16),
                   SpeakCraftButton(

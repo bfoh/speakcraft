@@ -2,7 +2,7 @@
 
 ## Data handled
 
-The app stores profession, English support choice, onboarding position, current prompt position for each of the five days and self-rated word review timing in private SQLite storage. It does not persist names, accounts, transcripts, learning scores or cloud identifiers.
+The app stores profession, English support choice, onboarding position, current prompt position for each of the five days, authored IDs of daily speaking steps attempted, and self-rated word review timing in private SQLite storage. It does not persist names, accounts, transcripts, learning scores or cloud identifiers. An attempt marker means a nonempty recording was saved and the learner advanced; it says nothing about speech quality.
 
 The microphone records only after an explicit learner action and OS permission. Mono audio is written to the app's private temporary cache. One current take is retained for in-app navigation. Starting a replacement, moving to another phrase, pressing Delete recording, or launching the app again removes it. The OS may evict cache files. A recording is not an English Mirror artefact or durable lesson history.
 
@@ -40,4 +40,4 @@ Before storing remote learner data or exposing the API publicly, implement learn
 
 ## Local removal
 
-Delete recording removes the current take. Relaunching the app clears previous takes automatically. The in-app **Privacy and phone data** screen offers a confirmed **Clear phone data** action. It discards current lesson, dialogue and assessment takes, removes staged baseline answers, clears transient transcript, feedback, dialogue and pilot code, deletes onboarding choices, all five saved prompt positions and word review timing in a SQLite transaction, and returns to Welcome. A failed audio or database operation reports retry rather than claiming success. This local action works offline and cannot revoke earlier provider processing or data in device backups. A learner-facing account/data deletion flow is required before public launch if accounts are introduced.
+Delete recording removes the current take. Relaunching the app clears previous takes automatically. The in-app **Privacy and phone data** screen offers a confirmed **Clear phone data** action. It discards current lesson, dialogue and assessment takes, removes staged baseline answers, clears transient transcript, feedback, dialogue and pilot code, deletes onboarding choices, all five saved prompt positions, daily attempt markers and word review timing in a SQLite transaction, and returns to Welcome. A failed audio or database operation reports retry rather than claiming success. This local action works offline and cannot revoke earlier provider processing or data in device backups. A learner-facing account/data deletion flow is required before public launch if accounts are introduced.

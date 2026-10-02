@@ -122,6 +122,7 @@ void main() {
     }
     await tap('Next practice');
     expect((await store.load()).dayOnePrompt, 1);
+    expect((await store.load()).attemptedPromptIds, isEmpty);
     // Grant permission with adb/simctl before this test, or accept the OS prompt.
     await tap('Enable microphone');
     final microphoneController = container.read(microphoneProvider);
@@ -270,7 +271,9 @@ void main() {
     await tap('Open Day 1');
     expect(container.read(microphoneProvider).recordingPath, recording);
     expect(await File(recording).exists(), isTrue);
-    await tap('Delete recording');
+    await tap('Next practice');
+    expect((await store.load()).hasAttempted('introduce-study'), isTrue);
+    expect((await store.load()).hasAttempted('introduce-name'), isFalse);
     expect(await File(recording).exists(), isFalse);
     await tap('Back to Home');
     await tap('Open starting assessment');
@@ -296,6 +299,7 @@ void main() {
     expect(find.text('Day 2 • Practice 1 of 3'), findsOneWidget);
     await tap('Next practice');
     expect((await store.load()).promptForDay(2), 1);
+    expect((await store.load()).hasAttempted('introduce-study'), isTrue);
     expect((await store.loadReview())['my-course']!.easeStage, 1);
     await store.close();
     store = await SqliteProgressStore.open(path: path);

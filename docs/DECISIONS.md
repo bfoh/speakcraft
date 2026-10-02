@@ -77,3 +77,7 @@ Add slow replay to examples and conversational phrases through the existing devi
 ## 2026-10-02 — Temporary unscored baseline capture
 
 Represent the blueprint's five Day-1 parts as seven authored recording items, with three fixed customer turns. A generated salon scene is provisional and labelled for educator review. Keep each accepted recording only in private temporary storage for the current app session, with automatic deletion at next launch and explicit removal through Privacy. Do not add a server assessment contract or present a score until a reviewed rubric, learner consent, retention policy and comparable Day-5 protocol exist. This flow establishes capture mechanics, not measured baseline performance.
+
+## 2026-10-02 — Recorded guided-practice steps
+
+Persist only authored prompt IDs after a nonempty local recording and explicit advance/save. Derive a finished guided-practice day from all current prompt IDs, so a skipped step or newly added content cannot inherit completion from a saved position. Keep the Day-3 consultation and Day-5 challenge separate: finishing short guided prompts is participation, not proof of a 90-second conversation or successful vocational communication.

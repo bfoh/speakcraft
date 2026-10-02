@@ -44,7 +44,7 @@ The canonical curriculum now contains three structured scenarios: first braids-a
 
 ## Sprint 9 practice and privacy slice
 
-A dedicated Progress screen reads the five prompt positions from `SessionController` and opens each day. It labels these as saved places, not assessment. A Privacy screen explains current local storage and explicit network actions. Confirmed reset first stops and discards both current recorder takes, clears transient transcript/feedback/dialogue and the in-memory pilot code, then deletes both SQLite progress tables in one transaction. The session publishes default onboarding only after durable deletion. Cleanup and SQLite deletion remain separate operations, so any failure reports retry without claiming complete erasure. The reset works offline and makes no backend request.
+A dedicated Progress screen reads the five prompt positions from `SessionController` and opens each day. It labels these as saved places, not assessment. A Privacy screen explains local storage and explicit network actions. Confirmed reset stops and discards current recorder takes, clears transient transcript/feedback/dialogue and the in-memory pilot code, then deletes local progress in one SQLite transaction. The session publishes default onboarding only after durable deletion. Cleanup and SQLite deletion remain separate operations, so any failure reports retry without claiming complete erasure. The reset works offline and makes no backend request.
 
 ## Sprint 10 offline review slice
 
@@ -57,6 +57,10 @@ The shared `SpeechOutput` contract accepts an optional slow flag. `DeviceSpeechO
 ## Sprint 12 unscored baseline capture slice
 
 Seven validated `baseline_items` in curriculum version 0.1.1 cover the blueprint's five Day-1 parts. The role-play uses three authored customer lines; this flow makes no provider call. A generated salon visual is packaged with the app and labelled as provisional. A dedicated native microphone keeps assessment takes apart from lessons and dialogue. `NativeAssessmentCaptureStore` stages each accepted take in app-private temporary storage, copying to a pending file before rename. `AssessmentController` advances only after staging succeeds. The controller holds the current position and capture paths in memory, so navigation within the app preserves them, while app relaunch deletes old assessment audio. Privacy reset clears both assessment folders before SQLite reset. There is no assessment endpoint, result, score, transcript or durable comparison data.
+
+## Sprint 13 guided-practice completion slice
+
+SQLite schema version 4 adds `practice_attempts`, a set of authored prompt IDs for which a nonempty native take was saved and the learner explicitly advanced or saved the last step. The attempt marker and current position are written in one transaction. All current prompt IDs must be present before a day displays `Practice steps finished`. Skipping remains possible but adds no marker. This is participation evidence only: it stores no audio, transcript or speaking result, and Days 3 and 5 do not claim completion of their longer challenges.
 
 ## Mobile structure
 
@@ -80,9 +84,9 @@ Riverpod supplies application dependencies. The bootstrap loads native services,
 
 ## Local state
 
-SQLite schema version 3 preserves the original `learner_progress` row, the `lesson_positions` table for Days 2–5, and adds `review_state` for self-rated phrase timing. It stores onboarding step, profession, support language and current prompt index for each day, plus review attempts and times. The repository uses parameterised queries. Changes become visible only after a successful database write; write failure preserves the previous state and exposes retry. This is navigation and self-report progress, not evidence of mastery or lesson completion.
+SQLite schema version 4 preserves the original `learner_progress` row and `lesson_positions` for Days 2–5, plus `review_state` for self-rated phrase timing and `practice_attempts` for recorded daily steps. It stores onboarding step, profession, support language, current prompt index, review timing and authored attempted-prompt IDs. The repository uses parameterised queries. Changes become visible only after a successful database write; write failure preserves the previous state and exposes retry. Attempts show guided-practice participation, not mastery or assessed lesson completion.
 
-Reset atomically deletes the three local progress/review tables. It does not contact the backend or revoke earlier provider processing. Lesson, dialogue and baseline audio caches are cleared before durable deletion, and failure is exposed for retry.
+Reset atomically deletes all four local progress/review/attempt tables. It does not contact the backend or revoke earlier provider processing. Lesson, dialogue and baseline audio caches are cleared before durable deletion, and failure is exposed for retry.
 
 Future local changes must increment the schema version and provide tested upgrades. No remote database schema or credentials are introduced. Routine audio is separate cache data, excluded from learning history.
 

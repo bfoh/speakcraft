@@ -82,6 +82,30 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
     if (mounted) await _transcription.transcribe(path);
   }
 
+  Future<void> _saveStep({required bool advance}) async {
+    final session = ref.read(sessionProvider);
+    final lesson = ref
+        .read(servicesProvider)
+        .curriculum
+        .lessons[widget.day - 1];
+    final index = session.progress.promptForDay(widget.day);
+    final promptId = lesson.prompts[index].id;
+    final hasTake =
+        _mic.promptId == promptId &&
+        _mic.state == MicrophoneState.success &&
+        _mic.recordingPath != null;
+    if (!advance && !hasTake) return;
+    var next = session.progress;
+    if (hasTake) next = next.withAttemptedPrompt(promptId);
+    if (advance) next = next.withPromptForDay(widget.day, index + 1);
+    if (!await session.update(next)) return;
+    await _mic.discard();
+    if (_mic.recordingPath == null) {
+      _transcription.clear();
+      _feedback.clear();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final services = ref.watch(servicesProvider);
@@ -93,6 +117,13 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
         final index = session.progress.promptForDay(widget.day);
         final prompt = lesson.prompts[index];
         final ownsTake = _mic.promptId == null || _mic.promptId == prompt.id;
+        final hasCurrentTake =
+            _mic.promptId == prompt.id &&
+            _mic.state == MicrophoneState.success &&
+            _mic.recordingPath != null;
+        final promptIds = lesson.prompts.map((item) => item.id);
+        final attempted = session.progress.attemptedCount(promptIds);
+        final finished = session.progress.finishedPractice(promptIds);
         final (status, button, icon) = switch (ownsTake
             ? _mic.state
             : MicrophoneState.idle) {
@@ -149,6 +180,14 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
               Text(
                 'Day ${lesson.day} • Practice ${index + 1} of ${lesson.prompts.length}',
               ),
+              Text(
+                '$attempted of ${lesson.prompts.length} speaking steps saved',
+              ),
+              if (finished)
+                const SpeakCraftNotice(
+                  'Practice steps finished. You can practise again.',
+                  icon: Icons.check_circle_outline,
+                ),
               LinearProgressIndicator(
                 value: (index + 1) / lesson.prompts.length,
                 semanticsLabel:
@@ -422,21 +461,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
                           _transcription.sending ||
                           _feedback.sending
                       ? null
-                      : () async {
-                          final saved = await session.update(
-                            session.progress.withPromptForDay(
-                              widget.day,
-                              index + 1,
-                            ),
-                          );
-                          if (saved) {
-                            await _mic.discard();
-                            if (_mic.recordingPath == null) {
-                              _transcription.clear();
-                              _feedback.clear();
-                            }
-                          }
-                        },
+                      : () => _saveStep(advance: true),
                   icon: const Icon(Icons.arrow_forward),
                   label: Text(session.saving ? 'Saving…' : 'Next practice'),
                 )
@@ -444,6 +469,22 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
                 const SpeakCraftNotice(
                   'Keep practising. We have not assessed or scored your speaking.',
                 ),
+                if (!session.progress.hasAttempted(prompt.id))
+                  SpeakCraftButton(
+                    label: session.saving ? 'Saving…' : 'Save this practice',
+                    icon: Icons.save_outlined,
+                    onPressed:
+                        hasCurrentTake &&
+                            !session.saving &&
+                            !_transcription.sending &&
+                            !_feedback.sending
+                        ? () => _saveStep(advance: false)
+                        : null,
+                  ),
+                if (!finished && session.progress.hasAttempted(prompt.id))
+                  const SpeakCraftNotice(
+                    'This step is saved. Practise from the start to record any steps you missed.',
+                  ),
                 OutlinedButton.icon(
                   onPressed:
                       _mic.capturing ||
