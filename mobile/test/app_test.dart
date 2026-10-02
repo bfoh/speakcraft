@@ -14,6 +14,7 @@ import 'package:speakcraft/core/speech/feedback.dart';
 import 'package:speakcraft/core/speech/conversation.dart';
 import 'package:speakcraft/core/speech/expression.dart';
 import 'package:speakcraft/features/lesson/microphone_controller.dart';
+import 'package:speakcraft/features/progress/confidence_check_in.dart';
 
 import 'support/fakes.dart';
 
@@ -1255,6 +1256,91 @@ void main() {
     expect(recordingPlayback.playing, isFalse);
     expect(assessmentCapture.captures, isEmpty);
     expect(find.text('Tell us about yourself'), findsOneWidget);
+  });
+
+  testWidgets(
+    'starting readiness choice saves offline and clears with phone data',
+    (tester) async {
+      await launch(tester, progress: returning);
+      await tap(tester, 'Open starting assessment');
+      for (var i = 0; i < 7; i++) {
+        await tap(tester, 'Enable microphone');
+        await tap(tester, 'Start recording');
+        await tap(tester, 'Stop recording');
+        await tap(tester, 'Save answer and continue');
+      }
+      expect(store.progress.confidenceFor('starting'), isNull);
+      await tap(tester, 'Hear the question');
+      expect(speech.spoken.last, contains('How ready do you feel'));
+      await tap(tester, '3 — Somewhat ready');
+      expect(store.progress.confidenceFor('starting')!.rating, 3);
+      expect(find.textContaining('Saved on this phone: 3'), findsOneWidget);
+      store.failSave = true;
+      await tap(tester, '4 — Ready');
+      expect(store.progress.confidenceFor('starting')!.rating, 3);
+      expect(find.textContaining("couldn't save your place"), findsOneWidget);
+      store.failSave = false;
+      await tap(tester, '4 — Ready');
+      expect(store.progress.confidenceFor('starting')!.rating, 4);
+      await tap(tester, 'Go to Home');
+      await tap(tester, 'My practice');
+      expect(find.text('Starting: 4 — Ready'), findsOneWidget);
+      expect(find.text('Day 5: 4 — Ready'), findsNothing);
+      await tester.tap(find.byTooltip('Back'));
+      await tester.pumpAndSettle();
+      await tap(tester, 'Privacy and phone data');
+      await tap(tester, 'Clear phone data');
+      await tester.tap(find.text('Clear phone data').last);
+      await tester.pumpAndSettle();
+      expect(store.progress.confidenceCheckIns, isEmpty);
+    },
+  );
+
+  testWidgets('Day 5 check-in appears after all speaking steps', (
+    tester,
+  ) async {
+    await launch(tester, progress: returning);
+    await tap(tester, 'Open Day 5');
+    expect(find.text(confidenceQuestion), findsNothing);
+    for (var i = 0; i < 4; i++) {
+      await tap(tester, 'Enable microphone');
+      await tap(tester, 'Start recording');
+      await tap(tester, 'Stop recording');
+      await tap(tester, i == 3 ? 'Save this practice' : 'Next practice');
+    }
+    expect(find.text(confidenceQuestion), findsOneWidget);
+    await tap(tester, '5 — Very ready');
+    expect(store.progress.confidenceFor('day5')!.rating, 5);
+    await tap(tester, 'Back to Home');
+    await tap(tester, 'My practice');
+    expect(find.text('Day 5: 5 — Very ready'), findsOneWidget);
+  });
+
+  testWidgets('confidence choices fit a small screen with larger text', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 700);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final day5 = Curriculum.parse(
+      File('assets/curriculum/alpha.json').readAsStringSync(),
+    ).lessons[4];
+    await launch(
+      tester,
+      progress: returning.copyWith(
+        otherDayPrompts: {5: day5.prompts.length - 1},
+        attemptedPromptIds: day5.prompts.map((p) => p.id).toSet(),
+      ),
+    );
+    await tap(tester, 'Open Day 5');
+    expect(find.text(confidenceQuestion), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tap(tester, '1 — Not ready yet');
+    expect(store.progress.confidenceFor('day5')!.rating, 1);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('starting answer playback failure keeps the take for retry', (

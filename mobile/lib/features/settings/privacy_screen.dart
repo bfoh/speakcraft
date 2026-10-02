@@ -22,7 +22,7 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
       builder: (dialogContext) => AlertDialog(
         title: const Text('Clear phone data?'),
         content: const Text(
-          'This erases your choices, saved speaking steps, salon reply counts and recording time, word reviews and current recordings on this phone. You will start again at Welcome.',
+          'This erases your choices, saved speaking steps, readiness choices, salon reply counts and recording time, word reviews and current recordings on this phone. You will start again at Welcome.',
         ),
         actions: [
           TextButton(
@@ -120,7 +120,7 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
     onBack: _clearing ? null : () => context.pop(),
     children: [
       const SpeakCraftAudioButton(
-        text: 'Your choices, speaking steps, salon reply counts and recording time stay on this phone. You choose when to send a recording or words for help. You can clear phone data here.',
+        text: 'Your choices, speaking steps, readiness choices, salon reply counts and recording time stay on this phone. You choose when to send a recording or words for help. You can clear phone data here.',
       ),
       const SpeakCraftCard(
         child: Column(
@@ -129,7 +129,7 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
             Text('Saved on this phone'),
             SizedBox(height: 8),
             Text(
-              'Your course, place in each day, recorded speaking steps, salon reply counts and recording time, and word review schedule. Starting assessment recordings are removed at next launch or when you clear phone data.',
+              'Your course, place in each day, recorded speaking steps, readiness choices, salon reply counts and recording time, and word review schedule. Starting assessment recordings are removed at next launch or when you clear phone data.',
             ),
             SizedBox(height: 16),
             Text('Sent only when you choose'),

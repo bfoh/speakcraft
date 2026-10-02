@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/services.dart';
 import '../../shared/components.dart';
+import 'confidence_check_in.dart';
 
 class ProgressScreen extends ConsumerWidget {
   const ProgressScreen({super.key});
@@ -28,6 +29,25 @@ class ProgressScreen extends ConsumerWidget {
             '${curriculum.lessons.where((lesson) => session.progress.finishedPractice(lesson.prompts.map((p) => p.id))).length} of ${curriculum.lessons.length} days of guided practice finished',
             style: Theme.of(context).textTheme.titleLarge,
           ),
+          if (session.progress.confidenceCheckIns.isNotEmpty)
+            SpeakCraftCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'How ready I felt',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text('My own choices. These are not speaking scores.'),
+                  if (session.progress.confidenceFor('starting')
+                      case final start?)
+                    Text('Starting: ${confidenceLabel(start.rating)}'),
+                  if (session.progress.confidenceFor('day5') case final day5?)
+                    Text('Day 5: ${confidenceLabel(day5.rating)}'),
+                ],
+              ),
+            ),
           for (final lesson in curriculum.lessons)
             SpeakCraftCard(
               child: Column(

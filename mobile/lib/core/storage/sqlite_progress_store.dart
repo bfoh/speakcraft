@@ -15,7 +15,7 @@ class SqliteProgressStore implements ProgressStore, ReviewStore {
     final db = await dbFactory.openDatabase(
       path ?? '${await getDatabasesPath()}/speakcraft.db',
       options: OpenDatabaseOptions(
-        version: 6,
+        version: 7,
         onCreate: (db, version) async {
           await db.execute('''
             CREATE TABLE learner_progress (
@@ -35,6 +35,7 @@ class SqliteProgressStore implements ProgressStore, ReviewStore {
           await _createReviewTable(db);
           await _createPracticeAttemptsTable(db);
           await _createSalonRehearsalsTable(db);
+          await _createConfidenceTable(db);
         },
         onUpgrade: (db, oldVersion, newVersion) async {
           if (oldVersion < 2) {
@@ -56,6 +57,7 @@ class SqliteProgressStore implements ProgressStore, ReviewStore {
                 CHECK (longest_recorded_seconds BETWEEN 0 AND 360)
             ''');
           }
+          if (oldVersion < 7) await _createConfidenceTable(db);
         },
       ),
     );
@@ -86,6 +88,15 @@ class SqliteProgressStore implements ProgressStore, ReviewStore {
       best_turns INTEGER NOT NULL CHECK (best_turns BETWEEN 1 AND 6),
       longest_recorded_seconds INTEGER NOT NULL DEFAULT 0
         CHECK (longest_recorded_seconds BETWEEN 0 AND 360)
+    )
+  ''');
+
+  static Future<void> _createConfidenceTable(DatabaseExecutor db) =>
+      db.execute('''
+    CREATE TABLE confidence_check_ins (
+      stage TEXT PRIMARY KEY NOT NULL CHECK (stage IN ('starting', 'day5')),
+      rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+      rated_at INTEGER NOT NULL CHECK (rated_at > 0)
     )
   ''');
 
@@ -132,6 +143,7 @@ class SqliteProgressStore implements ProgressStore, ReviewStore {
     final positions = await database.query('lesson_positions');
     final attempts = await database.query('practice_attempts');
     final rehearsals = await database.query('salon_rehearsals');
+    final confidence = await database.query('confidence_check_ins');
     return LearnerProgress(
       onboardingStep: row['onboarding_step'] as int,
       profession: row['profession'] as String?,
@@ -152,6 +164,16 @@ class SqliteProgressStore implements ProgressStore, ReviewStore {
         for (final rehearsal in rehearsals)
           rehearsal['scenario_id'] as String:
               rehearsal['longest_recorded_seconds'] as int,
+      }),
+      confidenceCheckIns: Map.unmodifiable({
+        for (final checkIn in confidence)
+          checkIn['stage'] as String: ConfidenceCheckIn(
+            checkIn['rating'] as int,
+            DateTime.fromMillisecondsSinceEpoch(
+              checkIn['rated_at'] as int,
+              isUtc: true,
+            ),
+          ),
       }),
     );
   }
@@ -186,6 +208,14 @@ class SqliteProgressStore implements ProgressStore, ReviewStore {
           ),
         });
       }
+      await txn.delete('confidence_check_ins');
+      for (final entry in progress.confidenceCheckIns.entries) {
+        await txn.insert('confidence_check_ins', {
+          'stage': entry.key,
+          'rating': entry.value.rating,
+          'rated_at': entry.value.ratedAt.millisecondsSinceEpoch,
+        });
+      }
     });
   }
 
@@ -195,6 +225,7 @@ class SqliteProgressStore implements ProgressStore, ReviewStore {
       await txn.delete('review_state');
       await txn.delete('practice_attempts');
       await txn.delete('salon_rehearsals');
+      await txn.delete('confidence_check_ins');
       await txn.delete('lesson_positions');
       await txn.delete('learner_progress');
     });

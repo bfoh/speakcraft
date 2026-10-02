@@ -70,6 +70,10 @@ Day-3 and Day-5 AI Salon now show the time spent recording answers in a finished
 
 In Starting assessment, learners can replay their current recording before saving it and listen to each saved answer on the final screen. Playback reads the existing private temporary `.m4a` files offline; leaving, recording again or clearing data stops it. The files still disappear at next launch. This is self-review during one app session, without a score or durable English Mirror comparison. See the [Sprint 16 plan](.agent/plans/sprint-16-listen-to-starting-answers.md).
 
+## Sprint 17 learner confidence check-ins
+
+After the starting assessment and after finishing all Day-5 speaking steps, learners can optionally answer the same 1–5 question about how ready they feel to help a customer in English. My practice shows the two latest self-ratings separately. They stay on the phone with a timestamp, can be changed, and disappear with Clear phone data. They are personal feelings, not speaking scores or proof of improvement. See the [Sprint 17 plan](.agent/plans/sprint-17-confidence-check-ins.md) and [remaining Alpha work](docs/ALPHA_REMAINING_WORK.md).
+
 ## Repository
 
 ```text
@@ -177,7 +181,7 @@ cd mobile
 flutter test integration_test/foundation_test.dart -d <device-id>
 ```
 
-The native smoke test uses real SQLite and recording, a separate test database, local My Words review, a private starting-assessment capture, and a local test HTTP server for speech, feedback, Kora, AI Salon and Help Me Say It contracts. It does not call OpenAI or establish teaching quality. See the [Sprint 1](docs/SPRINT_1_VALIDATION.md), [Sprint 2](docs/SPRINT_2_VALIDATION.md), [Sprint 3](docs/SPRINT_3_VALIDATION.md), [Sprint 4](docs/SPRINT_4_VALIDATION.md), [Sprint 5](docs/SPRINT_5_VALIDATION.md), [Sprint 6](docs/SPRINT_6_VALIDATION.md), [Sprint 7](docs/SPRINT_7_VALIDATION.md), [Sprint 8](docs/SPRINT_8_VALIDATION.md), [Sprint 9](docs/SPRINT_9_VALIDATION.md), [Sprint 10](docs/SPRINT_10_VALIDATION.md), [Sprint 11](docs/SPRINT_11_VALIDATION.md), [Sprint 12](docs/SPRINT_12_VALIDATION.md), [Sprint 13](docs/SPRINT_13_VALIDATION.md), [Sprint 14](docs/SPRINT_14_VALIDATION.md), [Sprint 15](docs/SPRINT_15_VALIDATION.md) and [Sprint 16](docs/SPRINT_16_VALIDATION.md) validation records.
+The native smoke test uses real SQLite and recording, a separate test database, local My Words review, a private starting-assessment capture, and a local test HTTP server for speech, feedback, Kora, AI Salon and Help Me Say It contracts. It does not call OpenAI or establish teaching quality. See the [Sprint 1](docs/SPRINT_1_VALIDATION.md), [Sprint 2](docs/SPRINT_2_VALIDATION.md), [Sprint 3](docs/SPRINT_3_VALIDATION.md), [Sprint 4](docs/SPRINT_4_VALIDATION.md), [Sprint 5](docs/SPRINT_5_VALIDATION.md), [Sprint 6](docs/SPRINT_6_VALIDATION.md), [Sprint 7](docs/SPRINT_7_VALIDATION.md), [Sprint 8](docs/SPRINT_8_VALIDATION.md), [Sprint 9](docs/SPRINT_9_VALIDATION.md), [Sprint 10](docs/SPRINT_10_VALIDATION.md), [Sprint 11](docs/SPRINT_11_VALIDATION.md), [Sprint 12](docs/SPRINT_12_VALIDATION.md), [Sprint 13](docs/SPRINT_13_VALIDATION.md), [Sprint 14](docs/SPRINT_14_VALIDATION.md), [Sprint 15](docs/SPRINT_15_VALIDATION.md), [Sprint 16](docs/SPRINT_16_VALIDATION.md) and [Sprint 17](docs/SPRINT_17_VALIDATION.md) validation records.
 
 ## Next build milestone
 

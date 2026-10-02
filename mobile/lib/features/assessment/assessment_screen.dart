@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/services.dart';
+import '../../core/storage/progress_store.dart';
 import '../../features/lesson/microphone_controller.dart';
+import '../../features/progress/confidence_check_in.dart';
 import '../../shared/components.dart';
 import 'assessment_controller.dart';
 import 'assessment_playback_controller.dart';
@@ -22,6 +24,7 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen>
   late final MicrophoneController _mic;
   late final AssessmentController _assessment;
   late final AssessmentPlaybackController _playback;
+  late final SessionController _session;
   String? _cleanupError;
 
   @override
@@ -30,6 +33,7 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen>
     _mic = ref.read(assessmentMicrophoneProvider);
     _assessment = ref.read(assessmentProvider);
     _playback = ref.read(assessmentPlaybackProvider);
+    _session = ref.read(sessionProvider);
     _mic.resume();
     WidgetsBinding.instance.addObserver(this);
   }
@@ -49,6 +53,12 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen>
     if (!await _playback.stop()) return;
     await _mic.interrupt();
     if (mounted) context.go('/home');
+  }
+
+  Future<void> _saveConfidence(int rating) async {
+    await _session.update(
+      _session.progress.withConfidenceCheckIn('starting', rating),
+    );
   }
 
   Future<void> _saveAndContinue() async {
@@ -117,7 +127,7 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen>
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: Listenable.merge([_assessment, _mic, _playback]),
+    listenable: Listenable.merge([_assessment, _mic, _playback, _session]),
     builder: (context, _) {
       final item = _assessment.current;
       if (item == null) {
@@ -185,6 +195,13 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen>
                 icon: Icons.error_outline,
                 live: true,
               ),
+            ConfidenceCheckInCard(
+              current: _session.progress.confidenceFor('starting'),
+              saving: _session.saving,
+              error: _session.error,
+              enabled: !_playback.busy && !_playback.playing,
+              onSelected: _saveConfidence,
+            ),
             SpeakCraftButton(
               label: 'Go to Home',
               icon: Icons.home_outlined,

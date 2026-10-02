@@ -1,6 +1,14 @@
 import 'package:flutter/foundation.dart';
 
 @immutable
+class ConfidenceCheckIn {
+  const ConfidenceCheckIn(this.rating, this.ratedAt);
+
+  final int rating;
+  final DateTime ratedAt;
+}
+
+@immutable
 class LearnerProgress {
   const LearnerProgress({
     this.onboardingStep = 0,
@@ -11,6 +19,7 @@ class LearnerProgress {
     this.attemptedPromptIds = const {},
     this.salonRehearsalTurns = const {},
     this.salonRecordedSeconds = const {},
+    this.confidenceCheckIns = const {},
   });
   final int onboardingStep;
   final String? profession;
@@ -26,6 +35,9 @@ class LearnerProgress {
 
   /// Longest total recorded-answer time in a finished rehearsal, per scenario.
   final Map<String, int> salonRecordedSeconds;
+
+  /// Latest learner-reported readiness, not a speaking assessment.
+  final Map<String, ConfidenceCheckIn> confidenceCheckIns;
   bool get onboarded => onboardingStep == 5;
 
   int promptForDay(int day) =>
@@ -50,6 +62,24 @@ class LearnerProgress {
 
   int longestSalonRecordedSeconds(String scenarioId) =>
       salonRecordedSeconds[scenarioId] ?? 0;
+
+  ConfidenceCheckIn? confidenceFor(String stage) => confidenceCheckIns[stage];
+
+  LearnerProgress withConfidenceCheckIn(
+    String stage,
+    int rating, {
+    DateTime? ratedAt,
+  }) {
+    if (!{'starting', 'day5'}.contains(stage) || rating < 1 || rating > 5) {
+      throw ArgumentError('Invalid confidence check-in');
+    }
+    return copyWith(
+      confidenceCheckIns: {
+        ...confidenceCheckIns,
+        stage: ConfidenceCheckIn(rating, (ratedAt ?? DateTime.now()).toUtc()),
+      },
+    );
+  }
 
   LearnerProgress withSalonTurns(String scenarioId, int turns) =>
       withSalonRehearsal(scenarioId, turns, 0);
@@ -98,6 +128,7 @@ class LearnerProgress {
     Set<String>? attemptedPromptIds,
     Map<String, int>? salonRehearsalTurns,
     Map<String, int>? salonRecordedSeconds,
+    Map<String, ConfidenceCheckIn>? confidenceCheckIns,
   }) => LearnerProgress(
     onboardingStep: onboardingStep ?? this.onboardingStep,
     profession: profession ?? this.profession,
@@ -112,6 +143,9 @@ class LearnerProgress {
     ),
     salonRecordedSeconds: Map.unmodifiable(
       salonRecordedSeconds ?? this.salonRecordedSeconds,
+    ),
+    confidenceCheckIns: Map.unmodifiable(
+      confidenceCheckIns ?? this.confidenceCheckIns,
     ),
   );
 }

@@ -26,15 +26,25 @@ void main() {
         expect((await store.load()).onboarded, isFalse);
         await store.save(
           const LearnerProgress(
-            onboardingStep: 5,
-            profession: 'beauty-cosmetology',
-            supportLanguage: 'en',
-            dayOnePrompt: 2,
-            otherDayPrompts: {2: 1, 3: 2, 5: 3},
-            attemptedPromptIds: {'introduce-name', 'customer-greeting'},
-            salonRehearsalTurns: {'welcome-needs-consultation': 3},
-            salonRecordedSeconds: {'welcome-needs-consultation': 74},
-          ),
+                onboardingStep: 5,
+                profession: 'beauty-cosmetology',
+                supportLanguage: 'en',
+                dayOnePrompt: 2,
+                otherDayPrompts: {2: 1, 3: 2, 5: 3},
+                attemptedPromptIds: {'introduce-name', 'customer-greeting'},
+                salonRehearsalTurns: {'welcome-needs-consultation': 3},
+                salonRecordedSeconds: {'welcome-needs-consultation': 74},
+              )
+              .withConfidenceCheckIn(
+                'starting',
+                2,
+                ratedAt: DateTime.utc(2026, 10, 1),
+              )
+              .withConfidenceCheckIn(
+                'day5',
+                4,
+                ratedAt: DateTime.utc(2026, 10, 2),
+              ),
         );
         await store.saveReview(
           'my-course',
@@ -68,6 +78,12 @@ void main() {
           74,
         );
         expect((await store.loadReview())['my-course']!.easeStage, 1);
+        expect(restored.confidenceFor('starting')!.rating, 2);
+        expect(
+          restored.confidenceFor('starting')!.ratedAt,
+          DateTime.utc(2026, 10, 1),
+        );
+        expect(restored.confidenceFor('day5')!.rating, 4);
       } finally {
         await store.close();
         await directory.delete(recursive: true);
@@ -222,6 +238,7 @@ void main() {
       try {
         final progress = await store.load();
         expect(progress.bestSalonTurns('welcome-needs-consultation'), 3);
+        expect(progress.confidenceCheckIns, isEmpty);
         expect(
           progress.longestSalonRecordedSeconds('welcome-needs-consultation'),
           0,
@@ -235,6 +252,14 @@ void main() {
           updated.longestSalonRecordedSeconds('welcome-needs-consultation'),
           55,
         );
+        await store.save(
+          updated.withConfidenceCheckIn(
+            'starting',
+            3,
+            ratedAt: DateTime.utc(2026, 10, 2),
+          ),
+        );
+        expect((await store.load()).confidenceFor('starting')!.rating, 3);
       } finally {
         await store.close();
         await directory.delete(recursive: true);
@@ -320,6 +345,22 @@ void main() {
     progress = progress.withAttemptedPrompt('two').withAttemptedPrompt('three');
     expect(progress.finishedPractice(ids), isTrue);
     expect(progress.finishedPractice([...ids, 'new-prompt']), isFalse);
+  });
+
+  test('confidence check-in accepts only known stages and a 1–5 choice', () {
+    const progress = LearnerProgress();
+    expect(
+      () => progress.withConfidenceCheckIn('other', 3),
+      throwsArgumentError,
+    );
+    expect(
+      () => progress.withConfidenceCheckIn('starting', 0),
+      throwsArgumentError,
+    );
+    expect(
+      () => progress.withConfidenceCheckIn('day5', 6),
+      throwsArgumentError,
+    );
   });
 
   test('version 1 database upgrades without losing Day-1 position', () async {
@@ -472,7 +513,7 @@ void main() {
             attemptedPromptIds: {'introduce-name', 'customer-greeting'},
             salonRehearsalTurns: {'welcome-needs-consultation': 3},
             salonRecordedSeconds: {'welcome-needs-consultation': 74},
-          ),
+          ).withConfidenceCheckIn('starting', 2),
         );
         await store.saveReview(
           'my-course',
@@ -501,7 +542,9 @@ void main() {
         expect(await store.database.query('review_state'), isEmpty);
         expect(await store.database.query('practice_attempts'), isEmpty);
         expect(await store.database.query('salon_rehearsals'), isEmpty);
+        expect(await store.database.query('confidence_check_ins'), isEmpty);
         expect(progress.salonRecordedSeconds, isEmpty);
+        expect(progress.confidenceCheckIns, isEmpty);
       } finally {
         await store.close();
         await directory.delete(recursive: true);

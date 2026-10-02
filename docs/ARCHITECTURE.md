@@ -74,6 +74,10 @@ The conversation microphone uses a monotonic stopwatch from successful native st
 
 `RecordingPlayback` isolates local `.m4a` playback from widgets. The native adapter uses `audioplayers` to open an existing app-private file and releases its player on stop. `AssessmentPlaybackController` handles loading, playing, completion and failure. The starting-assessment screen can replay the current take and staged answers from `AssessmentController`'s in-memory paths. Playback stops before new capture, navigation, interruption or deletion. No recording survives the existing cache lifetime, and there is no schema or API change.
 
+## Sprint 17 learner confidence slice
+
+SQLite schema version 7 adds `confidence_check_ins` with the latest 1–5 learner-reported readiness and UTC time for `starting` and `day5`. The same optional question appears after all seven starting recordings and after all Day-5 guided speaking steps. `SessionController` confirms a choice only after the local transaction succeeds. My practice shows each self-rating separately, without a derived change or speaking score. Clear phone data deletes both rows. No audio, transcript or backend request is involved.
+
 ## Mobile structure
 
 - `lib/app`: composition, Riverpod providers, GoRouter routes and theme.

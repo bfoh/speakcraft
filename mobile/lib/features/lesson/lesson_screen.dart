@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/services.dart';
 import '../../shared/components.dart';
 import '../../shared/pilot_access_dialog.dart';
+import '../progress/confidence_check_in.dart';
 import 'microphone_controller.dart';
 import 'transcription_controller.dart';
 import 'feedback_controller.dart';
@@ -508,6 +509,19 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
                   label: const Text('Practise from the start'),
                 ),
               ],
+              if (widget.day == 5 &&
+                  index == lesson.prompts.length - 1 &&
+                  finished)
+                ConfidenceCheckInCard(
+                  current: session.progress.confidenceFor('day5'),
+                  saving: session.saving,
+                  enabled: !_mic.capturing,
+                  onSelected: (rating) async {
+                    await session.update(
+                      session.progress.withConfidenceCheckIn('day5', rating),
+                    );
+                  },
+                ),
               if (widget.day == 3 || widget.day == 5) ...[
                 const SpeakCraftNotice(
                   'For more customer conversation practice, try AI Salon. This lesson does not assess a full consultation or challenge.',
