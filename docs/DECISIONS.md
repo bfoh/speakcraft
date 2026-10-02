@@ -89,3 +89,7 @@ Save the highest number of learner replies completed in one terminal Day-3 or Da
 ## 2026-10-02 — AI Salon recorded-answer time
 
 Measure each take with a monotonic clock from successful microphone start to stop request. Add its duration to a rehearsal only after the learner explicitly sends the transcript and the backend accepts the reply. Save the longest total answer-recording seconds per Day-3/Day-5 scenario on the phone, independently of the best completed-reply count. Label the time as recording, since it can include silence and excludes customer turns. Do not treat it as proof of the blueprint's 90-second consultation goal.
+
+## 2026-10-02 — Listen to temporary starting answers
+
+Let learners replay current and staged starting-assessment takes during the existing app session. Use one local audio player behind a small interface, stopping it before recording or deleting files. Keep the prior launch-time purge and explicit Clear recordings action. Do not call this English Mirror or retain a baseline for comparison until learner choice, educator review and retention rules are established.

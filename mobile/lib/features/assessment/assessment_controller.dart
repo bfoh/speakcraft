@@ -16,6 +16,7 @@ class AssessmentController extends ChangeNotifier {
   BaselineItem? get current => index < items.length ? items[index] : null;
   bool get complete => index == items.length;
   int get capturedCount => _captures.length;
+  String? pathFor(String itemId) => _captures[itemId];
 
   Future<bool> saveCurrent(String recordingPath) async {
     if (saving || complete) return false;

@@ -10,6 +10,7 @@ import 'package:speakcraft/app/services.dart';
 import 'package:speakcraft/app/speakcraft_app.dart';
 import 'package:speakcraft/core/audio/native_microphone.dart';
 import 'package:speakcraft/core/audio/assessment_capture_store.dart';
+import 'package:speakcraft/core/audio/recording_playback.dart';
 import 'package:speakcraft/core/audio/speech_output.dart';
 import 'package:speakcraft/core/curriculum/curriculum.dart';
 import 'package:speakcraft/core/storage/progress_store.dart';
@@ -86,6 +87,7 @@ void main() {
         folder: 'speakcraft-baseline-takes',
       ),
       assessmentCaptureStore: await NativeAssessmentCaptureStore.create(),
+      recordingPlayback: DeviceRecordingPlayback(),
       speech: DeviceSpeechOutput(),
       recognition: HttpSpeechRecognition('http://127.0.0.1:${server.port}'),
       feedback: HttpSpeakingFeedback('http://127.0.0.1:${server.port}'),

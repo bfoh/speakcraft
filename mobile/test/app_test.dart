@@ -22,6 +22,7 @@ void main() {
   late FakeMicrophone mic;
   late FakeSpeech speech;
   late FakeAssessmentCaptureStore assessmentCapture;
+  late FakeRecordingPlayback recordingPlayback;
   late FakeMicrophone baselineMic;
   late ProviderContainer container;
 
@@ -39,6 +40,7 @@ void main() {
     mic = FakeMicrophone();
     speech = FakeSpeech();
     assessmentCapture = FakeAssessmentCaptureStore();
+    recordingPlayback = FakeRecordingPlayback();
     baselineMic = FakeMicrophone();
     final salonController = salonClock == null
         ? null
@@ -60,6 +62,7 @@ void main() {
             conversationMicrophone: FakeMicrophone(),
             assessmentMicrophone: baselineMic,
             assessmentCaptureStore: assessmentCapture,
+            recordingPlayback: recordingPlayback,
             speech: speech,
             recognition: recognition,
             feedback: feedback,
@@ -110,6 +113,7 @@ void main() {
               conversationMicrophone: FakeMicrophone(),
               assessmentMicrophone: FakeMicrophone(),
               assessmentCaptureStore: FakeAssessmentCaptureStore(),
+              recordingPlayback: FakeRecordingPlayback(),
               speech: FakeSpeech(),
             ),
           ),
@@ -1207,6 +1211,10 @@ void main() {
     await tap(tester, 'Enable microphone');
     await tap(tester, 'Start recording');
     await tap(tester, 'Stop recording');
+    await tap(tester, 'Listen to my answer');
+    expect(recordingPlayback.paths.last, '/test/recording.m4a');
+    await tap(tester, 'Stop my answer');
+    expect(recordingPlayback.playing, isFalse);
     await tap(tester, 'Save answer and continue');
     expect(assessmentCapture.captures.keys, contains('baseline-introduction'));
     expect(find.text('Describe the salon picture'), findsOneWidget);
@@ -1231,6 +1239,42 @@ void main() {
     );
     expect(assessmentCapture.captures.length, 7);
     expect(baselineMic.starts, 7);
+    await tap(tester, 'Hear how to review');
+    expect(speech.spoken.last, contains('Tap an answer'));
+    await tap(tester, 'Play my answer: Tell us about yourself');
+    expect(
+      recordingPlayback.paths.last,
+      '/test/baseline/baseline-introduction.m4a',
+    );
+    await tap(tester, 'Go to Home');
+    expect(recordingPlayback.playing, isFalse);
+    await tap(tester, 'Open starting assessment');
+    await tap(tester, 'Play my answer: Tell us about yourself');
+    await tap(tester, 'Clear these recordings');
+    await tap(tester, 'Clear recordings');
+    expect(recordingPlayback.playing, isFalse);
+    expect(assessmentCapture.captures, isEmpty);
+    expect(find.text('Tell us about yourself'), findsOneWidget);
+  });
+
+  testWidgets('starting answer playback failure keeps the take for retry', (
+    tester,
+  ) async {
+    await launch(tester, progress: returning);
+    await tap(tester, 'Open starting assessment');
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    recordingPlayback.failPlay = true;
+    await tap(tester, 'Listen to my answer');
+    expect(find.textContaining("couldn't play that answer"), findsOneWidget);
+    expect(assessmentCapture.captures, isEmpty);
+    recordingPlayback.failPlay = false;
+    await tap(tester, 'Listen to my answer');
+    expect(recordingPlayback.playing, isTrue);
+    await tap(tester, 'Save answer and continue');
+    expect(recordingPlayback.playing, isFalse);
+    expect(assessmentCapture.captures.length, 1);
   });
 
   testWidgets('failed baseline save preserves the take and privacy clears it', (
@@ -1273,6 +1317,24 @@ void main() {
     );
     expect(store.progress.onboarded, isTrue);
     assessmentCapture.failClear = false;
+    await tap(tester, 'Clear phone data');
+    await tester.tap(find.text('Clear phone data').last);
+    await tester.pumpAndSettle();
+    expect(store.progress.onboarded, isFalse);
+  });
+
+  testWidgets('phone data stays intact if answer playback cannot stop', (
+    tester,
+  ) async {
+    await launch(tester, progress: returning);
+    recordingPlayback.failStop = true;
+    await tap(tester, 'Privacy and phone data');
+    await tap(tester, 'Clear phone data');
+    await tester.tap(find.text('Clear phone data').last);
+    await tester.pumpAndSettle();
+    expect(find.textContaining("couldn't stop an answer"), findsOneWidget);
+    expect(store.progress.onboarded, isTrue);
+    recordingPlayback.failStop = false;
     await tap(tester, 'Clear phone data');
     await tester.tap(find.text('Clear phone data').last);
     await tester.pumpAndSettle();

@@ -22,7 +22,7 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
       builder: (dialogContext) => AlertDialog(
         title: const Text('Clear phone data?'),
         content: const Text(
-          'This erases your choices, saved speaking steps, salon reply counts, word reviews and current recordings on this phone. You will start again at Welcome.',
+          'This erases your choices, saved speaking steps, salon reply counts and recording time, word reviews and current recordings on this phone. You will start again at Welcome.',
         ),
         actions: [
           TextButton(
@@ -45,6 +45,7 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
     final dialogueMic = ref.read(conversationMicrophoneProvider);
     final assessmentMic = ref.read(assessmentMicrophoneProvider);
     final assessment = ref.read(assessmentProvider);
+    final assessmentPlayback = ref.read(assessmentPlaybackProvider);
     final transcription = ref.read(transcriptionProvider);
     final feedback = ref.read(feedbackProvider);
     final conversation = ref.read(conversationProvider);
@@ -56,6 +57,16 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
     ];
     final session = ref.read(sessionProvider);
     final review = ref.read(reviewProvider);
+
+    if (!await assessmentPlayback.stop()) {
+      if (mounted) {
+        setState(() {
+          _clearing = false;
+          _error = "We couldn't stop an answer. Please try again.";
+        });
+      }
+      return;
+    }
 
     // Attempt every recorder even when one fails. Durable data is cleared only
     // after all recorders and staged baseline takes are gone.
@@ -109,7 +120,7 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
     onBack: _clearing ? null : () => context.pop(),
     children: [
       const SpeakCraftAudioButton(
-        text: 'Your choices, speaking steps and salon reply counts stay on this phone. You choose when to send a recording or words for help. You can clear phone data here.',
+        text: 'Your choices, speaking steps, salon reply counts and recording time stay on this phone. You choose when to send a recording or words for help. You can clear phone data here.',
       ),
       const SpeakCraftCard(
         child: Column(
@@ -118,7 +129,7 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
             Text('Saved on this phone'),
             SizedBox(height: 8),
             Text(
-              'Your course, place in each day, recorded speaking steps, salon reply counts and word review schedule. Starting assessment recordings are removed at next launch or when you clear phone data.',
+              'Your course, place in each day, recorded speaking steps, salon reply counts and recording time, and word review schedule. Starting assessment recordings are removed at next launch or when you clear phone data.',
             ),
             SizedBox(height: 16),
             Text('Sent only when you choose'),

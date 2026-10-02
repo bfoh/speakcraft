@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/audio/microphone.dart';
 import '../core/audio/assessment_capture_store.dart';
 import '../core/audio/native_microphone.dart';
+import '../core/audio/recording_playback.dart';
 import '../core/audio/speech_output.dart';
 import '../core/curriculum/curriculum.dart';
 import '../core/storage/progress_store.dart';
@@ -18,6 +19,7 @@ import '../core/speech/salon.dart';
 import '../core/speech/expression.dart';
 import '../features/conversation/conversation_controller.dart';
 import '../features/assessment/assessment_controller.dart';
+import '../features/assessment/assessment_playback_controller.dart';
 import '../features/help_me_say_it/expression_controller.dart';
 import '../features/lesson/feedback_controller.dart';
 import '../features/lesson/microphone_controller.dart';
@@ -33,6 +35,7 @@ class AppServices {
     required this.conversationMicrophone,
     required this.assessmentMicrophone,
     required this.assessmentCaptureStore,
+    required this.recordingPlayback,
     required this.speech,
     this.recognition = const UnconfiguredSpeechRecognition(),
     this.feedback = const UnconfiguredSpeakingFeedback(),
@@ -48,6 +51,7 @@ class AppServices {
   final Microphone conversationMicrophone;
   final Microphone assessmentMicrophone;
   final AssessmentCaptureStore assessmentCaptureStore;
+  final RecordingPlayback recordingPlayback;
   final SpeechOutput speech;
   final SpeechRecognition recognition;
   final SpeakingFeedback feedback;
@@ -97,6 +101,7 @@ final bootstrapProvider = FutureProvider<AppServices>((ref) async {
       conversationMicrophone: conversationMicrophone,
       assessmentMicrophone: assessmentMicrophone,
       assessmentCaptureStore: assessmentCaptureStore,
+      recordingPlayback: DeviceRecordingPlayback(),
       speech: DeviceSpeechOutput(),
       recognition: HttpSpeechRecognition(
         const String.fromEnvironment('SPEAKCRAFT_API_BASE_URL'),
@@ -173,6 +178,17 @@ final assessmentProvider = Provider<AssessmentController>((ref) {
   final controller = AssessmentController(
     services.assessmentCaptureStore,
     services.curriculum.baselineItems,
+  );
+  ref.onDispose(controller.dispose);
+  return controller;
+}, dependencies: [servicesProvider]);
+final assessmentPlaybackProvider = Provider<AssessmentPlaybackController>((
+  ref,
+) {
+  final services = ref.watch(servicesProvider);
+  final controller = AssessmentPlaybackController(
+    services.recordingPlayback,
+    services.speech,
   );
   ref.onDispose(controller.dispose);
   return controller;

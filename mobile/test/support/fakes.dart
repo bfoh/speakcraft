@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:speakcraft/core/audio/microphone.dart';
 import 'package:speakcraft/core/audio/assessment_capture_store.dart';
+import 'package:speakcraft/core/audio/recording_playback.dart';
 import 'package:speakcraft/core/audio/speech_output.dart';
 import 'package:speakcraft/core/storage/progress_store.dart';
 import 'package:speakcraft/core/storage/review_store.dart';
@@ -106,6 +107,44 @@ class FakeAssessmentCaptureStore implements AssessmentCaptureStore {
   Future<void> clear() async {
     if (failClear) throw StateError('Test assessment clear failure');
     captures.clear();
+  }
+}
+
+class FakeRecordingPlayback implements RecordingPlayback {
+  final events = StreamController<void>.broadcast();
+  final paths = <String>[];
+  int stops = 0;
+  bool failPlay = false;
+  bool failStop = false;
+  Completer<void>? playGate;
+  bool playing = false;
+
+  @override
+  Stream<void> get completed => events.stream;
+
+  @override
+  Future<void> play(String path) async {
+    if (playGate != null) await playGate!.future;
+    if (failPlay) throw StateError('Test playback failure');
+    paths.add(path);
+    playing = true;
+  }
+
+  @override
+  Future<void> stop() async {
+    stops++;
+    if (failStop) throw StateError('Test playback stop failure');
+    playing = false;
+  }
+
+  void complete() {
+    playing = false;
+    events.add(null);
+  }
+
+  @override
+  Future<void> dispose() async {
+    await events.close();
   }
 }
 

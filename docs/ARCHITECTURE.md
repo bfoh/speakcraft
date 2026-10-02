@@ -70,15 +70,19 @@ SQLite schema version 5 adds `salon_rehearsals` with the most learner replies co
 
 The conversation microphone uses a monotonic stopwatch from successful native start until stop is requested. Its duration excludes native stop processing, transcription and network wait, and is capped at the take limit. `ConversationController` adds a take's duration only after a successful provider response, so failed sends and retries cannot double-count it. SQLite schema version 6 stores each scenario's longest total recorded-answer seconds separately from its best completed-reply count. These maxima can come from different rehearsals. The measure may include silence and does not time the customer's turns or the whole consultation.
 
+## Sprint 16 starting-answer playback slice
+
+`RecordingPlayback` isolates local `.m4a` playback from widgets. The native adapter uses `audioplayers` to open an existing app-private file and releases its player on stop. `AssessmentPlaybackController` handles loading, playing, completion and failure. The starting-assessment screen can replay the current take and staged answers from `AssessmentController`'s in-memory paths. Playback stops before new capture, navigation, interruption or deletion. No recording survives the existing cache lifetime, and there is no schema or API change.
+
 ## Mobile structure
 
 - `lib/app`: composition, Riverpod providers, GoRouter routes and theme.
 - `lib/core/curriculum`: immutable typed models and bundled curriculum validation.
 - `lib/core/storage`: progress repository interface and native SQLite adapter.
-- `lib/core/audio`: microphone interface, native recording adapter, authored-text speech output.
+- `lib/core/audio`: microphone and playback interfaces, native recording/playback adapters, authored-text speech output.
 - `lib/core/speech`: backend-facing transcription and teaching-feedback contracts.
 - `lib/features/onboarding`: welcome, profession, support language, Kora introduction, assessment introduction.
-- `lib/features/assessment`: unscored baseline capture, private session storage and five-part learner journey.
+- `lib/features/assessment`: unscored seven-task starting capture and private session storage.
 - `lib/features/home`: five-day entry and practice positions.
 - `lib/features/progress`: saved daily positions and resume navigation.
 - `lib/features/review`: offline My Words listening and self-rated scheduling.

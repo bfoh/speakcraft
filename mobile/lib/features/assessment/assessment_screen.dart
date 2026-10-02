@@ -8,6 +8,7 @@ import '../../app/services.dart';
 import '../../features/lesson/microphone_controller.dart';
 import '../../shared/components.dart';
 import 'assessment_controller.dart';
+import 'assessment_playback_controller.dart';
 
 class AssessmentScreen extends ConsumerStatefulWidget {
   const AssessmentScreen({super.key});
@@ -20,6 +21,7 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen>
     with WidgetsBindingObserver {
   late final MicrophoneController _mic;
   late final AssessmentController _assessment;
+  late final AssessmentPlaybackController _playback;
   String? _cleanupError;
 
   @override
@@ -27,6 +29,7 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen>
     super.initState();
     _mic = ref.read(assessmentMicrophoneProvider);
     _assessment = ref.read(assessmentProvider);
+    _playback = ref.read(assessmentPlaybackProvider);
     _mic.resume();
     WidgetsBinding.instance.addObserver(this);
   }
@@ -36,12 +39,14 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen>
     if (state == AppLifecycleState.resumed) {
       _mic.resume();
     } else {
+      unawaited(_playback.stop());
       unawaited(_mic.interrupt());
     }
   }
 
   Future<void> _home() async {
     if (_assessment.saving) return;
+    if (!await _playback.stop()) return;
     await _mic.interrupt();
     if (mounted) context.go('/home');
   }
@@ -50,6 +55,7 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen>
     final item = _assessment.current;
     final path = _mic.recordingPath;
     if (item == null || path == null || _mic.promptId != item.id) return;
+    if (!await _playback.stop()) return;
     final saved = await _assessment.saveCurrent(path);
     if (!saved) return;
     await _mic.discard();
@@ -83,6 +89,7 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen>
       ),
     );
     if (confirmed != true || !mounted) return;
+    if (!await _playback.stop()) return;
     final microphoneCleared = await _mic.clearForPrivacy();
     if (!microphoneCleared) {
       if (mounted) {
@@ -103,13 +110,14 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    unawaited(_playback.stop());
     unawaited(_mic.interrupt());
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: Listenable.merge([_assessment, _mic]),
+    listenable: Listenable.merge([_assessment, _mic, _playback]),
     builder: (context, _) {
       final item = _assessment.current;
       if (item == null) {
@@ -125,6 +133,46 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen>
             const SpeakCraftNotice(
               'No score or assessment result is available yet. These recordings stay on this phone only for this app session and are removed next time you open the app.',
             ),
+            const Text('Listen to your answers from this app session.'),
+            SpeakCraftAudioButton(
+              text: 'Tap an answer to hear your recording. These answers are removed next time you open the app.',
+              label: 'Hear how to review',
+              enabled: !_playback.busy && !_playback.playing,
+            ),
+            for (final savedItem in _assessment.items)
+              if (_assessment.pathFor(savedItem.id) case final savedPath?)
+                SpeakCraftCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(savedItem.title),
+                      const SizedBox(height: 8),
+                      SpeakCraftButton(
+                        label:
+                            _playback.playing &&
+                                _playback.itemId == savedItem.id
+                            ? 'Stop my answer: ${savedItem.title}'
+                            : 'Play my answer: ${savedItem.title}',
+                        icon:
+                            _playback.playing &&
+                                _playback.itemId == savedItem.id
+                            ? Icons.stop_circle_outlined
+                            : Icons.play_circle_outline,
+                        onPressed: _playback.busy
+                            ? null
+                            : () => _playback.toggle(savedItem.id, savedPath),
+                      ),
+                    ],
+                  ),
+                ),
+            if (_playback.busy)
+              const SpeakCraftNotice('Opening your answer…', live: true),
+            if (_playback.error != null)
+              SpeakCraftNotice(
+                _playback.error!,
+                icon: Icons.error_outline,
+                live: true,
+              ),
             if (_cleanupError != null)
               SpeakCraftNotice(
                 _cleanupError!,
@@ -143,7 +191,7 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen>
               onPressed: _home,
             ),
             OutlinedButton.icon(
-              onPressed: _assessment.saving ? null : _clear,
+              onPressed: _assessment.saving || _playback.busy ? null : _clear,
               icon: const Icon(Icons.delete_outline),
               label: const Text('Clear these recordings'),
             ),
@@ -244,7 +292,7 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen>
               key: ValueKey(item.id),
               text: item.spokenPrompt,
               label: item.part >= 4 ? 'Listen to customer' : 'Hear the task',
-              enabled: !_mic.capturing,
+              enabled: !_mic.capturing && !_playback.busy && !_playback.playing,
               allowSlowReplay: true,
             ),
             SpeakCraftNotice(
@@ -266,12 +314,24 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen>
                 icon: Icons.error_outline,
                 live: true,
               ),
+            if (_playback.error != null)
+              SpeakCraftNotice(
+                _playback.error!,
+                icon: Icons.error_outline,
+                live: true,
+              ),
+            if (_playback.busy)
+              const SpeakCraftNotice('Opening your answer…', live: true),
             SpeakCraftButton(
               label: action,
               icon: icon,
-              onPressed: _mic.busy || _assessment.saving
+              onPressed: _mic.busy || _assessment.saving || _playback.busy
                   ? null
                   : () async {
+                      if (_mic.state != MicrophoneState.recording &&
+                          !await _playback.stop()) {
+                        return;
+                      }
                       switch (_mic.state) {
                         case MicrophoneState.idle:
                         case MicrophoneState.failure:
@@ -288,13 +348,29 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen>
                       }
                     },
             ),
+            if (ownsTake &&
+                _mic.state == MicrophoneState.success &&
+                _mic.recordingPath != null)
+              SpeakCraftButton(
+                label: _playback.playing && _playback.itemId == item.id
+                    ? 'Stop my answer'
+                    : 'Listen to my answer',
+                icon: _playback.playing && _playback.itemId == item.id
+                    ? Icons.stop_circle_outlined
+                    : Icons.play_circle_outline,
+                onPressed: _playback.busy || _assessment.saving
+                    ? null
+                    : () => _playback.toggle(item.id, _mic.recordingPath!),
+              ),
             if (ownsTake && _mic.state == MicrophoneState.success)
               SpeakCraftButton(
                 label: _assessment.saving
                     ? 'Saving…'
                     : 'Save answer and continue',
                 icon: Icons.arrow_forward,
-                onPressed: _assessment.saving ? null : _saveAndContinue,
+                onPressed: _assessment.saving || _playback.busy
+                    ? null
+                    : _saveAndContinue,
               ),
           ],
         ),
