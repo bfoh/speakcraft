@@ -12,7 +12,8 @@ import 'transcription_controller.dart';
 import 'feedback_controller.dart';
 
 class LessonScreen extends ConsumerStatefulWidget {
-  const LessonScreen({super.key});
+  const LessonScreen({super.key, required this.day});
+  final int day;
   @override
   ConsumerState<LessonScreen> createState() => _LessonScreenState();
 }
@@ -30,6 +31,24 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
     _feedback = ref.read(feedbackProvider);
     _mic.resume();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_clearOtherLessonTake());
+    });
+  }
+
+  Future<void> _clearOtherLessonTake() async {
+    final lesson = ref
+        .read(servicesProvider)
+        .curriculum
+        .lessons[widget.day - 1];
+    final index = ref.read(sessionProvider).progress.promptForDay(widget.day);
+    if (_mic.promptId != null && _mic.promptId != lesson.prompts[index].id) {
+      await _mic.discard();
+      if (_mic.recordingPath == null) {
+        _transcription.clear();
+        _feedback.clear();
+      }
+    }
   }
 
   @override
@@ -67,13 +86,16 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
   Widget build(BuildContext context) {
     final services = ref.watch(servicesProvider);
     final session = ref.watch(sessionProvider);
-    final lesson = services.curriculum.dayOne;
+    final lesson = services.curriculum.lessons[widget.day - 1];
     return ListenableBuilder(
       listenable: Listenable.merge([_mic, session, _transcription, _feedback]),
       builder: (context, _) {
-        final index = session.progress.dayOnePrompt;
+        final index = session.progress.promptForDay(widget.day);
         final prompt = lesson.prompts[index];
-        final (status, button, icon) = switch (_mic.state) {
+        final ownsTake = _mic.promptId == null || _mic.promptId == prompt.id;
+        final (status, button, icon) = switch (ownsTake
+            ? _mic.state
+            : MicrophoneState.idle) {
           MicrophoneState.idle => (
             'Ready when you are.',
             'Enable microphone',
@@ -124,7 +146,9 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
             title: lesson.title,
             onBack: session.saving ? null : _home,
             children: [
-              Text('Day 1 • Practice ${index + 1} of ${lesson.prompts.length}'),
+              Text(
+                'Day ${lesson.day} • Practice ${index + 1} of ${lesson.prompts.length}',
+              ),
               LinearProgressIndicator(
                 value: (index + 1) / lesson.prompts.length,
                 semanticsLabel:
@@ -159,7 +183,11 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
                 ),
               ),
               const Text('Use your own details. It is okay to try again.'),
-              SpeakCraftNotice(status, icon: icon, live: true),
+              SpeakCraftNotice(
+                ownsTake ? status : 'Ready for this practice.',
+                icon: icon,
+                live: true,
+              ),
               if (_mic.state == MicrophoneState.recording)
                 const Text('Recording stops after 60 seconds.'),
               SpeakCraftButton(
@@ -184,7 +212,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
                         }
                       },
               ),
-              if (_mic.recordingPath != null)
+              if (_mic.recordingPath != null && ownsTake)
                 OutlinedButton.icon(
                   onPressed:
                       _mic.capturing ||
@@ -205,7 +233,9 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
                 'Your voice stays on this phone unless you choose Hear my words. That sends the recording for speech recognition. Help me say it better sends the words you see for feedback.',
                 icon: Icons.privacy_tip_outlined,
               ),
-              if (_mic.recordingPath != null && _transcription.configured)
+              if (_mic.recordingPath != null &&
+                  ownsTake &&
+                  _transcription.configured)
                 SpeakCraftButton(
                   label: _transcription.sending
                       ? 'Listening to your words…'
@@ -218,12 +248,15 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
                       ? null
                       : () => _hearMyWords(_mic.recordingPath!),
                 ),
-              if (_mic.recordingPath != null && !_transcription.configured)
+              if (_mic.recordingPath != null &&
+                  ownsTake &&
+                  !_transcription.configured)
                 const SpeakCraftNotice(
                   'Speech recognition needs a SpeakCraft server connection. You can still practise without internet.',
                   icon: Icons.wifi_off_outlined,
                 ),
-              if (_transcription.state == TranscriptionState.success)
+              if (ownsTake &&
+                  _transcription.state == TranscriptionState.success)
                 SpeakCraftCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -246,7 +279,8 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
                     ],
                   ),
                 ),
-              if (_transcription.state == TranscriptionState.success &&
+              if (ownsTake &&
+                  _transcription.state == TranscriptionState.success &&
                   _feedback.provider.configured)
                 SpeakCraftButton(
                   label: _feedback.sending
@@ -274,7 +308,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
                           }
                         },
                 ),
-              if (_feedback.state == TeachingFeedbackState.success)
+              if (ownsTake && _feedback.state == TeachingFeedbackState.success)
                 SpeakCraftCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -304,61 +338,69 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
                     ],
                   ),
                 ),
-              if (_feedback.state == TeachingFeedbackState.offline)
+              if (ownsTake && _feedback.state == TeachingFeedbackState.offline)
                 const SpeakCraftNotice(
                   "We couldn't connect for feedback. Your words and recording are still here.",
                   icon: Icons.wifi_off_outlined,
                   live: true,
                 ),
-              if (_feedback.state == TeachingFeedbackState.accessDenied)
+              if (ownsTake &&
+                  _feedback.state == TeachingFeedbackState.accessDenied)
                 const SpeakCraftNotice(
                   'The access code has stopped working. Ask your facilitator.',
                   icon: Icons.lock_outline,
                   live: true,
                 ),
-              if (_feedback.state == TeachingFeedbackState.unavailable)
+              if (ownsTake &&
+                  _feedback.state == TeachingFeedbackState.unavailable)
                 const SpeakCraftNotice(
                   'Feedback is unavailable right now. You can still practise.',
                   icon: Icons.cloud_off_outlined,
                   live: true,
                 ),
-              if (_feedback.state == TeachingFeedbackState.failure)
+              if (ownsTake && _feedback.state == TeachingFeedbackState.failure)
                 const SpeakCraftNotice(
                   'Something went wrong with feedback. You can try again.',
                   icon: Icons.error_outline,
                   live: true,
                 ),
-              if (_transcription.state == TranscriptionState.noSpeech)
+              if (ownsTake &&
+                  _transcription.state == TranscriptionState.noSpeech)
                 const SpeakCraftNotice(
                   "I couldn't hear words in that recording. Try speaking again.",
                   icon: Icons.hearing_disabled_outlined,
                   live: true,
                 ),
-              if (_transcription.state == TranscriptionState.offline)
+              if (ownsTake &&
+                  _transcription.state == TranscriptionState.offline)
                 const SpeakCraftNotice(
                   "We couldn't connect. Your recording is still here. Try again when you're online.",
                   icon: Icons.wifi_off_outlined,
                   live: true,
                 ),
-              if (_transcription.state == TranscriptionState.accessDenied)
+              if (ownsTake &&
+                  _transcription.state == TranscriptionState.accessDenied)
                 const SpeakCraftNotice(
                   'That access code did not work. Ask your facilitator and try again.',
                   icon: Icons.lock_outline,
                   live: true,
                 ),
-              if (_transcription.state == TranscriptionState.unavailable)
+              if (ownsTake &&
+                  _transcription.state == TranscriptionState.unavailable)
                 const SpeakCraftNotice(
                   'Speech recognition is unavailable right now. Your recording is still here.',
                   icon: Icons.cloud_off_outlined,
                   live: true,
                 ),
-              if (_transcription.state == TranscriptionState.invalidRecording)
+              if (ownsTake &&
+                  _transcription.state == TranscriptionState.invalidRecording)
                 const SpeakCraftNotice(
                   "We couldn't use that recording. Please record again.",
                   icon: Icons.mic_off_outlined,
                   live: true,
                 ),
-              if (_transcription.state == TranscriptionState.failure)
+              if (ownsTake &&
+                  _transcription.state == TranscriptionState.failure)
                 const SpeakCraftNotice(
                   'Something went wrong while listening. Your recording is still here. Try again.',
                   icon: Icons.error_outline,
@@ -380,7 +422,10 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
                       ? null
                       : () async {
                           final saved = await session.update(
-                            session.progress.copyWith(dayOnePrompt: index + 1),
+                            session.progress.withPromptForDay(
+                              widget.day,
+                              index + 1,
+                            ),
                           );
                           if (saved) {
                             await _mic.discard();
@@ -395,7 +440,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
                 )
               else ...[
                 const SpeakCraftNotice(
-                  'Keep practising your introduction. We have not assessed or scored your speaking.',
+                  'Keep practising. We have not assessed or scored your speaking.',
                 ),
                 OutlinedButton.icon(
                   onPressed:
@@ -406,7 +451,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
                       ? null
                       : () async {
                           final saved = await session.update(
-                            session.progress.copyWith(dayOnePrompt: 0),
+                            session.progress.withPromptForDay(widget.day, 0),
                           );
                           if (saved) {
                             await _mic.discard();
@@ -418,6 +463,19 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
                         },
                   icon: const Icon(Icons.replay),
                   label: const Text('Practise from the start'),
+                ),
+              ],
+              if (widget.day == 3 || widget.day == 5) ...[
+                const SpeakCraftNotice(
+                  'For more customer conversation practice, try AI Salon. This lesson does not assess a full consultation or challenge.',
+                  icon: Icons.info_outline,
+                ),
+                OutlinedButton.icon(
+                  onPressed: _mic.capturing || session.saving
+                      ? null
+                      : () => context.push('/salon/first'),
+                  icon: const Icon(Icons.storefront_outlined),
+                  label: const Text('Practise in AI Salon'),
                 ),
               ],
               OutlinedButton.icon(

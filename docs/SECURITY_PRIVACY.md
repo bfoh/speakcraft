@@ -2,7 +2,7 @@
 
 ## Data handled
 
-The app stores profession, English support choice, onboarding position and Day-1 phrase position in private SQLite storage. It does not persist names, accounts, transcripts, learning scores or cloud identifiers.
+The app stores profession, English support choice, onboarding position and current prompt position for each of the five days in private SQLite storage. It does not persist names, accounts, transcripts, learning scores or cloud identifiers.
 
 The microphone records only after an explicit learner action and OS permission. Mono audio is written to the app's private temporary cache. One current take is retained for in-app navigation. Starting a replacement, moving to another phrase, pressing Delete recording, or launching the app again removes it. The OS may evict cache files. A recording is not an English Mirror artefact or durable lesson history.
 

@@ -53,3 +53,7 @@ Add only the blueprint's first difficulty-1 customer: friendly, interested in br
 ## 2026-10-02 — Help Me Say It micro-lesson
 
 Use explicit intention review before requesting an expression. Generate one short phrase and customer cue through a bounded structured-output endpoint. Keep the inferred meaning visible so the learner can notice a misunderstanding and start again. Reuse device speech and the separate dialogue recorder for repetition and a single role-play reply. Recognition output is not a pronunciation score, and no phrase bank or new persistent learner data is introduced.
+
+## 2026-10-02 — Five-day guided practice
+
+Open all five authored days without a false mastery gate. Add short example-based sequences for Days 2–5 and save only each day's prompt position in a versioned local SQLite table. Keep the blueprint's longer consultation and Day-5 challenge as future outcomes; the practice pages and AI Salon link do not claim to assess them. Clear a recording when the learner switches to a different day or prompt.

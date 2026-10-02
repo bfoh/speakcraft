@@ -2,9 +2,9 @@
 
 ## Foundation and boundaries
 
-A Flutter application runs the beginning of Day 1 on Android and iOS. A separate FastAPI process exposes liveness, optional speech transcription, prompt-bound teaching feedback, a bounded Kora dialogue and one structured AI Salon scenario. The mobile application remains usable offline and does not require the backend for navigation or recording. There is no learner authentication, cloud database, scored assessment or synchronisation in this build.
+A Flutter application runs guided practice across five days on Android and iOS. A separate FastAPI process exposes liveness, optional speech transcription, prompt-bound teaching feedback, a bounded Kora dialogue, Help Me Say It and one structured AI Salon scenario. The mobile application remains usable offline and does not require the backend for navigation or recording. There is no learner authentication, cloud database, scored assessment or synchronisation in this build.
 
-The architecture follows blueprint sections 18–20. The explicit Sprint 1 instruction limits the full AI vertical slice proposed in section 35; see DECISIONS.md.
+The architecture follows blueprint sections 18–20. Later slices remain bounded to the authored Alpha pathway; see DECISIONS.md.
 
 ## Sprint 2 speech slice
 
@@ -34,6 +34,10 @@ Lesson practice and Kora dialogue use separate native recorders and private cach
 
 The learner records an intention, reviews the tentative transcript and explicitly sends it to `POST /v1/help-me-say-it`. The authenticated backend accepts only the authored Beauty & Cosmetology context identifier and a bounded intention. Responses structured output returns a brief meaning confirmation, one expression and one customer cue; Pydantic validates all fields and provider storage is disabled. The mobile controller advances through intention, repeat and short role-play only after learner actions. The expression and subsequent transcripts remain in memory. Dialogue uses the separate conversation recorder, so Day-1 practice takes remain untouched. Recognition transcripts document what was heard; they do not establish pronunciation quality.
 
+## Sprint 7 daily practice slice
+
+The same lesson screen now reads any of the five validated curriculum days. Days 2–5 contain short authored sequences that teach the blueprint vocabulary and conversation moves. The `POST /v1/speech/evaluate` contract already resolves any authored lesson/prompt pair. Home opens each day and states that longer consultations and the final challenge are not assessed by these pages. Switching to another prompt or day clears the prior take before it can be shown or uploaded under the new prompt.
+
 ## Mobile structure
 
 - `lib/app`: composition, Riverpod providers, GoRouter routes and theme.
@@ -42,7 +46,7 @@ The learner records an intention, reviews the tentative transcript and explicitl
 - `lib/core/audio`: microphone interface, native recording adapter, authored-text speech output.
 - `lib/core/speech`: backend-facing transcription and teaching-feedback contracts.
 - `lib/features/onboarding`: welcome, profession, support language, Kora introduction, assessment introduction.
-- `lib/features/home`: Day-1 entry and a preview of the five-day journey.
+- `lib/features/home`: five-day entry and practice positions.
 - `lib/features/lesson`: phrase practice, microphone state controller and UI.
 - `lib/features/conversation`: bounded Day-1 dialogue controller and screen.
 - `lib/features/help_me_say_it`: short intention, repeat and customer role-play flow.
@@ -52,7 +56,7 @@ Riverpod supplies application dependencies. The bootstrap loads native services,
 
 ## Local state
 
-SQLite schema version 1 creates one `learner_progress` row. It stores onboarding step, profession, support language and Day-1 phrase index. The repository uses parameterised queries. Changes become visible only after a successful database write; write failure preserves the previous state and exposes retry. This is navigation progress, not evidence of mastery or lesson completion.
+SQLite schema version 2 preserves the original `learner_progress` row and adds `lesson_positions` for Days 2–5. It stores onboarding step, profession, support language and current prompt index for each day. The repository uses parameterised queries. Changes become visible only after a successful database write; write failure preserves the previous state and exposes retry. This is navigation progress, not evidence of mastery or lesson completion.
 
 Future local changes must increment the schema version and provide tested upgrades. No remote database schema or credentials are introduced. Routine audio is separate cache data, excluded from learning history.
 
@@ -60,7 +64,7 @@ Future local changes must increment the schema version and provide tested upgrad
 
 `curriculum/alpha.json` is the editorial source of truth for the five Alpha days. `scripts/sync_curriculum.py` validates it and copies identical content into `mobile/assets/curriculum/alpha.json` and `backend/app/data/alpha.json`. CI checks both copies for drift. No symlinks outside the projects are required for packaging.
 
-Day 1 has four authored prompts, ending in the blueprint's 30–60 second introduction. Days 2–5 contain objectives, target language and initial prompts; their activities remain unavailable. Example sentences are editorial seeds requiring educator review. They are not generated assessment data.
+Day 1 has four authored prompts, ending in the blueprint's 30–60 second introduction. Days 2–5 contain objectives, target language and short authored practice sequences. Longer consultations and the final challenge remain unassessed. Example sentences are editorial seeds requiring educator review. They are not generated assessment data.
 
 ## Voice boundary
 

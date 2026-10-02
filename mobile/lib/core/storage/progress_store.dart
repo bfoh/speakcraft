@@ -7,23 +7,38 @@ class LearnerProgress {
     this.profession,
     this.supportLanguage,
     this.dayOnePrompt = 0,
+    this.otherDayPrompts = const {},
   });
   final int onboardingStep;
   final String? profession;
   final String? supportLanguage;
   final int dayOnePrompt;
+  final Map<int, int> otherDayPrompts;
   bool get onboarded => onboardingStep == 5;
+
+  int promptForDay(int day) =>
+      day == 1 ? dayOnePrompt : (otherDayPrompts[day] ?? 0);
+
+  LearnerProgress withPromptForDay(int day, int index) {
+    if (day == 1) return copyWith(dayOnePrompt: index);
+    if (day < 2 || day > 5 || index < 0) {
+      throw ArgumentError('Invalid daily prompt');
+    }
+    return copyWith(otherDayPrompts: {...otherDayPrompts, day: index});
+  }
 
   LearnerProgress copyWith({
     int? onboardingStep,
     String? profession,
     String? supportLanguage,
     int? dayOnePrompt,
+    Map<int, int>? otherDayPrompts,
   }) => LearnerProgress(
     onboardingStep: onboardingStep ?? this.onboardingStep,
     profession: profession ?? this.profession,
     supportLanguage: supportLanguage ?? this.supportLanguage,
     dayOnePrompt: dayOnePrompt ?? this.dayOnePrompt,
+    otherDayPrompts: Map.unmodifiable(otherDayPrompts ?? this.otherDayPrompts),
   );
 }
 

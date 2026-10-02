@@ -10,6 +10,7 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final curriculum = ref.watch(servicesProvider).curriculum;
+    final progress = ref.watch(sessionProvider).progress;
     final dayOne = curriculum.dayOne;
     return SpeakCraftPage(
       title: 'Ready to speak?',
@@ -98,18 +99,40 @@ class HomeScreen extends ConsumerWidget {
         ),
         for (final lesson in curriculum.lessons.skip(1))
           SpeakCraftCard(
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(Icons.lock_outline),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Day ${lesson.day}: ${lesson.title}'),
-                      const Text('Coming later'),
-                    ],
-                  ),
+                Row(
+                  children: [
+                    const Icon(Icons.menu_book_outlined),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Day ${lesson.day}: ${lesson.title}'),
+                          const SizedBox(height: 8),
+                          Text(lesson.objective),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Practice ${progress.promptForDay(lesson.day) + 1} of ${lesson.prompts.length}',
+                          ),
+                          if (lesson.day == 3 || lesson.day == 5) ...[
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Guided practice. Full challenge is not assessed here.',
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SpeakCraftButton(
+                  label: 'Open Day ${lesson.day}',
+                  icon: Icons.play_arrow_rounded,
+                  onPressed: () => context.push('/lesson/day-${lesson.day}'),
                 ),
               ],
             ),

@@ -57,6 +57,8 @@ def validate(data: dict) -> None:
         for key in ("objective", "challenge", "target_language", "prompts"):
             if not lesson[key]:
                 raise ValueError(f"Missing {key}")
+        if len(lesson["prompts"]) < (4 if day in (1, 5) else 3):
+            raise ValueError(f"Day {day} needs its authored practice sequence")
         if not 1 <= lesson["estimated_minutes"] <= 30:
             raise ValueError("Invalid duration")
         conversation = lesson.get("conversation")

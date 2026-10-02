@@ -33,10 +33,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           builder: (context, state) => OnboardingScreen(step: step),
         ),
       GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
-      GoRoute(
-        path: '/lesson/day-1',
-        builder: (context, state) => const LessonScreen(),
-      ),
+      for (var day = 1; day <= 5; day++)
+        GoRoute(
+          path: '/lesson/day-$day',
+          builder: (context, state) => LessonScreen(day: day),
+        ),
       GoRoute(
         path: '/conversation/day-1',
         builder: (context, state) => const ConversationScreen(),

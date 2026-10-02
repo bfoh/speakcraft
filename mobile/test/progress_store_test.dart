@@ -29,6 +29,7 @@ void main() {
             profession: 'beauty-cosmetology',
             supportLanguage: 'en',
             dayOnePrompt: 2,
+            otherDayPrompts: {2: 1, 3: 2, 5: 3},
           ),
         );
         await store.close();
@@ -41,12 +42,61 @@ void main() {
         expect(restored.profession, 'beauty-cosmetology');
         expect(restored.supportLanguage, 'en');
         expect(restored.dayOnePrompt, 2);
+        expect(restored.promptForDay(2), 1);
+        expect(restored.promptForDay(3), 2);
+        expect(restored.promptForDay(4), 0);
+        expect(restored.promptForDay(5), 3);
       } finally {
         await store.close();
         await directory.delete(recursive: true);
       }
     },
   );
+
+  test('version 1 database upgrades without losing Day-1 position', () async {
+    sqfliteFfiInit();
+    final directory = await Directory.systemTemp.createTemp('speakcraft-v1-');
+    final path = '${directory.path}/progress.db';
+    final old = await databaseFactoryFfi.openDatabase(
+      path,
+      options: OpenDatabaseOptions(
+        version: 1,
+        onCreate: (db, version) async {
+          await db.execute('''
+            CREATE TABLE learner_progress (
+              id INTEGER PRIMARY KEY CHECK (id = 1),
+              onboarding_step INTEGER NOT NULL CHECK (onboarding_step BETWEEN 0 AND 5),
+              profession TEXT,
+              support_language TEXT,
+              day_one_prompt INTEGER NOT NULL CHECK (day_one_prompt >= 0)
+            )
+          ''');
+        },
+      ),
+    );
+    await old.insert('learner_progress', {
+      'id': 1,
+      'onboarding_step': 5,
+      'profession': 'beauty-cosmetology',
+      'support_language': 'en',
+      'day_one_prompt': 3,
+    });
+    await old.close();
+    final upgraded = await SqliteProgressStore.open(
+      factory: databaseFactoryFfi,
+      path: path,
+    );
+    try {
+      final progress = await upgraded.load();
+      expect(progress.dayOnePrompt, 3);
+      expect(progress.promptForDay(2), 0);
+      await upgraded.save(progress.withPromptForDay(2, 1));
+      expect((await upgraded.load()).promptForDay(2), 1);
+    } finally {
+      await upgraded.close();
+      await directory.delete(recursive: true);
+    }
+  });
 
   test('save failure preserves previous state and permits retry', () async {
     final store = MemoryProgressStore()..failSave = true;

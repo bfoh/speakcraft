@@ -61,6 +61,35 @@ def test_feedback_uses_authoritative_curriculum_context() -> None:
     assert provider.calls[0][1] == PAYLOAD["transcript"]
 
 
+@pytest.mark.parametrize(
+    ("lesson_id", "prompt_id"),
+    [
+        ("day-2", "salon-object-purpose"),
+        ("day-3", "customer-follow-up"),
+        ("day-4", "recommend-compare"),
+        ("day-5", "salon-close"),
+    ],
+)
+def test_all_daily_prompts_use_authored_objectives(
+    lesson_id: str, prompt_id: str
+) -> None:
+    provider = FakeFeedback(
+        TeachingFeedback(outcome="clear", feedback="I understood you.", example=None)
+    )
+    with TestClient(
+        create_app(Settings(pilot_token=PILOT, openai_api_key="key"), None, provider)
+    ) as client:
+        response = client.post(
+            "/v1/speech/evaluate",
+            headers={"Authorization": f"Bearer {PILOT}"},
+            json={**PAYLOAD, "lesson_id": lesson_id, "prompt_id": prompt_id},
+        )
+    assert response.status_code == 200
+    assert provider.calls[0][0].lesson_id == lesson_id
+    assert provider.calls[0][0].prompt_id == prompt_id
+    assert provider.calls[0][0].objective
+
+
 def test_feedback_rejects_unauthorized_and_invalid_requests() -> None:
     provider = FakeFeedback(
         TeachingFeedback(outcome="retry", feedback="Try again.", example=None)

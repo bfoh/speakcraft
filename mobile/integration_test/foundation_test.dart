@@ -266,9 +266,15 @@ void main() {
     expect(await File(recording).exists(), isTrue);
     await tap('Delete recording');
     expect(await File(recording).exists(), isFalse);
+    await tap('Back to Home');
+    await tap('Open Day 2');
+    expect(find.text('Day 2 • Practice 1 of 3'), findsOneWidget);
+    await tap('Next practice');
+    expect((await store.load()).promptForDay(2), 1);
     await store.close();
     store = await SqliteProgressStore.open(path: path);
     expect((await store.load()).dayOnePrompt, 1);
+    expect((await store.load()).promptForDay(2), 1);
     await store.close();
     container.dispose();
     await server.close(force: true);

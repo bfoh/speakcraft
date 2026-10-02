@@ -54,7 +54,11 @@ final bootstrapProvider = FutureProvider<AppServices>((ref) async {
   NativeMicrophone? dialogueMic;
   try {
     final progress = await store.load();
-    if (progress.dayOnePrompt >= curriculum.dayOne.prompts.length ||
+    if (curriculum.lessons.any(
+          (lesson) =>
+              progress.promptForDay(lesson.day) < 0 ||
+              progress.promptForDay(lesson.day) >= lesson.prompts.length,
+        ) ||
         (progress.onboardingStep >= 2 &&
             progress.profession != 'beauty-cosmetology') ||
         (progress.onboardingStep >= 3 && progress.supportLanguage != 'en')) {

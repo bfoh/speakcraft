@@ -96,5 +96,5 @@ flutter test integration_test/foundation_test.dart -d <simulator-id>
 - [x] Backend expression contract and tests.
 - [x] Mobile intention, repeat and role-play stages with recovery.
 - [x] Flutter/backend checks, Android build and iOS native simulator journey.
-- [~] Explicit iOS simulator debug build and final quality record. The native simulator test builds and runs, but the separate generic build stalled in Xcode and was interrupted after eight minutes; CI will repeat the generic build.
+- [x] Generic iOS simulator debug build passed in GitHub Actions for `534d097`; local native simulator journey passed. The local generic build stalled and was interrupted after eight minutes, without a compiler error.
 - [ ] Live provider and physical-device review before a learner pilot.

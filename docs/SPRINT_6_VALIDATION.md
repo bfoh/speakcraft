@@ -7,7 +7,7 @@
 - Canonical curriculum copies and `git diff --check`: PASS; this sprint changes no curriculum data.
 - Android debug APK: PASS.
 - iOS simulator native journey: PASS on iPhone 16 Pro / iOS 18.4. It used real SQLite and native recording with a local HTTP test server for the new expression contract and prior journeys. The Day-1 lesson recording survived the other voice flows.
-- iOS simulator debug build: local generic-destination command was interrupted after eight minutes in Xcode without a compiler error. The native simulator test compiled and ran the same app successfully. CI will repeat the generic build.
+- iOS simulator debug build: PASS in GitHub Actions for commit `534d097`. The local generic-destination command stalled and was interrupted after eight minutes without a compiler error; the native simulator test compiled and ran the same app successfully.
 - Source secret scan: PASS. The provider key is only read in FastAPI; the app receives an in-memory pilot access code. No learner text or audio logging was introduced.
 - Backend wheel packaging: PASS; it contains the expression provider module and curriculum asset.
 

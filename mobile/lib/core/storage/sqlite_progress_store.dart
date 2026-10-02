@@ -14,7 +14,7 @@ class SqliteProgressStore implements ProgressStore {
     final db = await dbFactory.openDatabase(
       path ?? '${await getDatabasesPath()}/speakcraft.db',
       options: OpenDatabaseOptions(
-        version: 1,
+        version: 2,
         onCreate: (db, version) async {
           await db.execute('''
             CREATE TABLE learner_progress (
@@ -25,6 +25,22 @@ class SqliteProgressStore implements ProgressStore {
               day_one_prompt INTEGER NOT NULL CHECK (day_one_prompt >= 0)
             )
           ''');
+          await db.execute('''
+            CREATE TABLE lesson_positions (
+              day INTEGER PRIMARY KEY CHECK (day BETWEEN 2 AND 5),
+              prompt_index INTEGER NOT NULL CHECK (prompt_index >= 0)
+            )
+          ''');
+        },
+        onUpgrade: (db, oldVersion, newVersion) async {
+          if (oldVersion < 2) {
+            await db.execute('''
+              CREATE TABLE lesson_positions (
+                day INTEGER PRIMARY KEY CHECK (day BETWEEN 2 AND 5),
+                prompt_index INTEGER NOT NULL CHECK (prompt_index >= 0)
+              )
+            ''');
+          }
         },
       ),
     );
@@ -40,23 +56,36 @@ class SqliteProgressStore implements ProgressStore {
     );
     if (rows.isEmpty) return const LearnerProgress();
     final row = rows.single;
+    final positions = await database.query('lesson_positions');
     return LearnerProgress(
       onboardingStep: row['onboarding_step'] as int,
       profession: row['profession'] as String?,
       supportLanguage: row['support_language'] as String?,
       dayOnePrompt: row['day_one_prompt'] as int,
+      otherDayPrompts: Map.unmodifiable({
+        for (final position in positions)
+          position['day'] as int: position['prompt_index'] as int,
+      }),
     );
   }
 
   @override
   Future<void> save(LearnerProgress progress) async {
-    await database.insert('learner_progress', {
-      'id': 1,
-      'onboarding_step': progress.onboardingStep,
-      'profession': progress.profession,
-      'support_language': progress.supportLanguage,
-      'day_one_prompt': progress.dayOnePrompt,
-    }, conflictAlgorithm: ConflictAlgorithm.replace);
+    await database.transaction((txn) async {
+      await txn.insert('learner_progress', {
+        'id': 1,
+        'onboarding_step': progress.onboardingStep,
+        'profession': progress.profession,
+        'support_language': progress.supportLanguage,
+        'day_one_prompt': progress.dayOnePrompt,
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
+      for (var day = 2; day <= 5; day++) {
+        await txn.insert('lesson_positions', {
+          'day': day,
+          'prompt_index': progress.promptForDay(day),
+        }, conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+    });
   }
 
   @override

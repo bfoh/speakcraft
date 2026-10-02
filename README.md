@@ -6,7 +6,7 @@
 
 Welcome → Profession → Support Language → Meet Kora → Assessment Introduction → Home → Day 1: This Is Me → local microphone practice.
 
-Sprint 1 established shared Android/iOS screens, a small accessible design system, saved onboarding and phrase position, authored audio instructions through device speech, and real local recording. The assessment, scoring, generated Kora conversations and lesson completion remain unavailable. Days 2–5 are structured curriculum seeds and are unavailable in the UI.
+Sprint 1 established shared Android/iOS screens, a small accessible design system, saved onboarding and phrase position, authored audio instructions through device speech, and real local recording. Later sprints added guided practice for Days 2–5 and bounded AI interactions. Scored assessment and verified lesson completion remain unavailable.
 
 The app works without the backend. Routine recordings stay in private cache for the running session, and are removed on replacement, deletion, phrase change or next launch. Installed device voices determine whether audio instructions work offline.
 
@@ -29,6 +29,10 @@ Day 1 also offers **Talk with Kora**: a short spoken exchange about the learner'
 ## Sprint 6 Help Me Say It slice
 
 **Help Me Say It** lets the learner record an intended message, review the transcript and ask Kora for one useful English expression. The learner can hear and repeat it, then answer a short simulated customer cue. The app shows what recognition heard without claiming pronunciation accuracy or mastery. The generated phrase and practice remain in memory for the open screen only. See the [Sprint 6 plan](.agent/plans/sprint-06-help-me-say-it.md).
+
+## Sprint 7 five-day practice
+
+All five Alpha days offer authored, voice-first practice steps. The learner can hear an example, record, review recognized words and request prompt-bound Kora feedback when connected. Each day's current prompt is saved locally. Days 3 and 5 link to the existing AI Salon for more customer conversation practice. This guided practice does not claim a completed 90-second consultation, final challenge or assessment. See the [Sprint 7 plan](.agent/plans/sprint-07-five-day-practice.md).
 
 ## Repository
 
@@ -137,8 +141,8 @@ cd mobile
 flutter test integration_test/foundation_test.dart -d <device-id>
 ```
 
-The native smoke test uses real SQLite and recording, a separate test database, and a local test HTTP server for speech, feedback, Kora, AI Salon and Help Me Say It contracts. It does not call OpenAI or establish teaching quality. See the [Sprint 1](docs/SPRINT_1_VALIDATION.md), [Sprint 2](docs/SPRINT_2_VALIDATION.md), [Sprint 3](docs/SPRINT_3_VALIDATION.md), [Sprint 4](docs/SPRINT_4_VALIDATION.md) and [Sprint 5](docs/SPRINT_5_VALIDATION.md) validation records.
+The native smoke test uses real SQLite and recording, a separate test database, and a local test HTTP server for speech, feedback, Kora, AI Salon and Help Me Say It contracts. It does not call OpenAI or establish teaching quality. See the [Sprint 1](docs/SPRINT_1_VALIDATION.md), [Sprint 2](docs/SPRINT_2_VALIDATION.md), [Sprint 3](docs/SPRINT_3_VALIDATION.md), [Sprint 4](docs/SPRINT_4_VALIDATION.md), [Sprint 5](docs/SPRINT_5_VALIDATION.md), [Sprint 6](docs/SPRINT_6_VALIDATION.md) and [Sprint 7](docs/SPRINT_7_VALIDATION.md) validation records.
 
 ## Next build milestone
 
-Turn the authored Days 2–5 curriculum into accessible practice journeys while retaining explicit recording and review controls. Verify generated teaching and dialogue with consented Ghanaian-accented speech and educator review before a learner pilot.
+Build the longer customer consultation and Day-5 challenge with reviewed scenarios and observable completion criteria. Verify generated teaching and dialogue with consented Ghanaian-accented speech and educator review before a learner pilot.

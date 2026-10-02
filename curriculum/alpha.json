@@ -62,7 +62,11 @@
       "estimated_minutes": 15,
       "challenge": "Name a salon object and explain what you use it for.",
       "target_language": ["comb", "brush", "dryer", "scissors", "wig", "shampoo", "conditioner", "extensions"],
-      "prompts": [{"id": "salon-object", "instruction": "Name a tool you use.", "example": "This is a comb. I use it to comb hair.", "hint": "This is a… I use it to…"}]
+      "prompts": [
+        {"id": "salon-object", "instruction": "Name a tool you use.", "example": "This is a comb. I use it to comb hair.", "hint": "This is a… I use it to…"},
+        {"id": "salon-product", "instruction": "Name a product you use.", "example": "This is shampoo. I use it to wash hair.", "hint": "This is… I use it to…"},
+        {"id": "salon-object-purpose", "instruction": "Choose one salon object. Say what it is and what you use it for.", "example": "This is a dryer. I use it to dry hair.", "hint": "This is a… I use it to…"}
+      ]
     },
     {
       "id": "day-3", "day": 3, "title": "Welcome a Customer",
@@ -70,7 +74,11 @@
       "estimated_minutes": 15,
       "challenge": "Complete a 90-second customer consultation.",
       "target_language": ["Welcome", "How can I help you?", "What hairstyle would you like?"],
-      "prompts": [{"id": "customer-greeting", "instruction": "Welcome a customer to your salon.", "example": "Welcome. What hairstyle would you like?", "hint": "Start with: Welcome…"}]
+      "prompts": [
+        {"id": "customer-greeting", "instruction": "Welcome a customer to your salon.", "example": "Welcome. How can I help you today?", "hint": "Start with: Welcome…"},
+        {"id": "customer-needs", "instruction": "Ask what hairstyle the customer wants.", "example": "What hairstyle would you like?", "hint": "What hairstyle…?"},
+        {"id": "customer-follow-up", "instruction": "Ask one more question about the customer's choice.", "example": "Would you like long or short braids?", "hint": "Would you like…?"}
+      ]
     },
     {
       "id": "day-4", "day": 4, "title": "Recommend",
@@ -78,7 +86,11 @@
       "estimated_minutes": 15,
       "challenge": "Give a customer a recommendation and a reason.",
       "target_language": ["I recommend…", "I think…", "This would be better because…"],
-      "prompts": [{"id": "recommend-style", "instruction": "Recommend a hairstyle that is easy to maintain.", "example": "I recommend braids because they are easy to maintain.", "hint": "I recommend… because…"}]
+      "prompts": [
+        {"id": "recommend-style", "instruction": "Recommend a hairstyle that is easy to maintain.", "example": "I recommend braids because they are easy to maintain.", "hint": "I recommend… because…"},
+        {"id": "recommend-reason", "instruction": "Give one reason for your choice.", "example": "I think braids are a good choice because they are easy to care for.", "hint": "I think… because…"},
+        {"id": "recommend-compare", "instruction": "Tell the customer why one choice may suit them better.", "example": "This would be better because you want a style that is easy to maintain.", "hint": "This would be better because…"}
+      ]
     },
     {
       "id": "day-5", "day": 5, "title": "Salon Challenge",
@@ -86,7 +98,12 @@
       "estimated_minutes": 20,
       "challenge": "Greet a customer, discover their needs, ask questions, recommend, explain and close.",
       "target_language": ["Welcome", "What would you like?", "I recommend…", "Thank you"],
-      "prompts": [{"id": "salon-conversation", "instruction": "Start a conversation with your customer.", "example": "Welcome. How can I help you today?", "hint": "Greet your customer, then ask what they need."}]
+      "prompts": [
+        {"id": "salon-conversation", "instruction": "Start a conversation with your customer.", "example": "Welcome. How can I help you today?", "hint": "Greet your customer, then ask what they need."},
+        {"id": "salon-discover", "instruction": "Ask a question to learn what the customer wants.", "example": "What kind of braids would you like?", "hint": "What kind of…?"},
+        {"id": "salon-recommend", "instruction": "Recommend a style and give a reason.", "example": "I recommend braids because they are easy to maintain.", "hint": "I recommend… because…"},
+        {"id": "salon-close", "instruction": "Close the conversation politely.", "example": "Thank you for visiting. Let me check the details for you.", "hint": "Thank you… Let me…"}
+      ]
     }
   ]
 }

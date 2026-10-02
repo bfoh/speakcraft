@@ -501,6 +501,64 @@ void main() {
     expect(find.text('2 • Listen and repeat'), findsOneWidget);
   });
 
+  testWidgets('each open day uses its own prompt and saved position', (
+    tester,
+  ) async {
+    final feedback = FakeFeedback();
+    await launch(
+      tester,
+      progress: returning,
+      recognition: FakeRecognition(),
+      feedback: feedback,
+    );
+    await tap(tester, 'Open Day 2');
+    expect(find.text('My Salon'), findsOneWidget);
+    expect(find.text('Day 2 • Practice 1 of 3'), findsOneWidget);
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    await tap(tester, 'Hear my words');
+    await tester.enterText(find.byType(TextField), 'pilot-access-code');
+    await tap(tester, 'Continue');
+    await tap(tester, 'Help me say it better');
+    expect(feedback.calls.last.$1, 'day-2');
+    expect(feedback.calls.last.$2, 'salon-object');
+    await tap(tester, 'Next practice');
+    expect(store.progress.promptForDay(2), 1);
+    await tap(tester, 'Back to Home');
+    await tap(tester, 'Open Day 3');
+    expect(find.text('Day 3 • Practice 1 of 3'), findsOneWidget);
+    expect(find.text('Delete recording'), findsNothing);
+    await tap(tester, 'Back to Home');
+    await tap(tester, 'Open Day 2');
+    expect(find.text('Day 2 • Practice 2 of 3'), findsOneWidget);
+    await tap(tester, 'Back to Home');
+    await tap(tester, 'Open Day 5');
+    expect(find.text('Day 5 • Practice 1 of 4'), findsOneWidget);
+    expect(find.text('Practise in AI Salon'), findsOneWidget);
+  });
+
+  testWidgets('switching days clears another day’s recording and transcript', (
+    tester,
+  ) async {
+    await launch(tester, progress: returning, recognition: FakeRecognition());
+    await tap(tester, 'Open Day 2');
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    await tap(tester, 'Hear my words');
+    await tester.enterText(find.byType(TextField), 'pilot-access-code');
+    await tap(tester, 'Continue');
+    expect(find.text('Delete recording'), findsOneWidget);
+    final discardsBefore = mic.discards;
+    await tap(tester, 'Back to Home');
+    await tap(tester, 'Open Day 4');
+    expect(find.text('Day 4 • Practice 1 of 3'), findsOneWidget);
+    expect(find.text('Delete recording'), findsNothing);
+    expect(find.text('WHAT I HEARD'), findsNothing);
+    expect(mic.discards, greaterThan(discardsBefore));
+  });
+
   testWidgets('storage failure does not navigate or claim saved state', (
     tester,
   ) async {
@@ -572,6 +630,10 @@ void main() {
         expect(tester.takeException(), isNull);
       }
       await tap(tester, 'Back to Home');
+      expect(tester.takeException(), isNull);
+      await tap(tester, 'Open Day 5');
+      expect(tester.takeException(), isNull);
+      await tap(tester, 'Practise in AI Salon');
       expect(tester.takeException(), isNull);
     },
   );

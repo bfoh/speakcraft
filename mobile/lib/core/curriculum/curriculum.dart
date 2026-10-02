@@ -133,6 +133,8 @@ class Curriculum {
   final List<Lesson> lessons;
   final List<SalonScenario> salonScenarios;
   Lesson get dayOne => lessons.first;
+  Lesson? lessonForDay(int day) =>
+      day >= 1 && day <= lessons.length ? lessons[day - 1] : null;
   SalonScenario get firstSalonScenario => salonScenarios.first;
 
   factory Curriculum.parse(String source) {
@@ -171,6 +173,7 @@ class Curriculum {
           lesson.title.isEmpty ||
           lesson.objective.isEmpty ||
           lesson.prompts.isEmpty ||
+          lesson.prompts.length < ((i == 0 || i == 4) ? 4 : 3) ||
           lesson.targetLanguage.isEmpty ||
           lesson.estimatedMinutes <= 0) {
         throw const FormatException('Invalid lesson');
