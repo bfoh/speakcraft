@@ -26,6 +26,30 @@ def validate(data: dict) -> None:
     lessons = data["lessons"]
     if [x["title"] for x in lessons] != TITLES:
         raise ValueError("Alpha needs the five blueprint lessons in order")
+    baseline = data.get("baseline_items")
+    expected_baseline = [
+        ("baseline-introduction", 1),
+        ("baseline-picture", 2),
+        ("baseline-procedure", 3),
+        ("baseline-listening", 4),
+        ("baseline-customer-1", 5),
+        ("baseline-customer-2", 5),
+        ("baseline-customer-3", 5),
+    ]
+    if not isinstance(baseline, list) or len(baseline) != len(expected_baseline):
+        raise ValueError("Alpha needs seven baseline recording items")
+    for index, item in enumerate(baseline):
+        item_id, part = expected_baseline[index]
+        if (
+            not isinstance(item, dict)
+            or item.get("id") != item_id
+            or item.get("part") != part
+        ):
+            raise ValueError("Invalid baseline item identity or order")
+        for key, limit in (("title", 80), ("instruction", 240), ("spoken_prompt", 240)):
+            value = item.get(key)
+            if not isinstance(value, str) or not value.strip() or len(value) > limit:
+                raise ValueError(f"Invalid baseline {key}")
     review_items = data.get("review_items")
     if not isinstance(review_items, list) or len(review_items) != 10:
         raise ValueError("Alpha needs ten authored review items")

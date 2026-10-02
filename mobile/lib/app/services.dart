@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/audio/microphone.dart';
+import '../core/audio/assessment_capture_store.dart';
 import '../core/audio/native_microphone.dart';
 import '../core/audio/speech_output.dart';
 import '../core/curriculum/curriculum.dart';
@@ -16,6 +17,7 @@ import '../core/speech/conversation.dart';
 import '../core/speech/salon.dart';
 import '../core/speech/expression.dart';
 import '../features/conversation/conversation_controller.dart';
+import '../features/assessment/assessment_controller.dart';
 import '../features/help_me_say_it/expression_controller.dart';
 import '../features/lesson/feedback_controller.dart';
 import '../features/lesson/microphone_controller.dart';
@@ -29,6 +31,8 @@ class AppServices {
     required this.progress,
     required this.microphone,
     required this.conversationMicrophone,
+    required this.assessmentMicrophone,
+    required this.assessmentCaptureStore,
     required this.speech,
     this.recognition = const UnconfiguredSpeechRecognition(),
     this.feedback = const UnconfiguredSpeakingFeedback(),
@@ -42,6 +46,8 @@ class AppServices {
   final LearnerProgress progress;
   final Microphone microphone;
   final Microphone conversationMicrophone;
+  final Microphone assessmentMicrophone;
+  final AssessmentCaptureStore assessmentCaptureStore;
   final SpeechOutput speech;
   final SpeechRecognition recognition;
   final SpeakingFeedback feedback;
@@ -54,9 +60,12 @@ final bootstrapProvider = FutureProvider<AppServices>((ref) async {
   final curriculum = Curriculum.parse(
     await rootBundle.loadString('assets/curriculum/alpha.json'),
   );
+  // Purge prior-session voice data even if database or microphone setup fails.
+  final assessmentCaptureStore = await NativeAssessmentCaptureStore.create();
   final store = await SqliteProgressStore.open();
   NativeMicrophone? lessonMic;
   NativeMicrophone? dialogueMic;
+  NativeMicrophone? assessmentMic;
   try {
     final progress = await store.load();
     if (curriculum.lessons.any(
@@ -75,6 +84,10 @@ final bootstrapProvider = FutureProvider<AppServices>((ref) async {
       folder: 'speakcraft-conversation-takes',
     );
     dialogueMic = conversationMicrophone;
+    final assessmentMicrophone = await NativeMicrophone.create(
+      folder: 'speakcraft-baseline-takes',
+    );
+    assessmentMic = assessmentMicrophone;
     return AppServices(
       curriculum: curriculum,
       store: store,
@@ -82,6 +95,8 @@ final bootstrapProvider = FutureProvider<AppServices>((ref) async {
       progress: progress,
       microphone: microphone,
       conversationMicrophone: conversationMicrophone,
+      assessmentMicrophone: assessmentMicrophone,
+      assessmentCaptureStore: assessmentCaptureStore,
       speech: DeviceSpeechOutput(),
       recognition: HttpSpeechRecognition(
         const String.fromEnvironment('SPEAKCRAFT_API_BASE_URL'),
@@ -100,6 +115,7 @@ final bootstrapProvider = FutureProvider<AppServices>((ref) async {
       ),
     );
   } catch (_) {
+    await assessmentMic?.dispose();
     await dialogueMic?.dispose();
     await lessonMic?.dispose();
     await store.close();
@@ -139,6 +155,24 @@ final conversationMicrophoneProvider = Provider<MicrophoneController>((ref) {
   final controller = MicrophoneController(
     services.conversationMicrophone,
     services.speech,
+  );
+  ref.onDispose(controller.dispose);
+  return controller;
+}, dependencies: [servicesProvider]);
+final assessmentMicrophoneProvider = Provider<MicrophoneController>((ref) {
+  final services = ref.watch(servicesProvider);
+  final controller = MicrophoneController(
+    services.assessmentMicrophone,
+    services.speech,
+  );
+  ref.onDispose(controller.dispose);
+  return controller;
+}, dependencies: [servicesProvider]);
+final assessmentProvider = Provider<AssessmentController>((ref) {
+  final services = ref.watch(servicesProvider);
+  final controller = AssessmentController(
+    services.assessmentCaptureStore,
+    services.curriculum.baselineItems,
   );
   ref.onDispose(controller.dispose);
   return controller;

@@ -20,6 +20,8 @@ void main() {
   late MemoryProgressStore store;
   late FakeMicrophone mic;
   late FakeSpeech speech;
+  late FakeAssessmentCaptureStore assessmentCapture;
+  late FakeMicrophone baselineMic;
   late ProviderContainer container;
 
   Future<void> launch(
@@ -34,6 +36,8 @@ void main() {
     store = MemoryProgressStore()..progress = progress;
     mic = FakeMicrophone();
     speech = FakeSpeech();
+    assessmentCapture = FakeAssessmentCaptureStore();
+    baselineMic = FakeMicrophone();
     container = ProviderContainer(
       overrides: [
         servicesProvider.overrideWithValue(
@@ -46,6 +50,8 @@ void main() {
             progress: progress,
             microphone: mic,
             conversationMicrophone: FakeMicrophone(),
+            assessmentMicrophone: baselineMic,
+            assessmentCaptureStore: assessmentCapture,
             speech: speech,
             recognition: recognition,
             feedback: feedback,
@@ -94,6 +100,8 @@ void main() {
               progress: const LearnerProgress(),
               microphone: FakeMicrophone(),
               conversationMicrophone: FakeMicrophone(),
+              assessmentMicrophone: FakeMicrophone(),
+              assessmentCaptureStore: FakeAssessmentCaptureStore(),
               speech: FakeSpeech(),
             ),
           ),
@@ -120,7 +128,7 @@ void main() {
       await tap(tester, 'Continue in English');
       expect(find.text('Meet Kora'), findsOneWidget);
       await tap(tester, 'Meet your first lesson');
-      expect(find.textContaining('No assessment result'), findsOneWidget);
+      expect(find.textContaining('No result is recorded yet'), findsOneWidget);
       await tap(tester, 'Go to Home');
       expect(store.progress.onboarded, isTrue);
       await tap(tester, 'Open Day 1');
@@ -944,5 +952,110 @@ void main() {
     expect(find.textContaining('All done for now'), findsOneWidget);
     await tap(tester, 'Show all words');
     expect(find.text('I study Beauty and Cosmetology.'), findsOneWidget);
+  });
+
+  testWidgets('starting assessment captures all five parts without a score', (
+    tester,
+  ) async {
+    await launch(tester, progress: returning);
+    await tap(tester, 'Open starting assessment');
+    expect(find.text('Tell us about yourself'), findsOneWidget);
+    await tap(tester, 'Hear the task');
+    expect(speech.spoken.last, contains('where you are from'));
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    await tap(tester, 'Save answer and continue');
+    expect(assessmentCapture.captures.keys, contains('baseline-introduction'));
+    expect(find.text('Describe the salon picture'), findsOneWidget);
+    expect(
+      find.text('Generated picture • educator review pending'),
+      findsOneWidget,
+    );
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+    await tap(tester, 'Open starting assessment');
+    expect(find.text('Describe the salon picture'), findsOneWidget);
+    for (var i = 1; i < 7; i++) {
+      await tap(tester, 'Enable microphone');
+      await tap(tester, 'Start recording');
+      await tap(tester, 'Stop recording');
+      await tap(tester, 'Save answer and continue');
+    }
+    expect(find.text('7 recordings captured'), findsOneWidget);
+    expect(
+      find.textContaining('No score or assessment result'),
+      findsOneWidget,
+    );
+    expect(assessmentCapture.captures.length, 7);
+    expect(baselineMic.starts, 7);
+  });
+
+  testWidgets('failed baseline save preserves the take and privacy clears it', (
+    tester,
+  ) async {
+    await launch(tester, progress: returning);
+    assessmentCapture.failSave = true;
+    await tap(tester, 'Open starting assessment');
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    await tap(tester, 'Save answer and continue');
+    expect(find.text('Tell us about yourself'), findsOneWidget);
+    expect(find.textContaining('recording is still here'), findsOneWidget);
+    assessmentCapture.failSave = false;
+    await tap(tester, 'Save answer and continue');
+    expect(assessmentCapture.captures.length, 1);
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+    await tap(tester, 'Privacy and phone data');
+    await tap(tester, 'Clear phone data');
+    await tester.tap(find.text('Clear phone data').last);
+    await tester.pumpAndSettle();
+    expect(assessmentCapture.captures, isEmpty);
+    expect(store.progress.onboarded, isFalse);
+  });
+
+  testWidgets('baseline cache deletion failure keeps Privacy open for retry', (
+    tester,
+  ) async {
+    await launch(tester, progress: returning);
+    assessmentCapture.failClear = true;
+    await tap(tester, 'Privacy and phone data');
+    await tap(tester, 'Clear phone data');
+    await tester.tap(find.text('Clear phone data').last);
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining("couldn't clear the starting recordings"),
+      findsOneWidget,
+    );
+    expect(store.progress.onboarded, isTrue);
+    assessmentCapture.failClear = false;
+    await tap(tester, 'Clear phone data');
+    await tester.tap(find.text('Clear phone data').last);
+    await tester.pumpAndSettle();
+    expect(store.progress.onboarded, isFalse);
+  });
+
+  testWidgets('baseline permission, missing voice and large text are usable', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 700);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await launch(tester, progress: returning);
+    baselineMic.permission = false;
+    speech.unavailable = true;
+    await tap(tester, 'Open starting assessment');
+    await tap(tester, 'Hear the task');
+    expect(find.textContaining("Audio isn't available"), findsOneWidget);
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
+    await tap(tester, 'Enable microphone');
+    expect(find.textContaining('Microphone access is off'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }

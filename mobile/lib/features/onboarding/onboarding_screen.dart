@@ -48,7 +48,7 @@ class OnboardingScreen extends ConsumerWidget {
       ),
       _ => (
         'Let’s begin gently',
-        'Your first practice is ready. A full starting assessment is being prepared.',
+        'You can record a starting sample, then practise Day 1. No score is available yet.',
         'Go to Home',
         Icons.record_voice_over,
       ),
@@ -68,7 +68,7 @@ class OnboardingScreen extends ConsumerWidget {
           Text(message, style: Theme.of(context).textTheme.bodyLarge),
           SpeakCraftAudioButton(
             text:
-                '$title. $message${step == 4 ? ' The assessment is not ready yet. You can practise Day 1 now.' : ''}',
+                '$title. $message${step == 4 ? ' Open the starting assessment from Home.' : ''}',
           ),
           if (step == 1)
             const SpeakCraftCard(
@@ -102,7 +102,7 @@ class OnboardingScreen extends ConsumerWidget {
             ),
           if (step == 4)
             const SpeakCraftNotice(
-              'The assessment is not ready yet. You can practise Day 1 now. No assessment result will be recorded.',
+              'Open Starting assessment from Home. Your recordings stay only for this app session. No result is recorded yet.',
             ),
           if (session.error != null)
             SpeakCraftNotice(

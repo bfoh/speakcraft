@@ -40,6 +40,29 @@ class ReviewItem {
   );
 }
 
+class BaselineItem {
+  const BaselineItem({
+    required this.id,
+    required this.part,
+    required this.title,
+    required this.instruction,
+    required this.spokenPrompt,
+  });
+  final String id;
+  final int part;
+  final String title;
+  final String instruction;
+  final String spokenPrompt;
+
+  factory BaselineItem.fromJson(Map<String, dynamic> json) => BaselineItem(
+    id: json['id'] as String,
+    part: json['part'] as int,
+    title: json['title'] as String,
+    instruction: json['instruction'] as String,
+    spokenPrompt: json['spoken_prompt'] as String,
+  );
+}
+
 class LessonConversation {
   const LessonConversation({
     required this.opening,
@@ -149,10 +172,16 @@ class Lesson {
 }
 
 class Curriculum {
-  const Curriculum(this.lessons, this.salonScenarios, this.reviewItems);
+  const Curriculum(
+    this.lessons,
+    this.salonScenarios,
+    this.reviewItems,
+    this.baselineItems,
+  );
   final List<Lesson> lessons;
   final List<SalonScenario> salonScenarios;
   final List<ReviewItem> reviewItems;
+  final List<BaselineItem> baselineItems;
   Lesson get dayOne => lessons.first;
   Lesson? lessonForDay(int day) =>
       day >= 1 && day <= lessons.length ? lessons[day - 1] : null;
@@ -179,6 +208,33 @@ class Curriculum {
     final reviewItems = (json['review_items'] as List)
         .map((item) => ReviewItem.fromJson(item as Map<String, dynamic>))
         .toList();
+    final baselineItems = (json['baseline_items'] as List)
+        .map((item) => BaselineItem.fromJson(item as Map<String, dynamic>))
+        .toList();
+    const expectedBaseline = [
+      ('baseline-introduction', 1),
+      ('baseline-picture', 2),
+      ('baseline-procedure', 3),
+      ('baseline-listening', 4),
+      ('baseline-customer-1', 5),
+      ('baseline-customer-2', 5),
+      ('baseline-customer-3', 5),
+    ];
+    if (baselineItems.length != expectedBaseline.length ||
+        List.generate(baselineItems.length, (index) => index).any((index) {
+          final item = baselineItems[index];
+          final (id, part) = expectedBaseline[index];
+          return item.id != id ||
+              item.part != part ||
+              item.title.trim().isEmpty ||
+              item.title.length > 80 ||
+              item.instruction.trim().isEmpty ||
+              item.instruction.length > 240 ||
+              item.spokenPrompt.trim().isEmpty ||
+              item.spokenPrompt.length > 240;
+        })) {
+      throw const FormatException('Invalid baseline capture items');
+    }
     final reviewIds = <String>{};
     if (reviewItems.length != 10 ||
         reviewItems.any(
@@ -254,6 +310,7 @@ class Curriculum {
       List.unmodifiable(lessons),
       List.unmodifiable(scenarios),
       List.unmodifiable(reviewItems),
+      List.unmodifiable(baselineItems),
     );
   }
 }

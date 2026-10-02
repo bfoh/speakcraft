@@ -54,6 +54,10 @@ Ten stable, authored review items live in canonical curriculum data and are pack
 
 The shared `SpeechOutput` contract accepts an optional slow flag. `DeviceSpeechOutput` maps it to a gentler device TTS rate and retains the existing English voice preference. A phrase's shared audio component coordinates its normal and slow controls, so only one can be active in that component. This adds no persistence, network request or pronunciation judgement; the native voice and audio route vary by device.
 
+## Sprint 12 unscored baseline capture slice
+
+Seven validated `baseline_items` in curriculum version 0.1.1 cover the blueprint's five Day-1 parts. The role-play uses three authored customer lines; this flow makes no provider call. A generated salon visual is packaged with the app and labelled as provisional. A dedicated native microphone keeps assessment takes apart from lessons and dialogue. `NativeAssessmentCaptureStore` stages each accepted take in app-private temporary storage, copying to a pending file before rename. `AssessmentController` advances only after staging succeeds. The controller holds the current position and capture paths in memory, so navigation within the app preserves them, while app relaunch deletes old assessment audio. Privacy reset clears both assessment folders before SQLite reset. There is no assessment endpoint, result, score, transcript or durable comparison data.
+
 ## Mobile structure
 
 - `lib/app`: composition, Riverpod providers, GoRouter routes and theme.
@@ -62,6 +66,7 @@ The shared `SpeechOutput` contract accepts an optional slow flag. `DeviceSpeechO
 - `lib/core/audio`: microphone interface, native recording adapter, authored-text speech output.
 - `lib/core/speech`: backend-facing transcription and teaching-feedback contracts.
 - `lib/features/onboarding`: welcome, profession, support language, Kora introduction, assessment introduction.
+- `lib/features/assessment`: unscored baseline capture, private session storage and five-part learner journey.
 - `lib/features/home`: five-day entry and practice positions.
 - `lib/features/progress`: saved daily positions and resume navigation.
 - `lib/features/review`: offline My Words listening and self-rated scheduling.
@@ -77,7 +82,7 @@ Riverpod supplies application dependencies. The bootstrap loads native services,
 
 SQLite schema version 3 preserves the original `learner_progress` row, the `lesson_positions` table for Days 2–5, and adds `review_state` for self-rated phrase timing. It stores onboarding step, profession, support language and current prompt index for each day, plus review attempts and times. The repository uses parameterised queries. Changes become visible only after a successful database write; write failure preserves the previous state and exposes retry. This is navigation and self-report progress, not evidence of mastery or lesson completion.
 
-Reset atomically deletes the three local progress/review tables. It does not contact the backend or revoke earlier provider processing. The current audio cache is cleared before durable deletion, and failure is exposed for retry.
+Reset atomically deletes the three local progress/review tables. It does not contact the backend or revoke earlier provider processing. Lesson, dialogue and baseline audio caches are cleared before durable deletion, and failure is exposed for retry.
 
 Future local changes must increment the schema version and provide tested upgrades. No remote database schema or credentials are introduced. Routine audio is separate cache data, excluded from learning history.
 
@@ -86,6 +91,8 @@ Future local changes must increment the schema version and provide tested upgrad
 `curriculum/alpha.json` is the editorial source of truth for the five Alpha days. `scripts/sync_curriculum.py` validates it and copies identical content into `mobile/assets/curriculum/alpha.json` and `backend/app/data/alpha.json`. CI checks both copies for drift. No symlinks outside the projects are required for packaging.
 
 Day 1 has four authored prompts, ending in the blueprint's 30–60 second introduction. Days 2–5 contain objectives, target language and short authored practice sequences. Longer consultations and the final challenge remain unassessed. Example sentences are editorial seeds requiring educator review. They are not generated assessment data.
+
+The seven baseline capture prompts and generated salon visual are also provisional teaching/assessment material. The visual is an aid to description, not a reference answer. No measured result is inferred from recording completion.
 
 ## Voice boundary
 

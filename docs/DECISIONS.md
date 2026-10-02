@@ -73,3 +73,7 @@ Use ten authored phrases from the five-day pathway as a small My Words deck. Sch
 ## 2026-10-02 — Slower device-voice replay
 
 Add slow replay to examples and conversational phrases through the existing device speech abstraction. Keep normal and slow actions in one shared control so their visible playback state remains coordinated. Keep text visible and preserve the normal rate as the default. The rate is transient and is not learner data or a pronunciation standard.
+
+## 2026-10-02 — Temporary unscored baseline capture
+
+Represent the blueprint's five Day-1 parts as seven authored recording items, with three fixed customer turns. A generated salon scene is provisional and labelled for educator review. Keep each accepted recording only in private temporary storage for the current app session, with automatic deletion at next launch and explicit removal through Privacy. Do not add a server assessment contract or present a score until a reviewed rubric, learner consent, retention policy and comparable Day-5 protocol exist. This flow establishes capture mechanics, not measured baseline performance.

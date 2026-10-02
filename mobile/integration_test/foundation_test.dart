@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:speakcraft/app/services.dart';
 import 'package:speakcraft/app/speakcraft_app.dart';
 import 'package:speakcraft/core/audio/native_microphone.dart';
+import 'package:speakcraft/core/audio/assessment_capture_store.dart';
 import 'package:speakcraft/core/audio/speech_output.dart';
 import 'package:speakcraft/core/curriculum/curriculum.dart';
 import 'package:speakcraft/core/storage/progress_store.dart';
@@ -81,6 +82,10 @@ void main() {
       conversationMicrophone: await NativeMicrophone.create(
         folder: 'speakcraft-conversation-takes',
       ),
+      assessmentMicrophone: await NativeMicrophone.create(
+        folder: 'speakcraft-baseline-takes',
+      ),
+      assessmentCaptureStore: await NativeAssessmentCaptureStore.create(),
       speech: DeviceSpeechOutput(),
       recognition: HttpSpeechRecognition('http://127.0.0.1:${server.port}'),
       feedback: HttpSpeakingFeedback('http://127.0.0.1:${server.port}'),
@@ -268,6 +273,19 @@ void main() {
     await tap('Delete recording');
     expect(await File(recording).exists(), isFalse);
     await tap('Back to Home');
+    await tap('Open starting assessment');
+    await tap('Enable microphone');
+    await tap('Start recording');
+    await tester.pump(const Duration(seconds: 2));
+    await tap('Stop recording');
+    await tap('Save answer and continue');
+    expect(container.read(assessmentProvider).capturedCount, 1);
+    final baselineFile = File(
+      '${(services.assessmentCaptureStore as NativeAssessmentCaptureStore).directory.path}/baseline-introduction.m4a',
+    );
+    expect(await baselineFile.length(), greaterThan(0));
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
     await tap('My Words');
     await tap('Listen and repeat');
     await tap('Felt easy');

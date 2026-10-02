@@ -22,7 +22,7 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
       builder: (dialogContext) => AlertDialog(
         title: const Text('Clear phone data?'),
         content: const Text(
-          'This erases your choices, saved practice places, word reviews and current recordings on this phone. You will start again at Welcome.',
+          'This erases your choices, saved practice places, word reviews and all current recordings on this phone. You will start again at Welcome.',
         ),
         actions: [
           TextButton(
@@ -43,6 +43,8 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
     });
     final lessonMic = ref.read(microphoneProvider);
     final dialogueMic = ref.read(conversationMicrophoneProvider);
+    final assessmentMic = ref.read(assessmentMicrophoneProvider);
+    final assessment = ref.read(assessmentProvider);
     final transcription = ref.read(transcriptionProvider);
     final feedback = ref.read(feedbackProvider);
     final conversation = ref.read(conversationProvider);
@@ -55,15 +57,25 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
     final session = ref.read(sessionProvider);
     final review = ref.read(reviewProvider);
 
-    // Attempt both caches even when one fails. Durable data is cleared only
-    // after both recorders confirm that their current take is gone.
+    // Attempt every recorder even when one fails. Durable data is cleared only
+    // after all recorders and staged baseline takes are gone.
     final lessonCleared = await lessonMic.clearForPrivacy();
     final dialogueCleared = await dialogueMic.clearForPrivacy();
-    if (!lessonCleared || !dialogueCleared) {
+    final assessmentMicCleared = await assessmentMic.clearForPrivacy();
+    if (!lessonCleared || !dialogueCleared || !assessmentMicCleared) {
       if (mounted) {
         setState(() {
           _clearing = false;
           _error = "We couldn't clear a recording. Please try again.";
+        });
+      }
+      return;
+    }
+    if (!await assessment.clear()) {
+      if (mounted) {
+        setState(() {
+          _clearing = false;
+          _error = assessment.error;
         });
       }
       return;
@@ -106,7 +118,7 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
             Text('Saved on this phone'),
             SizedBox(height: 8),
             Text(
-              'Your course choice, place in each day and word review schedule.',
+              'Your course choice, place in each day and word review schedule. Starting assessment recordings are temporary and are removed at next launch or when you clear phone data.',
             ),
             SizedBox(height: 16),
             Text('Sent only when you choose'),

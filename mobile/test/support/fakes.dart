@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:speakcraft/core/audio/microphone.dart';
+import 'package:speakcraft/core/audio/assessment_capture_store.dart';
 import 'package:speakcraft/core/audio/speech_output.dart';
 import 'package:speakcraft/core/storage/progress_store.dart';
 import 'package:speakcraft/core/storage/review_store.dart';
@@ -69,6 +70,28 @@ class FakeSpeech implements SpeechOutput {
   @override
   Future<void> stop() async {
     stops++;
+  }
+}
+
+class FakeAssessmentCaptureStore implements AssessmentCaptureStore {
+  final captures = <String, String>{};
+  bool failSave = false;
+  bool failClear = false;
+  Completer<void>? saveGate;
+
+  @override
+  Future<String> save(String itemId, String recordingPath) async {
+    if (saveGate != null) await saveGate!.future;
+    if (failSave) throw StateError('Test assessment save failure');
+    final path = '/test/baseline/$itemId.m4a';
+    captures[itemId] = path;
+    return path;
+  }
+
+  @override
+  Future<void> clear() async {
+    if (failClear) throw StateError('Test assessment clear failure');
+    captures.clear();
   }
 }
 

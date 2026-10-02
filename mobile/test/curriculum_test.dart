@@ -47,6 +47,17 @@ void main() {
       'I study Beauty and Cosmetology.',
     );
     expect(curriculum.reviewItems.last.day, 5);
+    expect(curriculum.baselineItems.length, 7);
+    expect(curriculum.baselineItems.map((item) => item.part), [
+      1,
+      2,
+      3,
+      4,
+      5,
+      5,
+      5,
+    ]);
+    expect(curriculum.baselineItems.last.id, 'baseline-customer-3');
   });
   test('rejects future incompatible versions rather than misreading them', () {
     final data = jsonDecode(source) as Map<String, dynamic>;
@@ -77,6 +88,11 @@ void main() {
   test('rejects duplicate review identities', () {
     final data = jsonDecode(source) as Map<String, dynamic>;
     data['review_items'][1]['id'] = data['review_items'][0]['id'];
+    expect(() => Curriculum.parse(jsonEncode(data)), throwsFormatException);
+  });
+  test('rejects missing or reordered baseline items', () {
+    final data = jsonDecode(source) as Map<String, dynamic>;
+    data['baseline_items'][4]['id'] = 'baseline-customer-3';
     expect(() => Curriculum.parse(jsonEncode(data)), throwsFormatException);
   });
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/home/home_screen.dart';
+import '../features/assessment/assessment_screen.dart';
 import '../features/conversation/conversation_screen.dart';
 import '../features/help_me_say_it/expression_screen.dart';
 import '../features/lesson/lesson_screen.dart';
@@ -36,6 +37,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           builder: (context, state) => OnboardingScreen(step: step),
         ),
       GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
+      GoRoute(
+        path: '/baseline',
+        builder: (context, state) => const AssessmentScreen(),
+      ),
       GoRoute(
         path: '/progress',
         builder: (context, state) => const ProgressScreen(),

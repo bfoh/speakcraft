@@ -1,9 +1,18 @@
 {
   "schema_version": 1,
   "id": "beauty-alpha",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "profession": "beauty-cosmetology",
   "title": "Beauty & Cosmetology",
+  "baseline_items": [
+    {"id": "baseline-introduction", "part": 1, "title": "Tell us about yourself", "instruction": "Say your name, where you are from, what you study and why you chose Beauty and Cosmetology.", "spoken_prompt": "Tell me your name, where you are from, what you study, and why you chose Beauty and Cosmetology."},
+    {"id": "baseline-picture", "part": 2, "title": "Describe the salon picture", "instruction": "Look at the picture. Tell us what the stylist and customer are doing. If you cannot see it, describe how someone gets braids at a salon.", "spoken_prompt": "Look at the salon picture. What is happening? If you cannot see it, describe how someone gets braids at a salon."},
+    {"id": "baseline-procedure", "part": 3, "title": "Explain your work", "instruction": "Explain how you make a wig or do another salon procedure you know.", "spoken_prompt": "How do you make a wig, or do another salon procedure you know? Tell me the steps."},
+    {"id": "baseline-listening", "part": 4, "title": "Listen to the customer", "instruction": "Listen to the customer. Then tell us what the customer wants and what you would ask next.", "spoken_prompt": "Hello. I would like braids that are easy to maintain. I am not sure if I want them long or short. Can you help me choose?"},
+    {"id": "baseline-customer-1", "part": 5, "title": "Talk with a customer • 1 of 3", "instruction": "Answer the customer.", "spoken_prompt": "Hello. I am thinking about getting braids. Can you help me?"},
+    {"id": "baseline-customer-2", "part": 5, "title": "Talk with a customer • 2 of 3", "instruction": "Ask a useful question before recommending a style.", "spoken_prompt": "I would like a style that is easy to care for. What would you ask me?"},
+    {"id": "baseline-customer-3", "part": 5, "title": "Talk with a customer • 3 of 3", "instruction": "Recommend a style and give a reason. Do not invent a price.", "spoken_prompt": "I would like something simple. What do you recommend, and why?"}
+  ],
   "review_items": [
     {"id": "my-course", "day": 1, "text": "I study Beauty and Cosmetology.", "cue": "Tell someone what you study."},
     {"id": "my-reason", "day": 1, "text": "I chose this course because I enjoy helping people.", "cue": "Say why you chose your course."},

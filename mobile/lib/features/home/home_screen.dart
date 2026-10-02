@@ -23,6 +23,27 @@ class HomeScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const Text('STARTING ASSESSMENT'),
+              const SizedBox(height: 12),
+              Text(
+                'Record a starting sample across five short tasks.',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              const Text('No score yet. Recordings last for this app session.'),
+              const SizedBox(height: 20),
+              SpeakCraftButton(
+                label: 'Open starting assessment',
+                icon: Icons.assignment_outlined,
+                onPressed: () => context.push('/baseline'),
+              ),
+            ],
+          ),
+        ),
+        SpeakCraftCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
               const Text('DAY 1 • BEAUTY & COSMETOLOGY'),
               const SizedBox(height: 12),
               Text(
