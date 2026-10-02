@@ -20,4 +20,4 @@ Updated 2026-10-02. This is an execution order for the five-day Beauty & Cosmeto
 
 ## Final task: connected-device acceptance
 
-After the code, documentation and remote checks above, connect Android and iOS devices. Run the native journey on both: onboarding, offline lessons, microphone permission/denial, recording/playback, speaker and wired/Bluetooth routes, interruptions, large text, screen reader, connection loss/retry, Privacy reset and provider requests. Record failures and fixes before a learner pilot. The user requested this physical-device phase last.
+After the code, documentation and remote checks above, connect Android and iOS devices and use the [final acceptance checklist](DEVICE_ACCEPTANCE_CHECKLIST.md). Run the native journey on both: onboarding, offline lessons, microphone permission/denial, recording/playback, speaker and wired/Bluetooth routes, interruptions, large text, screen reader, connection loss/retry, Privacy reset and provider requests. Record failures and fixes before a learner pilot. The user requested this physical-device phase last.

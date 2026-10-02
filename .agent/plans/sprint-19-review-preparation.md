@@ -22,7 +22,7 @@ Add a reviewer pack with exact versioned prompt IDs and review fields; a rating 
 
 ## Files / Components
 
-`docs/ASSESSMENT_REVIEW_PACK.md`, `docs/ASSESSMENT_RATING_WORKSHEET.md`, `docs/PILOT_READINESS.md`, rubric, README and remaining-work tracker.
+`docs/ASSESSMENT_REVIEW_PACK.md`, `docs/ASSESSMENT_RATING_WORKSHEET.md`, `docs/PILOT_READINESS.md`, `docs/DEVICE_ACCEPTANCE_CHECKLIST.md`, rubric, README and remaining-work tracker.
 
 ## Data Model
 
@@ -48,7 +48,7 @@ The review pack flags platform-specific prompt delivery, permission, playback, a
 
 1. Map each fixed prompt to the exact customer act and identify unsupported comparisons.
 2. Create written content review and independent rating templates without learner data.
-3. Document consent, provider, security and release gates.
+3. Document consent, provider, security and release gates; prepare the final connected-device checklist without running it.
 4. Check links and repository quality; update the ExecPlan.
 
 ## Acceptance Criteria

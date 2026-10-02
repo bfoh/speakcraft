@@ -81,5 +81,5 @@ Prompt equivalence and the local realism of customer responses need vocational a
 - [x] Plan and inspect existing assessment/curriculum architecture.
 - [x] Author and validate items.
 - [x] Implement flow and tests.
-- [~] Run quality checks and CI. Local checks passed; GitHub CI pending.
+- [x] Run quality checks and CI. [Sprint quality run](https://github.com/bfoh/speakcraft/actions/runs/37065756424) passed all three jobs.
 - [ ] Physical-device acceptance remains the final task.

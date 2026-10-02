@@ -10,7 +10,7 @@
 - `flutter build ios --simulator --debug`: PASS.
 - Backend Ruff format/lint, mypy and pytest: PASS, 44 tests. No backend API was added.
 - Local Markdown links and `git diff --check`: PASS.
-- GitHub CI: PENDING after push.
+- GitHub CI: PASS ([Sprint quality run](https://github.com/bfoh/speakcraft/actions/runs/37065756424)); backend, mobile and iOS jobs passed.
 
 ## SpeakCraft quality gate
 

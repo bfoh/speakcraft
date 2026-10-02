@@ -24,4 +24,4 @@ The project owner and reviewers must choose the study purpose, exact consent lan
 
 ## Final connected-device pass
 
-When the earlier gates are ready, connect one representative Android and one iOS device. Run the checklist in the [remaining-work tracker](ALPHA_REMAINING_WORK.md), record device/OS/audio route and failure evidence, fix critical issues, and repeat failed cases. A simulator build is valuable code validation but is not evidence that real microphone, permissions, installed voices or audio routes work.
+When the earlier gates are ready, connect one representative Android and one iOS device. Run the [connected-device acceptance checklist](DEVICE_ACCEPTANCE_CHECKLIST.md), record device/OS/audio route and failure evidence, fix critical issues, and repeat failed cases. A simulator build is valuable code validation but is not evidence that real microphone, permissions, installed voices or audio routes work.
