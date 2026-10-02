@@ -150,18 +150,19 @@ final conversationProvider = Provider<ConversationController>((ref) {
   ref.onDispose(controller.dispose);
   return controller;
 }, dependencies: [servicesProvider]);
-final salonConversationProvider = Provider<ConversationController>((ref) {
-  final services = ref.watch(servicesProvider);
-  final scenario = services.curriculum.firstSalonScenario;
-  final controller = ConversationController(
-    provider: services.salon,
-    lessonId: scenario.id,
-    opening: scenario.customerOpening,
-    turnLimit: scenario.turnLimit,
-  );
-  ref.onDispose(controller.dispose);
-  return controller;
-}, dependencies: [servicesProvider]);
+final salonConversationProvider =
+    Provider.family<ConversationController, String>((ref, scenarioId) {
+      final services = ref.watch(servicesProvider);
+      final scenario = services.curriculum.scenarioForId(scenarioId)!;
+      final controller = ConversationController(
+        provider: services.salon,
+        lessonId: scenario.id,
+        opening: scenario.customerOpening,
+        turnLimit: scenario.turnLimit,
+      );
+      ref.onDispose(controller.dispose);
+      return controller;
+    }, dependencies: [servicesProvider]);
 final expressionProvider = Provider<ExpressionController>((ref) {
   final controller = ExpressionController(
     ref.watch(servicesProvider).expression,

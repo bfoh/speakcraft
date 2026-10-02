@@ -27,29 +27,40 @@ def validate(data: dict) -> None:
     if [x["title"] for x in lessons] != TITLES:
         raise ValueError("Alpha needs the five blueprint lessons in order")
     scenarios = data.get("salon_scenarios")
-    if not isinstance(scenarios, list) or len(scenarios) != 1:
-        raise ValueError("Alpha needs one authored salon scenario")
-    scenario = scenarios[0]
-    if scenario.get("id") != "friendly-braids-price":
-        raise ValueError("Unexpected salon scenario")
-    if scenario.get("difficulty") != 1 or scenario.get("turn_limit") != 4:
-        raise ValueError("Invalid first salon difficulty or turn limit")
-    for key in (
-        "scenario_goal",
-        "customer_goal",
-        "customer_personality",
-        "customer_opening",
-    ):
-        if not isinstance(scenario.get(key), str) or not scenario[key].strip():
-            raise ValueError(f"Invalid salon {key}")
-    for key in ("learner_objectives", "target_language", "success_conditions"):
-        values = scenario.get(key)
+    if not isinstance(scenarios, list) or len(scenarios) != 3:
+        raise ValueError("Alpha needs three authored salon scenarios")
+    expected_scenarios = [
+        ("friendly-braids-price", 1, 4),
+        ("welcome-needs-consultation", 2, 4),
+        ("complete-salon-conversation", 3, 6),
+    ]
+    for index, scenario in enumerate(scenarios):
+        scenario_id, difficulty, turn_limit = expected_scenarios[index]
+        if scenario.get("id") != scenario_id:
+            raise ValueError("Unexpected salon scenario")
         if (
-            not isinstance(values, list)
-            or not values
-            or any(not isinstance(value, str) or not value.strip() for value in values)
+            scenario.get("difficulty") != difficulty
+            or scenario.get("turn_limit") != turn_limit
         ):
-            raise ValueError(f"Invalid salon {key}")
+            raise ValueError("Invalid salon difficulty or turn limit")
+        for key in (
+            "scenario_goal",
+            "customer_goal",
+            "customer_personality",
+            "customer_opening",
+        ):
+            if not isinstance(scenario.get(key), str) or not scenario[key].strip():
+                raise ValueError(f"Invalid salon {key}")
+        for key in ("learner_objectives", "target_language", "success_conditions"):
+            values = scenario.get(key)
+            if (
+                not isinstance(values, list)
+                or not values
+                or any(
+                    not isinstance(value, str) or not value.strip() for value in values
+                )
+            ):
+                raise ValueError(f"Invalid salon {key}")
     ids = set()
     for day, lesson in enumerate(lessons, 1):
         if lesson["day"] != day or lesson["id"] != f"day-{day}":

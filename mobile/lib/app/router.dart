@@ -47,6 +47,20 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ConversationScreen(salon: true),
       ),
       GoRoute(
+        path: '/salon/day-3',
+        builder: (context, state) => const ConversationScreen(
+          salon: true,
+          scenarioId: 'welcome-needs-consultation',
+        ),
+      ),
+      GoRoute(
+        path: '/salon/day-5',
+        builder: (context, state) => const ConversationScreen(
+          salon: true,
+          scenarioId: 'complete-salon-conversation',
+        ),
+      ),
+      GoRoute(
         path: '/help-me-say-it',
         builder: (context, state) => const ExpressionScreen(),
       ),

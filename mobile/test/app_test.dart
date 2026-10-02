@@ -432,6 +432,48 @@ void main() {
     expect(salon.calls.length, 2);
   });
 
+  testWidgets('Day 3 and Day 5 open their distinct customer scenarios', (
+    tester,
+  ) async {
+    final salon = FakeConversation();
+    await launch(
+      tester,
+      progress: returning,
+      recognition: FakeRecognition(),
+      salon: salon,
+    );
+    await tap(tester, 'Open Day 3');
+    await tap(tester, 'Practise in AI Salon');
+    expect(
+      find.text('Hello. I need a hairstyle for graduation. Can you help me?'),
+      findsOneWidget,
+    );
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    await tap(tester, 'Hear my words');
+    await tester.enterText(find.byType(TextField), 'pilot-access-code');
+    await tap(tester, 'Continue');
+    await tap(tester, 'Send reply to customer');
+    expect(salon.calls.single.$1, 'welcome-needs-consultation');
+    await tap(tester, 'Back to Home');
+    await tap(tester, 'Open Day 5');
+    await tap(tester, 'Practise in AI Salon');
+    expect(
+      find.text(
+        'Hello. I want a hairstyle that is easy to maintain. Can you help me?',
+      ),
+      findsOneWidget,
+    );
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    await tap(tester, 'Hear my words');
+    await tap(tester, 'Send reply to customer');
+    expect(salon.calls.last.$1, 'complete-salon-conversation');
+    expect(find.text('Turn 2 of 6'), findsOneWidget);
+  });
+
   testWidgets('Help Me Say It flows through expression, repeat and role-play', (
     tester,
   ) async {

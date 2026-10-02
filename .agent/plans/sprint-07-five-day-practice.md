@@ -98,5 +98,5 @@ flutter test integration_test/foundation_test.dart -d <simulator-id>
 - [x] Read the five-day blueprint objectives and current curriculum/storage boundaries.
 - [x] Expand and validate daily practice data.
 - [x] Migrate daily positions and generalise mobile flow.
-- [~] CI generic iOS build and final quality record; all 62 Flutter tests pass. The local native simulator build stalled twice in Xcode and was interrupted, so this journey remains unverified here.
+- [x] Generic iOS simulator build passed in GitHub Actions for `7b70e44`; all 62 Flutter tests and Android build pass. The local native simulator journey remains unverified because Xcode stalled twice on this host.
 - [ ] Live provider, educator and physical-device review before pilot.

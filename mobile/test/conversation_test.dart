@@ -131,4 +131,27 @@ void main() {
     expect(controller.turns.length, 1);
     controller.dispose();
   });
+
+  test('six-turn salon exchange ends at its authored limit', () async {
+    final provider = FakeConversation();
+    final controller = ConversationController(
+      provider: provider,
+      lessonId: 'complete-salon-conversation',
+      opening: 'Hello. Can you help me?',
+      turnLimit: 6,
+    );
+    for (var turn = 1; turn <= 6; turn++) {
+      if (turn == 6) provider.result = const KoraReply('Thank you.', null);
+      await controller.send('I can help you.', 'pilot');
+      expect(controller.learnerTurns, turn);
+      if (turn < 6) {
+        expect(controller.complete, isFalse);
+        controller.beginNewRecording();
+      }
+    }
+    expect(controller.complete, isTrue);
+    expect(controller.turns.length, 13);
+    expect(provider.calls.last.$2.length, 11);
+    controller.dispose();
+  });
 }

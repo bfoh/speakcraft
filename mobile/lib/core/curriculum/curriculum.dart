@@ -136,6 +136,12 @@ class Curriculum {
   Lesson? lessonForDay(int day) =>
       day >= 1 && day <= lessons.length ? lessons[day - 1] : null;
   SalonScenario get firstSalonScenario => salonScenarios.first;
+  SalonScenario? scenarioForId(String id) {
+    for (final scenario in salonScenarios) {
+      if (scenario.id == id) return scenario;
+    }
+    return null;
+  }
 
   factory Curriculum.parse(String source) {
     final json = jsonDecode(source) as Map<String, dynamic>;
@@ -149,17 +155,26 @@ class Curriculum {
     final scenarios = (json['salon_scenarios'] as List)
         .map((s) => SalonScenario.fromJson(s as Map<String, dynamic>))
         .toList();
-    if (scenarios.length != 1 ||
-        scenarios.first.id != 'friendly-braids-price' ||
-        scenarios.first.difficulty != 1 ||
-        scenarios.first.turnLimit != 4 ||
-        scenarios.first.scenarioGoal.isEmpty ||
-        scenarios.first.customerGoal.isEmpty ||
-        scenarios.first.customerPersonality.isEmpty ||
-        scenarios.first.customerOpening.isEmpty ||
-        scenarios.first.learnerObjectives.isEmpty ||
-        scenarios.first.targetLanguage.isEmpty ||
-        scenarios.first.successConditions.isEmpty) {
+    const expected = [
+      ('friendly-braids-price', 1, 4),
+      ('welcome-needs-consultation', 2, 4),
+      ('complete-salon-conversation', 3, 6),
+    ];
+    if (scenarios.length != expected.length ||
+        List.generate(scenarios.length, (index) => index).any((index) {
+          final scenario = scenarios[index];
+          final (id, difficulty, turnLimit) = expected[index];
+          return scenario.id != id ||
+              scenario.difficulty != difficulty ||
+              scenario.turnLimit != turnLimit ||
+              scenario.scenarioGoal.isEmpty ||
+              scenario.customerGoal.isEmpty ||
+              scenario.customerPersonality.isEmpty ||
+              scenario.customerOpening.isEmpty ||
+              scenario.learnerObjectives.isEmpty ||
+              scenario.targetLanguage.isEmpty ||
+              scenario.successConditions.isEmpty;
+        })) {
       throw const FormatException('Invalid salon scenario');
     }
     final ids = <String>{};

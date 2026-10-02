@@ -57,3 +57,7 @@ Use explicit intention review before requesting an expression. Generate one shor
 ## 2026-10-02 — Five-day guided practice
 
 Open all five authored days without a false mastery gate. Add short example-based sequences for Days 2–5 and save only each day's prompt position in a versioned local SQLite table. Keep the blueprint's longer consultation and Day-5 challenge as future outcomes; the practice pages and AI Salon link do not claim to assess them. Clear a recording when the learner switches to a different day or prompt.
+
+## 2026-10-02 — Scenario-bound consultation practice
+
+Extend the existing stateless AI Salon contract to three authored scenarios. Use the Day-3 and Day-5 objectives to bound distinct customer conversations, and increase the request cap only enough for six learner turns. Keep the provider instructions independent of the first braids scenario. Finishing an exchange displays the transcript and a practice-complete state; it does not assign a score or claim that the longer blueprint challenge was assessed.

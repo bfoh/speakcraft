@@ -31,6 +31,16 @@ void main() {
     expect(curriculum.firstSalonScenario.id, 'friendly-braids-price');
     expect(curriculum.firstSalonScenario.difficulty, 1);
     expect(curriculum.firstSalonScenario.successConditions.length, 3);
+    expect(curriculum.salonScenarios.length, 3);
+    expect(
+      curriculum.scenarioForId('welcome-needs-consultation')!.turnLimit,
+      4,
+    );
+    expect(
+      curriculum.scenarioForId('complete-salon-conversation')!.turnLimit,
+      6,
+    );
+    expect(curriculum.scenarioForId('unknown'), isNull);
   });
   test('rejects future incompatible versions rather than misreading them', () {
     final data = jsonDecode(source) as Map<String, dynamic>;

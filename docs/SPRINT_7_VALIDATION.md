@@ -8,7 +8,7 @@
 - SQLite version-1 to version-2 upgrade test: PASS; Day-1 index survives, and new days start at the first prompt. Save and reopen tests cover independent day positions.
 - Android debug APK: PASS.
 - iOS native simulator journey: BLOCKED locally. Xcode's simulator build stalled twice and was interrupted; the first attempt logged an invalid saved account credential in the host keychain. There was no compiler diagnostic. Sprint 6's native journey passed before this host issue. The Sprint 7 native journey remains unverified.
-- Generic iOS simulator build in CI: pending after push.
+- Generic iOS simulator build in GitHub Actions: PASS for `7b70e44`. The local native journey remains unverified due to the host Xcode stall.
 - `git diff --check`, canonical curriculum check and source secret scan: PASS.
 
 ## Product quality gate

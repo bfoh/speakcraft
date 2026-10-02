@@ -2,7 +2,7 @@
 
 ## Foundation and boundaries
 
-A Flutter application runs guided practice across five days on Android and iOS. A separate FastAPI process exposes liveness, optional speech transcription, prompt-bound teaching feedback, a bounded Kora dialogue, Help Me Say It and one structured AI Salon scenario. The mobile application remains usable offline and does not require the backend for navigation or recording. There is no learner authentication, cloud database, scored assessment or synchronisation in this build.
+A Flutter application runs guided practice across five days on Android and iOS. A separate FastAPI process exposes liveness, optional speech transcription, prompt-bound teaching feedback, a bounded Kora dialogue, Help Me Say It and three structured AI Salon scenarios. The mobile application remains usable offline and does not require the backend for navigation or recording. There is no learner authentication, cloud database, scored assessment or synchronisation in this build.
 
 The architecture follows blueprint sections 18–20. Later slices remain bounded to the authored Alpha pathway; see DECISIONS.md.
 
@@ -37,6 +37,10 @@ The learner records an intention, reviews the tentative transcript and explicitl
 ## Sprint 7 daily practice slice
 
 The same lesson screen now reads any of the five validated curriculum days. Days 2–5 contain short authored sequences that teach the blueprint vocabulary and conversation moves. The `POST /v1/speech/evaluate` contract already resolves any authored lesson/prompt pair. Home opens each day and states that longer consultations and the final challenge are not assessed by these pages. Switching to another prompt or day clears the prior take before it can be shown or uploaded under the new prompt.
+
+## Sprint 8 salon progression slice
+
+The canonical curriculum now contains three structured scenarios: first braids-and-price practice, a Day-3 needs consultation and a Day-5 extended customer exchange. Each has authored goals, personality, opening, objectives, target language, success conditions and turn limit. The backend checks the selected ID and exact opening, alternating roles, per-turn lengths and the scenario's limit before calling the provider. Its developer instruction is scenario-neutral; the selected scenario data is authoritative. The same Flutter dialogue UI is parameterised by scenario ID and linked from the relevant daily lesson. No conversation is stored or scored, and reaching the turn limit is practice completion rather than a validated challenge result.
 
 ## Mobile structure
 

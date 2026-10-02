@@ -92,11 +92,90 @@ def test_invalid_input_and_auth_never_call_provider() -> None:
             )
         assert (
             client.post(
-                "/v1/salon/respond", headers=headers, content=b"x" * 4097
+                "/v1/salon/respond", headers=headers, content=b"x" * 8193
             ).status_code
             == 413
         )
     assert provider.calls == []
+
+
+@pytest.mark.parametrize(
+    ("scenario_id", "turn_limit"),
+    [
+        ("welcome-needs-consultation", 4),
+        ("complete-salon-conversation", 6),
+    ],
+)
+def test_later_scenarios_use_their_own_authored_context(
+    scenario_id: str, turn_limit: int
+) -> None:
+    context = salon_context(scenario_id)
+    assert context is not None
+    provider = FakeSalon(CustomerReply(customer_reply="Thank you.", next_question=None))
+    with client_for(provider) as client:
+        response = client.post(
+            "/v1/salon/respond",
+            headers={"Authorization": f"Bearer {PILOT}"},
+            json={
+                "scenario_id": scenario_id,
+                "turns": [{"speaker": "customer", "text": context.customer_opening}],
+                "transcript": "Welcome. What would you like?",
+            },
+        )
+        changed_opening = client.post(
+            "/v1/salon/respond",
+            headers={"Authorization": f"Bearer {PILOT}"},
+            json={
+                "scenario_id": scenario_id,
+                "turns": [{"speaker": "customer", "text": "Other opening"}],
+                "transcript": "Welcome.",
+            },
+        )
+    assert response.status_code == 200
+    assert changed_opening.status_code == 422
+    assert provider.calls[0][0].turn_limit == turn_limit
+    assert provider.calls[0][0].customer_goal == context.customer_goal
+
+
+def test_day_five_history_is_bounded_to_six_learner_turns() -> None:
+    context = salon_context("complete-salon-conversation")
+    assert context is not None
+    provider = FakeSalon(CustomerReply(customer_reply="Thank you.", next_question=None))
+    history = [{"speaker": "customer", "text": context.customer_opening}]
+    for _ in range(5):
+        history.extend(
+            [
+                {"speaker": "learner", "text": "What do you prefer?"},
+                {"speaker": "customer", "text": "I prefer easy care."},
+            ]
+        )
+    with client_for(provider) as client:
+        headers = {"Authorization": f"Bearer {PILOT}"}
+        valid = client.post(
+            "/v1/salon/respond",
+            headers=headers,
+            json={
+                "scenario_id": context.scenario_id,
+                "turns": history,
+                "transcript": "I recommend braids because they are easy to maintain.",
+            },
+        )
+        invalid = client.post(
+            "/v1/salon/respond",
+            headers=headers,
+            json={
+                "scenario_id": context.scenario_id,
+                "turns": history
+                + [
+                    {"speaker": "learner", "text": "Thank you."},
+                    {"speaker": "customer", "text": "Goodbye."},
+                ],
+                "transcript": "Goodbye.",
+            },
+        )
+    assert valid.status_code == 200
+    assert invalid.status_code == 422
+    assert len(provider.calls) == 1
 
 
 @pytest.mark.parametrize(
@@ -142,6 +221,7 @@ def test_openai_adapter_uses_scenario_and_disables_storage() -> None:
         body = json.loads(request.content)
         assert body["store"] is False
         assert body["text"]["format"]["strict"] is True
+        assert "wants braids" not in body["input"][0]["content"]
         user_data = json.loads(body["input"][1]["content"])
         assert user_data["scenario"]["customer_goal"] == CONTEXT.customer_goal
         assert user_data["current_transcript"] == PAYLOAD["transcript"]

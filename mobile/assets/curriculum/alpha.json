@@ -28,6 +28,57 @@
         "The learner responds to price without inventing an amount."
       ],
       "turn_limit": 4
+    },
+    {
+      "id": "welcome-needs-consultation",
+      "scenario_goal": "Welcome a customer and learn what they want for an event.",
+      "customer_goal": "The customer wants a hairstyle for graduation but is unsure which style to choose.",
+      "customer_personality": "Friendly, a little unsure, and happy to answer questions.",
+      "difficulty": 2,
+      "customer_opening": "Hello. I need a hairstyle for graduation. Can you help me?",
+      "learner_objectives": [
+        "Greet the customer.",
+        "Ask what look they want.",
+        "Ask one follow-up question about their preference."
+      ],
+      "target_language": [
+        "Welcome. How can I help you?",
+        "What kind of hairstyle would you like?",
+        "Would you like it long or short?"
+      ],
+      "success_conditions": [
+        "The learner greets the customer.",
+        "The learner asks about the customer's needs.",
+        "The learner asks a clarifying question."
+      ],
+      "turn_limit": 4
+    },
+    {
+      "id": "complete-salon-conversation",
+      "scenario_goal": "Guide a customer from greeting through a recommendation and polite close.",
+      "customer_goal": "The customer wants a hairstyle that is easy to maintain and asks for a recommendation.",
+      "customer_personality": "Friendly, curious, and open to suggestions.",
+      "difficulty": 3,
+      "customer_opening": "Hello. I want a hairstyle that is easy to maintain. Can you help me?",
+      "learner_objectives": [
+        "Greet the customer.",
+        "Ask about their needs and preferences.",
+        "Recommend a style and explain why.",
+        "Close the conversation politely."
+      ],
+      "target_language": [
+        "Welcome. How can I help you?",
+        "What kind of style do you like?",
+        "I recommend braids because they are easy to maintain.",
+        "Thank you for visiting."
+      ],
+      "success_conditions": [
+        "The learner greets the customer.",
+        "The learner asks about needs and preference.",
+        "The learner recommends a suitable style with a reason.",
+        "The learner closes politely."
+      ],
+      "turn_limit": 6
     }
   ],
   "lessons": [

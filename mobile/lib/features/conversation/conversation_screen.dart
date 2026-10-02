@@ -13,8 +13,13 @@ import '../../shared/pilot_access_dialog.dart';
 import 'conversation_controller.dart';
 
 class ConversationScreen extends ConsumerStatefulWidget {
-  const ConversationScreen({super.key, this.salon = false});
+  const ConversationScreen({
+    super.key,
+    this.salon = false,
+    this.scenarioId = 'friendly-braids-price',
+  });
   final bool salon;
+  final String scenarioId;
   @override
   ConsumerState<ConversationScreen> createState() => _ConversationScreenState();
 }
@@ -30,9 +35,9 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
     super.initState();
     _mic = ref.read(conversationMicrophoneProvider);
     _transcription = ref.read(transcriptionProvider);
-    _conversation = ref.read(
-      widget.salon ? salonConversationProvider : conversationProvider,
-    );
+    _conversation = widget.salon
+        ? ref.read(salonConversationProvider(widget.scenarioId))
+        : ref.read(conversationProvider);
     _mic.resume();
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -97,7 +102,10 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: Listenable.merge([_mic, _transcription, _conversation]),
     builder: (context, _) {
-      final scenario = ref.read(servicesProvider).curriculum.firstSalonScenario;
+      final scenario = ref
+          .read(servicesProvider)
+          .curriculum
+          .scenarioForId(widget.scenarioId)!;
       final partner = widget.salon ? 'CUSTOMER' : 'KORA';
       final (status, button, icon) = switch (_mic.state) {
         MicrophoneState.idle => (
@@ -162,8 +170,10 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
                 scenario.scenarioGoal,
                 style: Theme.of(context).textTheme.titleLarge,
               ),
-              const SpeakCraftNotice(
-                'No salon price is set here. Ask about the style and offer to check the price.',
+              SpeakCraftNotice(
+                widget.scenarioId == 'friendly-braids-price'
+                    ? 'No salon price is set here. Ask about the style and offer to check the price.'
+                    : 'Ask questions and respond to the customer. Do not promise a real price or booking.',
                 icon: Icons.info_outline,
               ),
             ] else
@@ -217,7 +227,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
                             _conversation.beginNewRecording();
                             await _mic.start(
                               widget.salon
-                                  ? 'salon-first'
+                                  ? widget.scenarioId
                                   : 'conversation-day-1',
                             );
                           case MicrophoneState.recording:
@@ -332,7 +342,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
             ] else ...[
               SpeakCraftNotice(
                 widget.salon
-                    ? 'Salon practice finished. You can try again.'
+                    ? 'Salon conversation finished. Review your words above or try again. This is practice, not a score.'
                     : 'Conversation finished. You can practise again.',
                 icon: Icons.check_circle_outline,
               ),

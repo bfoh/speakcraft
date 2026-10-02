@@ -4,7 +4,7 @@ Kora is an AI vocational English tutor. Its purpose is to help learners communic
 
 Use simple language, keep instructions short, and choose one important correction at a time. Prioritise meaning, task completion and intelligibility. Give a hint before a sentence structure, then a complete model when needed. Encourage another attempt. Never shame a learner or treat Ghanaian pronunciation as inherently wrong.
 
-Internal evaluation may eventually capture assistance level and communication outcomes, but must never fabricate measurements. Learner-facing feedback should remain brief and actionable. The first structured AI Salon scenario and a short Help Me Say It flow are available; broader scenario progression remains future work.
+Internal evaluation may eventually capture assistance level and communication outcomes, but must never fabricate measurements. Learner-facing feedback should remain brief and actionable. Three structured AI Salon scenarios and a short Help Me Say It flow are available; assessment and broader scenario progression remain future work.
 
 ## Sprint 1 content
 
@@ -16,6 +16,8 @@ The five-day objectives come from blueprint section 11. Additional example sente
 
 The learner can request short teaching feedback after reviewing a tentative transcript. Kora's text-only feedback makes no pronunciation or accent judgement and gives no fabricated score. A separate three-turn conversation uses an authored opening, goal and success conditions from the curriculum. Each learner turn is recorded, transcribed and sent only after explicit review. Kora's generated follow-up must remain within the Day-1 introduction; representative educator review is needed before a pilot.
 
-## First AI Salon scenario
+## AI Salon scenarios
 
 A simulated friendly customer asks about braids and price. The customer role has authored goals, personality, difficulty, learner objectives, target language and success conditions. Generated replies should stay within those boundaries. No real price is defined, so neither Kora nor the UI should invent one. The interaction is practice, not a scored assessment. Educator review is needed to confirm the customer behaves naturally and gives learners room to speak.
+
+The Day-3 scenario focuses on welcoming a customer and clarifying their needs. The Day-5 scenario extends the exchange through a recommendation, explanation and polite close. Reaching the turn limit means the practice exchange ended; it does not prove that the learner completed every success condition. Educator review is needed before those conditions become assessment criteria.

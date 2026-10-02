@@ -34,6 +34,10 @@ Day 1 also offers **Talk with Kora**: a short spoken exchange about the learner'
 
 All five Alpha days offer authored, voice-first practice steps. The learner can hear an example, record, review recognized words and request prompt-bound Kora feedback when connected. Each day's current prompt is saved locally. Days 3 and 5 link to the existing AI Salon for more customer conversation practice. This guided practice does not claim a completed 90-second consultation, final challenge or assessment. See the [Sprint 7 plan](.agent/plans/sprint-07-five-day-practice.md).
 
+## Sprint 8 salon progression
+
+Days 3 and 5 now open their own structured AI Salon scenarios. Day 3 practises greeting a customer and asking about needs. Day 5 practises a longer exchange from greeting through recommendation and polite close. The first braids-and-price scenario remains available from Home. Each exchange is bounded, transient and explicitly sent one reply at a time. The app does not claim a measured 90-second consultation or assessed challenge completion. See the [Sprint 8 plan](.agent/plans/sprint-08-salon-progression.md).
+
 ## Repository
 
 ```text
@@ -116,7 +120,7 @@ curl http://127.0.0.1:8000/health
 
 Expected response: `{"status":"ok","service":"speakcraft-api","version":"0.1.0"}`.
 
-When enabled, [interactive API docs](http://127.0.0.1:8000/docs) describe health, transcription, teaching feedback, Kora dialogue, the first structured salon response and Help Me Say It. Formal assessment, scoring and learner-data endpoints remain unimplemented. Health means the process is alive, not that speech credentials are configured.
+When enabled, [interactive API docs](http://127.0.0.1:8000/docs) describe health, transcription, teaching feedback, Kora dialogue, three structured salon responses and Help Me Say It. Formal assessment, scoring and learner-data endpoints remain unimplemented. Health means the process is alive, not that speech credentials are configured.
 
 ## Validate
 
@@ -141,8 +145,8 @@ cd mobile
 flutter test integration_test/foundation_test.dart -d <device-id>
 ```
 
-The native smoke test uses real SQLite and recording, a separate test database, and a local test HTTP server for speech, feedback, Kora, AI Salon and Help Me Say It contracts. It does not call OpenAI or establish teaching quality. See the [Sprint 1](docs/SPRINT_1_VALIDATION.md), [Sprint 2](docs/SPRINT_2_VALIDATION.md), [Sprint 3](docs/SPRINT_3_VALIDATION.md), [Sprint 4](docs/SPRINT_4_VALIDATION.md), [Sprint 5](docs/SPRINT_5_VALIDATION.md), [Sprint 6](docs/SPRINT_6_VALIDATION.md) and [Sprint 7](docs/SPRINT_7_VALIDATION.md) validation records.
+The native smoke test uses real SQLite and recording, a separate test database, and a local test HTTP server for speech, feedback, Kora, AI Salon and Help Me Say It contracts. It does not call OpenAI or establish teaching quality. See the [Sprint 1](docs/SPRINT_1_VALIDATION.md), [Sprint 2](docs/SPRINT_2_VALIDATION.md), [Sprint 3](docs/SPRINT_3_VALIDATION.md), [Sprint 4](docs/SPRINT_4_VALIDATION.md), [Sprint 5](docs/SPRINT_5_VALIDATION.md), [Sprint 6](docs/SPRINT_6_VALIDATION.md), [Sprint 7](docs/SPRINT_7_VALIDATION.md) and [Sprint 8](docs/SPRINT_8_VALIDATION.md) validation records.
 
 ## Next build milestone
 
-Build the longer customer consultation and Day-5 challenge with reviewed scenarios and observable completion criteria. Verify generated teaching and dialogue with consented Ghanaian-accented speech and educator review before a learner pilot.
+Define and validate observable consultation and Day-5 challenge completion criteria with educators, then build the assessment and learner-facing progress view. Verify generated teaching and dialogue with consented Ghanaian-accented speech before a learner pilot.

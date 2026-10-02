@@ -48,7 +48,7 @@ from app.speech import (
 MAX_AUDIO_BYTES = 4 * 1024 * 1024
 MAX_FEEDBACK_BODY_BYTES = 4096
 MAX_CONVERSATION_BODY_BYTES = 4096
-MAX_SALON_BODY_BYTES = 4096
+MAX_SALON_BODY_BYTES = 8192
 MAX_EXPRESSION_BODY_BYTES = 2048
 
 
@@ -79,7 +79,7 @@ class ConversationRequest(BaseModel):
 class SalonRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     scenario_id: str = Field(min_length=1, max_length=80)
-    turns: list[SalonTurn] = Field(min_length=1, max_length=7)
+    turns: list[SalonTurn] = Field(min_length=1, max_length=11)
     transcript: str = Field(min_length=1, max_length=400)
 
 

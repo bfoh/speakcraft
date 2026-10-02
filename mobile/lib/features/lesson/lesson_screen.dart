@@ -473,7 +473,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
                 OutlinedButton.icon(
                   onPressed: _mic.capturing || session.saving
                       ? null
-                      : () => context.push('/salon/first'),
+                      : () => context.push('/salon/day-${widget.day}'),
                   icon: const Icon(Icons.storefront_outlined),
                   label: const Text('Practise in AI Salon'),
                 ),
