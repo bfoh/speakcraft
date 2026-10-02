@@ -181,4 +181,4 @@ The native smoke test uses real SQLite and recording, a separate test database, 
 
 ## Next build milestone
 
-Review the baseline visual and prompts with Ghanaian educators, then define an assessment rubric, consent and retention policy before storing a comparable baseline. Define observable consultation and Day-5 challenge criteria. Verify generated teaching and dialogue with consented Ghanaian-accented speech and both physical devices before a learner pilot.
+A [research-derived draft assessment rubric](docs/ASSESSMENT_RUBRIC_DRAFT.md) now maps the seven starting tasks to observable communication outcomes and sets out a local review and validation protocol. It does not produce a result in the app. Review the visual, prompts and draft with Ghanaian vocational and language educators; settle consent and retention before storing a comparable baseline. Define and pilot equivalent Day-5 tasks, and verify speech behavior and both physical devices before learner-facing assessment claims.

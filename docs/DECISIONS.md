@@ -93,3 +93,7 @@ Measure each take with a monotonic clock from successful microphone start to sto
 ## 2026-10-02 — Listen to temporary starting answers
 
 Let learners replay current and staged starting-assessment takes during the existing app session. Use one local audio player behind a small interface, stopping it before recording or deleting files. Keep the prior launch-time purge and explicit Clear recordings action. Do not call this English Mirror or retain a baseline for comparison until learner choice, educator review and retention rules are established.
+
+## 2026-10-02 — Research-derived assessment rubric draft
+
+Specify task outcomes for the seven existing Day-1 prompts in `docs/ASSESSMENT_RUBRIC_DRAFT.md`, prioritising communicated meaning and customer-task completion. Separate missing evidence from unsuccessful attempts, record the stimulus and assistance actually used, and judge intelligibility without penalising Ghanaian English accent variation. Confidence requires learner self-report. The document is a provisional reviewer aid, not an approved rating scale: do not add learner-facing scores or persistent baseline data until local content review, consent, rater agreement and a comparable Day-5 protocol exist.
