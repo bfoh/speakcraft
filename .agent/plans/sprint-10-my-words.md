@@ -97,6 +97,6 @@ flutter build ios --simulator --debug
 - [x] Add persistence, scheduler and version 1/2 migration tests.
 - [x] Add UI and widget tests, including empty due list, write retry and large text.
 - [x] Backend checks, mobile format/analyze, full 83-test suite, wheel asset packaging and Android debug build after the audio fix.
-- [x] Generic iOS CI build and source quality record for the pre-fix commit.
-- [x] Local iOS simulator build and native journey, including My Words. Final regression fix CI remains to run.
+- [x] Generic iOS, backend and Android/mobile CI checks on the final code commit.
+- [x] Local iOS simulator build and native journey, including My Words.
 - [ ] Educator review, physical devices and live provider verification before pilot.
