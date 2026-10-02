@@ -89,5 +89,13 @@ class SqliteProgressStore implements ProgressStore {
   }
 
   @override
+  Future<void> clear() async {
+    await database.transaction((txn) async {
+      await txn.delete('lesson_positions');
+      await txn.delete('learner_progress');
+    });
+  }
+
+  @override
   Future<void> close() => database.close();
 }

@@ -42,6 +42,10 @@ The same lesson screen now reads any of the five validated curriculum days. Days
 
 The canonical curriculum now contains three structured scenarios: first braids-and-price practice, a Day-3 needs consultation and a Day-5 extended customer exchange. Each has authored goals, personality, opening, objectives, target language, success conditions and turn limit. The backend checks the selected ID and exact opening, alternating roles, per-turn lengths and the scenario's limit before calling the provider. Its developer instruction is scenario-neutral; the selected scenario data is authoritative. The same Flutter dialogue UI is parameterised by scenario ID and linked from the relevant daily lesson. No conversation is stored or scored, and reaching the turn limit is practice completion rather than a validated challenge result.
 
+## Sprint 9 practice and privacy slice
+
+A dedicated Progress screen reads the five prompt positions from `SessionController` and opens each day. It labels these as saved places, not assessment. A Privacy screen explains current local storage and explicit network actions. Confirmed reset first stops and discards both current recorder takes, clears transient transcript/feedback/dialogue and the in-memory pilot code, then deletes both SQLite progress tables in one transaction. The session publishes default onboarding only after durable deletion. Cleanup and SQLite deletion remain separate operations, so any failure reports retry without claiming complete erasure. The reset works offline and makes no backend request.
+
 ## Mobile structure
 
 - `lib/app`: composition, Riverpod providers, GoRouter routes and theme.
@@ -51,6 +55,8 @@ The canonical curriculum now contains three structured scenarios: first braids-a
 - `lib/core/speech`: backend-facing transcription and teaching-feedback contracts.
 - `lib/features/onboarding`: welcome, profession, support language, Kora introduction, assessment introduction.
 - `lib/features/home`: five-day entry and practice positions.
+- `lib/features/progress`: saved daily positions and resume navigation.
+- `lib/features/settings`: local privacy explanation and confirmed phone-data reset.
 - `lib/features/lesson`: phrase practice, microphone state controller and UI.
 - `lib/features/conversation`: bounded Day-1 dialogue controller and screen.
 - `lib/features/help_me_say_it`: short intention, repeat and customer role-play flow.
@@ -61,6 +67,8 @@ Riverpod supplies application dependencies. The bootstrap loads native services,
 ## Local state
 
 SQLite schema version 2 preserves the original `learner_progress` row and adds `lesson_positions` for Days 2–5. It stores onboarding step, profession, support language and current prompt index for each day. The repository uses parameterised queries. Changes become visible only after a successful database write; write failure preserves the previous state and exposes retry. This is navigation progress, not evidence of mastery or lesson completion.
+
+Reset atomically deletes the two progress tables. It does not contact the backend or revoke earlier provider processing. The current audio cache is cleared before durable deletion, and failure is exposed for retry.
 
 Future local changes must increment the schema version and provide tested upgrades. No remote database schema or credentials are introduced. Routine audio is separate cache data, excluded from learning history.
 

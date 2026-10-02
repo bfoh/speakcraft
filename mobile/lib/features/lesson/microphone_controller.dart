@@ -128,6 +128,25 @@ class MicrophoneController extends ChangeNotifier {
     await speech.stop().catchError((Object _) {});
   }
 
+  /// Erase the current take before clearing local learner data.
+  Future<bool> clearForPrivacy() async {
+    _backgrounded = true;
+    if (busy) return false;
+    _timer?.cancel();
+    if (state == MicrophoneState.recording) await finish();
+    try {
+      await speech.stop();
+      await microphone.discard();
+      recordingPath = null;
+      promptId = null;
+      _set(MicrophoneState.idle);
+      return true;
+    } catch (_) {
+      _set(MicrophoneState.failure);
+      return false;
+    }
+  }
+
   void resume() {
     _backgrounded = false;
   }

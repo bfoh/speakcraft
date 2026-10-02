@@ -90,6 +90,16 @@ class HomeScreen extends ConsumerWidget {
           'Your place is saved on this phone. You can practise without internet.',
           icon: Icons.offline_pin_outlined,
         ),
+        SpeakCraftButton(
+          label: 'My practice',
+          icon: Icons.route_outlined,
+          onPressed: () => context.push('/progress'),
+        ),
+        OutlinedButton.icon(
+          onPressed: () => context.push('/settings/privacy'),
+          icon: const Icon(Icons.privacy_tip_outlined),
+          label: const Text('Privacy and phone data'),
+        ),
         Semantics(
           header: true,
           child: Text(

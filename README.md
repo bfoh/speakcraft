@@ -38,6 +38,10 @@ All five Alpha days offer authored, voice-first practice steps. The learner can 
 
 Days 3 and 5 now open their own structured AI Salon scenarios. Day 3 practises greeting a customer and asking about needs. Day 5 practises a longer exchange from greeting through recommendation and polite close. The first braids-and-price scenario remains available from Home. Each exchange is bounded, transient and explicitly sent one reply at a time. The app does not claim a measured 90-second consultation or assessed challenge completion. See the [Sprint 8 plan](.agent/plans/sprint-08-salon-progression.md).
 
+## Sprint 9 practice and privacy
+
+**My practice** shows the saved place in each of the five days and opens the selected day. It does not present a speaking score or claim lesson completion. **Privacy and phone data** explains the local and explicit-send boundaries. A confirmed clear removes onboarding choices, daily positions and current recordings, then returns to Welcome. If audio cleanup or SQLite deletion fails, the learner sees a retry message. See the [Sprint 9 plan](.agent/plans/sprint-09-progress-privacy.md).
+
 ## Repository
 
 ```text
@@ -145,8 +149,8 @@ cd mobile
 flutter test integration_test/foundation_test.dart -d <device-id>
 ```
 
-The native smoke test uses real SQLite and recording, a separate test database, and a local test HTTP server for speech, feedback, Kora, AI Salon and Help Me Say It contracts. It does not call OpenAI or establish teaching quality. See the [Sprint 1](docs/SPRINT_1_VALIDATION.md), [Sprint 2](docs/SPRINT_2_VALIDATION.md), [Sprint 3](docs/SPRINT_3_VALIDATION.md), [Sprint 4](docs/SPRINT_4_VALIDATION.md), [Sprint 5](docs/SPRINT_5_VALIDATION.md), [Sprint 6](docs/SPRINT_6_VALIDATION.md), [Sprint 7](docs/SPRINT_7_VALIDATION.md) and [Sprint 8](docs/SPRINT_8_VALIDATION.md) validation records.
+The native smoke test uses real SQLite and recording, a separate test database, and a local test HTTP server for speech, feedback, Kora, AI Salon and Help Me Say It contracts. It does not call OpenAI or establish teaching quality. See the [Sprint 1](docs/SPRINT_1_VALIDATION.md), [Sprint 2](docs/SPRINT_2_VALIDATION.md), [Sprint 3](docs/SPRINT_3_VALIDATION.md), [Sprint 4](docs/SPRINT_4_VALIDATION.md), [Sprint 5](docs/SPRINT_5_VALIDATION.md), [Sprint 6](docs/SPRINT_6_VALIDATION.md), [Sprint 7](docs/SPRINT_7_VALIDATION.md), [Sprint 8](docs/SPRINT_8_VALIDATION.md) and [Sprint 9](docs/SPRINT_9_VALIDATION.md) validation records.
 
 ## Next build milestone
 
-Define and validate observable consultation and Day-5 challenge completion criteria with educators, then build the assessment and learner-facing progress view. Verify generated teaching and dialogue with consented Ghanaian-accented speech before a learner pilot.
+Build the blueprint's multi-part baseline assessment capture without inventing scores, then define observable consultation and Day-5 challenge criteria with educators. Verify generated teaching and dialogue with consented Ghanaian-accented speech before a learner pilot.

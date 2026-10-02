@@ -61,3 +61,7 @@ Open all five authored days without a false mastery gate. Add short example-base
 ## 2026-10-02 — Scenario-bound consultation practice
 
 Extend the existing stateless AI Salon contract to three authored scenarios. Use the Day-3 and Day-5 objectives to bound distinct customer conversations, and increase the request cap only enough for six learner turns. Keep the provider instructions independent of the first braids scenario. Finishing an exchange displays the transcript and a practice-complete state; it does not assign a score or claim that the longer blueprint challenge was assessed.
+
+## 2026-10-02 — Saved practice and local erasure
+
+Show the saved prompt index for each Alpha day in a dedicated screen, without treating it as mastery or completion. Let the learner confirm erasure of local choices, positions, current recordings and transient dialogue. Clear both audio caches before publishing a SQLite reset, and show retry if either stage fails. Do not imply that local erasure revokes previous provider requests or device backups.

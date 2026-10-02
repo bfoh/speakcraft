@@ -693,4 +693,122 @@ void main() {
       semantics.dispose();
     },
   );
+
+  testWidgets('practice screen shows saved positions and opens the right day', (
+    tester,
+  ) async {
+    await launch(
+      tester,
+      progress: const LearnerProgress(
+        onboardingStep: 5,
+        profession: 'beauty-cosmetology',
+        supportLanguage: 'en',
+        dayOnePrompt: 1,
+        otherDayPrompts: {3: 2},
+      ),
+    );
+    await tap(tester, 'My practice');
+    expect(
+      find.text('This shows where to continue. It is not a speaking score.'),
+      findsOneWidget,
+    );
+    expect(find.text('Practice 2 of 4'), findsOneWidget);
+    expect(find.text('Practice 3 of 3'), findsOneWidget);
+    await tap(tester, 'Open Day 3');
+    expect(find.text('Day 3 • Practice 3 of 3'), findsOneWidget);
+  });
+
+  testWidgets(
+    'privacy reset asks first, clears both takes and returns to Welcome',
+    (tester) async {
+      await launch(
+        tester,
+        progress: const LearnerProgress(
+          onboardingStep: 5,
+          profession: 'beauty-cosmetology',
+          supportLanguage: 'en',
+          dayOnePrompt: 1,
+          otherDayPrompts: {3: 2},
+        ),
+      );
+      await tap(tester, 'Open Day 1');
+      await tap(tester, 'Enable microphone');
+      await tap(tester, 'Start recording');
+      await tap(tester, 'Stop recording');
+      await tap(tester, 'Back to Home');
+      await tap(tester, 'Privacy and phone data');
+      await tap(tester, 'Clear phone data');
+      expect(find.text('Clear phone data?'), findsOneWidget);
+      await tap(tester, 'Keep my data');
+      expect(store.progress.onboarded, isTrue);
+      await tap(tester, 'Clear phone data');
+      await tester.tap(find.text('Clear phone data').last);
+      await tester.pumpAndSettle();
+      expect(find.text('Real English.\nReal skills.'), findsOneWidget);
+      expect(store.progress.onboarded, isFalse);
+      expect(store.progress.promptForDay(1), 0);
+      expect(store.progress.promptForDay(3), 0);
+      expect(mic.discards, greaterThan(0));
+    },
+  );
+
+  testWidgets('failed local deletion stays on Privacy and offers retry', (
+    tester,
+  ) async {
+    await launch(tester, progress: returning);
+    store.failClear = true;
+    await tap(tester, 'Privacy and phone data');
+    await tap(tester, 'Clear phone data');
+    await tester.tap(find.text('Clear phone data').last);
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining("couldn't clear your phone data"),
+      findsOneWidget,
+    );
+    expect(store.progress.onboarded, isTrue);
+    store.failClear = false;
+    await tap(tester, 'Clear phone data');
+    await tester.tap(find.text('Clear phone data').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Real English.\nReal skills.'), findsOneWidget);
+  });
+
+  testWidgets('failed audio cleanup keeps saved progress for retry', (
+    tester,
+  ) async {
+    await launch(tester, progress: returning);
+    mic.failDiscard = true;
+    await tap(tester, 'Privacy and phone data');
+    await tap(tester, 'Clear phone data');
+    await tester.tap(find.text('Clear phone data').last);
+    await tester.pumpAndSettle();
+    expect(find.textContaining("couldn't clear a recording"), findsOneWidget);
+    expect(store.progress.onboarded, isTrue);
+    mic.failDiscard = false;
+    await tap(tester, 'Clear phone data');
+    await tester.tap(find.text('Clear phone data').last);
+    await tester.pumpAndSettle();
+    expect(store.progress.onboarded, isFalse);
+  });
+
+  testWidgets('practice and privacy remain usable on a small scaled screen', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 700);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await launch(tester, progress: returning);
+    await tap(tester, 'My practice');
+    expect(tester.takeException(), isNull);
+    await tap(tester, 'Open Day 5');
+    expect(tester.takeException(), isNull);
+    await tap(tester, 'Back to Home');
+    await tap(tester, 'Privacy and phone data');
+    expect(tester.takeException(), isNull);
+    await tap(tester, 'Clear phone data');
+    expect(tester.takeException(), isNull);
+  });
 }

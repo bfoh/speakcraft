@@ -6,7 +6,7 @@
 - Backend Ruff formatting/lint, strict mypy and pytest: PASS (44 tests). Tests cover scenario authority, altered openings, six-turn history bounds, provider-agnostic customer instructions, safe failures and `store: false`.
 - Flutter formatting, analysis and tests: PASS (64 tests). The Day-3 and Day-5 routes open distinct customer scenarios, and the six-turn controller stops at the authored limit. Existing offline retry and small-screen flows still pass.
 - Android debug APK: PASS.
-- Generic iOS simulator build in CI: pending after push.
+- Generic iOS simulator build in CI: PASS ([run 36960468162](https://github.com/bfoh/speakcraft/actions/runs/36960468162)). Backend and Android/mobile jobs passed in the same run.
 - iOS native simulator journey: BLOCKED locally. Xcode's simulator build stalled twice during Sprint 7; one attempt logged an invalid saved account credential. The Sprint 6 native voice journey passed before this host issue. The new scenarios need a later native run on a repaired host or connected devices.
 - `git diff --check`, canonical curriculum check and source secret scan: PASS. Backend wheel packaging: PASS; the packaged asset contains all three scenarios.
 

@@ -38,4 +38,4 @@ Before storing remote learner data or exposing the API publicly, implement learn
 
 ## Local removal
 
-Delete recording removes the current take. Relaunching the app clears previous takes automatically. Resetting app storage on Android or deleting/reinstalling the app on iOS removes local practice state (subject to OS backups). A learner-facing account/data deletion flow is required before public launch if accounts are introduced.
+Delete recording removes the current take. Relaunching the app clears previous takes automatically. The in-app **Privacy and phone data** screen offers a confirmed **Clear phone data** action. It discards current lesson and dialogue takes, clears transient transcript, feedback, dialogue and pilot code, deletes onboarding choices and all five saved prompt positions in a SQLite transaction, and returns to Welcome. A failed audio or database operation reports retry rather than claiming success. This local action works offline and cannot revoke earlier provider processing or data in device backups. A learner-facing account/data deletion flow is required before public launch if accounts are introduced.

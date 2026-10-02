@@ -45,6 +45,7 @@ class LearnerProgress {
 abstract interface class ProgressStore {
   Future<LearnerProgress> load();
   Future<void> save(LearnerProgress progress);
+  Future<void> clear();
   Future<void> close();
 }
 
@@ -67,6 +68,24 @@ class SessionController extends ChangeNotifier {
       return true;
     } catch (_) {
       error = "We couldn't save your place. Please try again.";
+      return false;
+    } finally {
+      saving = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> reset() async {
+    if (saving) return false;
+    saving = true;
+    error = null;
+    notifyListeners();
+    try {
+      await store.clear();
+      progress = const LearnerProgress();
+      return true;
+    } catch (_) {
+      error = "We couldn't clear your phone data. Please try again.";
       return false;
     } finally {
       saving = false;

@@ -7,6 +7,8 @@ import '../features/conversation/conversation_screen.dart';
 import '../features/help_me_say_it/expression_screen.dart';
 import '../features/lesson/lesson_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
+import '../features/progress/progress_screen.dart';
+import '../features/settings/privacy_screen.dart';
 import '../shared/components.dart';
 import 'services.dart';
 
@@ -33,6 +35,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           builder: (context, state) => OnboardingScreen(step: step),
         ),
       GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
+      GoRoute(
+        path: '/progress',
+        builder: (context, state) => const ProgressScreen(),
+      ),
+      GoRoute(
+        path: '/settings/privacy',
+        builder: (context, state) => const PrivacyScreen(),
+      ),
       for (var day = 1; day <= 5; day++)
         GoRoute(
           path: '/lesson/day-$day',

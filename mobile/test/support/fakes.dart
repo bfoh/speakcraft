@@ -13,6 +13,7 @@ class FakeMicrophone implements Microphone {
   bool permission = true;
   bool failStart = false;
   bool failStop = false;
+  bool failDiscard = false;
   int starts = 0;
   int stops = 0;
   int discards = 0;
@@ -41,6 +42,7 @@ class FakeMicrophone implements Microphone {
   @override
   Future<void> discard() async {
     discards++;
+    if (failDiscard) throw StateError('Test cleanup failure');
   }
 
   @override
@@ -148,6 +150,7 @@ class FakeExpression implements ExpressionGenerator {
 class MemoryProgressStore implements ProgressStore {
   LearnerProgress progress = const LearnerProgress();
   bool failSave = false;
+  bool failClear = false;
   Completer<void>? saveGate;
   @override
   Future<LearnerProgress> load() async => progress;
@@ -156,6 +159,12 @@ class MemoryProgressStore implements ProgressStore {
     if (saveGate != null) await saveGate!.future;
     if (failSave) throw StateError('Test disk full');
     progress = next;
+  }
+
+  @override
+  Future<void> clear() async {
+    if (failClear) throw StateError('Test disk failure');
+    progress = const LearnerProgress();
   }
 
   @override

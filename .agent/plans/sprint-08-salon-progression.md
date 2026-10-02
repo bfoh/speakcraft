@@ -99,5 +99,5 @@ flutter test integration_test/foundation_test.dart -d <simulator-id>
 - [x] Generalise backend provider/contract and mobile routes/dialogue.
 - [x] Backend and Flutter test suites pass.
 - [x] Android debug build, source quality checks and backend wheel packaging pass.
-- [~] Generic iOS CI build and final quality record. Native simulator test is blocked by local Xcode.
+- [x] Generic iOS CI build and final source quality record. Native simulator test remains blocked by local Xcode.
 - [ ] Live provider, educator and physical-device review before pilot.

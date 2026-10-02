@@ -118,6 +118,71 @@ void main() {
   });
 
   test(
+    'SQLite clear removes onboarding and all daily positions on reopen',
+    () async {
+      sqfliteFfiInit();
+      final directory = await Directory.systemTemp.createTemp(
+        'speakcraft-clear-',
+      );
+      final path = '${directory.path}/progress.db';
+      var store = await SqliteProgressStore.open(
+        factory: databaseFactoryFfi,
+        path: path,
+      );
+      try {
+        await store.save(
+          const LearnerProgress(
+            onboardingStep: 5,
+            profession: 'beauty-cosmetology',
+            supportLanguage: 'en',
+            dayOnePrompt: 2,
+            otherDayPrompts: {2: 1, 3: 2, 4: 1, 5: 3},
+          ),
+        );
+        await store.clear();
+        await store.close();
+        store = await SqliteProgressStore.open(
+          factory: databaseFactoryFfi,
+          path: path,
+        );
+        final progress = await store.load();
+        expect(progress.onboarded, isFalse);
+        expect(progress.profession, isNull);
+        expect(progress.supportLanguage, isNull);
+        for (var day = 1; day <= 5; day++) {
+          expect(progress.promptForDay(day), 0);
+        }
+        expect(await store.database.query('learner_progress'), isEmpty);
+        expect(await store.database.query('lesson_positions'), isEmpty);
+      } finally {
+        await store.close();
+        await directory.delete(recursive: true);
+      }
+    },
+  );
+
+  test('failed clear keeps published position and allows retry', () async {
+    const saved = LearnerProgress(
+      onboardingStep: 5,
+      dayOnePrompt: 2,
+      otherDayPrompts: {3: 1},
+    );
+    final store = MemoryProgressStore()
+      ..progress = saved
+      ..failClear = true;
+    final controller = SessionController(store, saved);
+    addTearDown(controller.dispose);
+    expect(await controller.reset(), isFalse);
+    expect(controller.progress.promptForDay(3), 1);
+    expect(store.progress.onboarded, isTrue);
+    expect(controller.error, contains('couldn\'t clear'));
+    store.failClear = false;
+    expect(await controller.reset(), isTrue);
+    expect(controller.progress.onboarded, isFalse);
+    expect(store.progress.promptForDay(3), 0);
+  });
+
+  test(
     'state is only confirmed after save and competing writes are rejected',
     () async {
       final store = MemoryProgressStore()..saveGate = Completer<void>();
