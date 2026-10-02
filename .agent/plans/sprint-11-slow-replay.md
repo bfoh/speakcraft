@@ -88,4 +88,5 @@ flutter test integration_test/foundation_test.dart -d BB727569-6977-4D3D-92E4-85
 - [x] Flutter formatting, analysis and 84 unit/widget tests
 - [x] Android debug and iOS simulator app builds
 - [x] Backend regression checks, security review and documentation
+- [x] Backend, mobile/Android and iOS CI jobs on the implementation commit
 - [ ] Native iOS journey and Android/iOS listening check (CoreSimulator stalled; physical devices later)

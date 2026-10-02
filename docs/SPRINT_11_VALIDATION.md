@@ -8,6 +8,7 @@
 - iOS simulator app build: PASS.
 - Backend Ruff format/lint, strict mypy and pytest: PASS (44 tests). Backend behavior is unchanged.
 - `git diff --check` and mobile source credential scan: PASS.
+- [CI run 36994879601](https://github.com/bfoh/speakcraft/actions/runs/36994879601): PASS for backend, Android/mobile and iOS simulator build on the implementation commit.
 
 ## Native journey
 
