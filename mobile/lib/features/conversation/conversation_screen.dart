@@ -16,9 +16,11 @@ class ConversationScreen extends ConsumerStatefulWidget {
   const ConversationScreen({
     super.key,
     this.salon = false,
+    this.saveRehearsal = false,
     this.scenarioId = 'friendly-braids-price',
   });
   final bool salon;
+  final bool saveRehearsal;
   final String scenarioId;
   @override
   ConsumerState<ConversationScreen> createState() => _ConversationScreenState();
@@ -55,6 +57,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
   }
 
   Future<void> _startOver() async {
+    if (ref.read(sessionProvider).saving) return;
     _conversation.reset();
     _transcription.clear();
     await _mic.interrupt();
@@ -63,6 +66,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
   }
 
   Future<void> _home() async {
+    if (ref.read(sessionProvider).saving) return;
     await _startOver();
     if (mounted) context.go('/home');
   }
@@ -89,6 +93,20 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
     if (_conversation.state == ConversationState.accessDenied) {
       _transcription.clearAccessToken();
     }
+    if (mounted && widget.saveRehearsal && _conversation.complete) {
+      await _saveRehearsal();
+    }
+  }
+
+  Future<void> _saveRehearsal() async {
+    if (!_conversation.complete || !widget.saveRehearsal) return;
+    final session = ref.read(sessionProvider);
+    final next = session.progress.withSalonTurns(
+      widget.scenarioId,
+      _conversation.learnerTurns,
+    );
+    if (identical(next, session.progress)) return;
+    await session.update(next);
   }
 
   @override
@@ -100,8 +118,14 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: Listenable.merge([_mic, _transcription, _conversation]),
+    listenable: Listenable.merge([
+      _mic,
+      _transcription,
+      _conversation,
+      ref.watch(sessionProvider),
+    ]),
     builder: (context, _) {
+      final session = ref.read(sessionProvider);
       final scenario = ref
           .read(servicesProvider)
           .curriculum
@@ -162,7 +186,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
         },
         child: SpeakCraftPage(
           title: widget.salon ? 'AI Salon' : 'Talk with Kora',
-          onBack: _home,
+          onBack: session.saving ? null : _home,
           children: [
             if (widget.salon) ...[
               const Text('Practise with a simulated customer.'),
@@ -343,12 +367,58 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
             ] else ...[
               SpeakCraftNotice(
                 widget.salon
-                    ? 'Salon conversation finished. Review your words above or try again. This is practice, not a score.'
+                    ? 'Customer conversation ended. Review your words above or try again. This is practice, not a score.'
                     : 'Conversation finished. You can practise again.',
                 icon: Icons.check_circle_outline,
               ),
+              if (widget.salon) ...[
+                SpeakCraftCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text('LOOK BACK AT YOUR CONVERSATION'),
+                      const SizedBox(height: 12),
+                      for (final goal in scenario.learnerObjectives)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Text('• $goal'),
+                        ),
+                      SpeakCraftAudioButton(
+                        text: scenario.learnerObjectives.join(' '),
+                        label: 'Hear practice goals',
+                      ),
+                      const Text('These are practice goals, not a score.'),
+                    ],
+                  ),
+                ),
+                if (widget.saveRehearsal) ...[
+                  Text(
+                    'You answered ${_conversation.learnerTurns} of ${_conversation.turnLimit} customer turns in this rehearsal.',
+                  ),
+                  Text(
+                    'Best saved on this phone: ${session.progress.bestSalonTurns(widget.scenarioId)} of ${_conversation.turnLimit} turns.',
+                  ),
+                  if (session.error != null &&
+                      _conversation.learnerTurns >
+                          session.progress.bestSalonTurns(widget.scenarioId))
+                    const SpeakCraftNotice(
+                      "We couldn't save your reply count on this phone. Tap Save rehearsal to try again.",
+                      icon: Icons.error_outline,
+                      live: true,
+                    ),
+                  if (_conversation.learnerTurns >
+                      session.progress.bestSalonTurns(widget.scenarioId))
+                    SpeakCraftButton(
+                      label: session.saving
+                          ? 'Saving rehearsal…'
+                          : 'Save rehearsal',
+                      icon: Icons.save_outlined,
+                      onPressed: session.saving ? null : _saveRehearsal,
+                    ),
+                ],
+              ],
               OutlinedButton.icon(
-                onPressed: _startOver,
+                onPressed: session.saving ? null : _startOver,
                 icon: const Icon(Icons.replay),
                 label: Text(
                   widget.salon
@@ -359,12 +429,14 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen>
             ],
             SpeakCraftNotice(
               widget.salon
-                  ? 'Your voice stays on this phone until you choose Hear my words. Send reply sends the words you see to the simulated customer. This practice is not saved.'
+                  ? widget.saveRehearsal
+                        ? 'Your voice stays on this phone until you choose Hear my words. Send reply sends the words you see to the simulated customer. Only your completed reply count is saved on this phone.'
+                        : 'Your voice stays on this phone until you choose Hear my words. Send reply sends the words you see to the simulated customer. This practice is not saved.'
                   : 'Your voice stays on this phone until you choose Hear my words. Send reply sends the words you see to Kora. This conversation is not saved.',
               icon: Icons.privacy_tip_outlined,
             ),
             OutlinedButton.icon(
-              onPressed: _home,
+              onPressed: session.saving ? null : _home,
               icon: const Icon(Icons.home_outlined),
               label: const Text('Back to Home'),
             ),

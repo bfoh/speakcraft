@@ -513,6 +513,9 @@ class _LessonScreenState extends ConsumerState<LessonScreen>
                   'For more customer conversation practice, try AI Salon. This lesson does not assess a full consultation or challenge.',
                   icon: Icons.info_outline,
                 ),
+                Text(
+                  'AI Salon replies saved: ${session.progress.bestSalonTurns(services.curriculum.scenarioForDay(widget.day)!.id)} of ${services.curriculum.scenarioForDay(widget.day)!.turnLimit}',
+                ),
                 OutlinedButton.icon(
                   onPressed: _mic.capturing || session.saving
                       ? null

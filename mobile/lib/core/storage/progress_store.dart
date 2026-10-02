@@ -9,6 +9,7 @@ class LearnerProgress {
     this.dayOnePrompt = 0,
     this.otherDayPrompts = const {},
     this.attemptedPromptIds = const {},
+    this.salonRehearsalTurns = const {},
   });
   final int onboardingStep;
   final String? profession;
@@ -18,6 +19,9 @@ class LearnerProgress {
 
   /// Authored prompts with a saved local speaking attempt; never a quality score.
   final Set<String> attemptedPromptIds;
+
+  /// Most learner replies completed in one rehearsal per authored scenario.
+  final Map<String, int> salonRehearsalTurns;
   bool get onboarded => onboardingStep == 5;
 
   int promptForDay(int day) =>
@@ -38,6 +42,19 @@ class LearnerProgress {
     return copyWith(attemptedPromptIds: {...attemptedPromptIds, promptId});
   }
 
+  int bestSalonTurns(String scenarioId) => salonRehearsalTurns[scenarioId] ?? 0;
+
+  LearnerProgress withSalonTurns(String scenarioId, int turns) {
+    if (scenarioId.isEmpty || turns < 1 || turns > 6) {
+      throw ArgumentError('Invalid salon rehearsal');
+    }
+    final best = bestSalonTurns(scenarioId);
+    if (turns <= best) return this;
+    return copyWith(
+      salonRehearsalTurns: {...salonRehearsalTurns, scenarioId: turns},
+    );
+  }
+
   LearnerProgress withPromptForDay(int day, int index) {
     if (day == 1) return copyWith(dayOnePrompt: index);
     if (day < 2 || day > 5 || index < 0) {
@@ -53,6 +70,7 @@ class LearnerProgress {
     int? dayOnePrompt,
     Map<int, int>? otherDayPrompts,
     Set<String>? attemptedPromptIds,
+    Map<String, int>? salonRehearsalTurns,
   }) => LearnerProgress(
     onboardingStep: onboardingStep ?? this.onboardingStep,
     profession: profession ?? this.profession,
@@ -61,6 +79,9 @@ class LearnerProgress {
     otherDayPrompts: Map.unmodifiable(otherDayPrompts ?? this.otherDayPrompts),
     attemptedPromptIds: Set.unmodifiable(
       attemptedPromptIds ?? this.attemptedPromptIds,
+    ),
+    salonRehearsalTurns: Map.unmodifiable(
+      salonRehearsalTurns ?? this.salonRehearsalTurns,
     ),
   );
 }

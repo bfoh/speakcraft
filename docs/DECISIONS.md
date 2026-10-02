@@ -81,3 +81,7 @@ Represent the blueprint's five Day-1 parts as seven authored recording items, wi
 ## 2026-10-02 — Recorded guided-practice steps
 
 Persist only authored prompt IDs after a nonempty local recording and explicit advance/save. Derive a finished guided-practice day from all current prompt IDs, so a skipped step or newly added content cannot inherit completion from a saved position. Keep the Day-3 consultation and Day-5 challenge separate: finishing short guided prompts is participation, not proof of a 90-second conversation or successful vocational communication.
+
+## 2026-10-02 — Local AI Salon rehearsal counts
+
+Save the highest number of learner replies completed in one terminal Day-3 or Day-5 AI Salon exchange. Show authored learner objectives at the end for self-review. A provider may end early, so show the actual count without a completion score. Keep dialogue, transcripts and audio transient. A failed local save keeps the finished exchange visible with a retry action. This records participation, not consultation duration or successful customer communication.

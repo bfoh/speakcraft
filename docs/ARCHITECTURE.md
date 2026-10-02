@@ -62,6 +62,10 @@ Seven validated `baseline_items` in curriculum version 0.1.1 cover the blueprint
 
 SQLite schema version 4 adds `practice_attempts`, a set of authored prompt IDs for which a nonempty native take was saved and the learner explicitly advanced or saved the last step. The attempt marker and current position are written in one transaction. All current prompt IDs must be present before a day displays `Practice steps finished`. Skipping remains possible but adds no marker. This is participation evidence only: it stores no audio, transcript or speaking result, and Days 3 and 5 do not claim completion of their longer challenges.
 
+## Sprint 14 AI Salon rehearsal progress slice
+
+SQLite schema version 5 adds `salon_rehearsals` with the most learner replies completed in one terminal Day-3 or Day-5 scenario. `ConversationScreen` writes only after a successful provider response ends the exchange; early provider endings save their actual shorter count. A failed local save retains the visible dialogue and offers retry. The final screen displays the scenario's authored learner objectives for self-review. The count is local participation evidence, not a duration, communication score or success judgement; no conversation text or audio is retained.
+
 ## Mobile structure
 
 - `lib/app`: composition, Riverpod providers, GoRouter routes and theme.
@@ -84,9 +88,9 @@ Riverpod supplies application dependencies. The bootstrap loads native services,
 
 ## Local state
 
-SQLite schema version 4 preserves the original `learner_progress` row and `lesson_positions` for Days 2–5, plus `review_state` for self-rated phrase timing and `practice_attempts` for recorded daily steps. It stores onboarding step, profession, support language, current prompt index, review timing and authored attempted-prompt IDs. The repository uses parameterised queries. Changes become visible only after a successful database write; write failure preserves the previous state and exposes retry. Attempts show guided-practice participation, not mastery or assessed lesson completion.
+SQLite schema version 5 preserves the original `learner_progress` row and `lesson_positions` for Days 2–5, plus `review_state`, `practice_attempts` and `salon_rehearsals`. It stores onboarding step, profession, support language, current prompt index, review timing, authored attempted-prompt IDs and per-scenario best completed reply counts. The repository uses parameterised queries. Changes become visible only after a successful database write; write failure preserves the previous state and exposes retry. Attempts and counts show participation, not mastery or assessed lesson completion.
 
-Reset atomically deletes all four local progress/review/attempt tables. It does not contact the backend or revoke earlier provider processing. Lesson, dialogue and baseline audio caches are cleared before durable deletion, and failure is exposed for retry.
+Reset atomically deletes all five local progress/review/attempt/rehearsal tables. It does not contact the backend or revoke earlier provider processing. Lesson, dialogue and baseline audio caches are cleared before durable deletion, and failure is exposed for retry.
 
 Future local changes must increment the schema version and provide tested upgrades. No remote database schema or credentials are introduced. Routine audio is separate cache data, excluded from learning history.
 

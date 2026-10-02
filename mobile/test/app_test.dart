@@ -471,6 +471,7 @@ void main() {
     await tap(tester, 'Continue');
     await tap(tester, 'Send reply to customer');
     expect(salon.calls.single.$1, 'welcome-needs-consultation');
+    expect(store.progress.bestSalonTurns('welcome-needs-consultation'), 0);
     await tap(tester, 'Back to Home');
     await tap(tester, 'Open Day 5');
     await tap(tester, 'Practise in AI Salon');
@@ -487,6 +488,120 @@ void main() {
     await tap(tester, 'Send reply to customer');
     expect(salon.calls.last.$1, 'complete-salon-conversation');
     expect(find.text('Turn 2 of 6'), findsOneWidget);
+    expect(store.progress.bestSalonTurns('complete-salon-conversation'), 0);
+  });
+
+  testWidgets('early salon ending saves its actual reply count for review', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 700);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final salon = FakeConversation()
+      ..result = const KoraReply('Thank you for your help.', null);
+    await launch(
+      tester,
+      progress: returning,
+      recognition: FakeRecognition(),
+      salon: salon,
+    );
+    await tap(tester, 'Open Day 5');
+    await tap(tester, 'Practise in AI Salon');
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    await tap(tester, 'Hear my words');
+    await tester.enterText(find.byType(TextField), 'pilot-access-code');
+    await tap(tester, 'Continue');
+    await tap(tester, 'Send reply to customer');
+    expect(store.progress.bestSalonTurns('complete-salon-conversation'), 1);
+    expect(
+      find.text('You answered 1 of 6 customer turns in this rehearsal.'),
+      findsOneWidget,
+    );
+    expect(find.text('These are practice goals, not a score.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tap(tester, 'Hear practice goals');
+    expect(speech.spoken.last, contains('Greet the customer.'));
+    await tap(tester, 'Back to Home');
+    expect(find.text('AI Salon replies saved: 1 of 6'), findsOneWidget);
+    await tap(tester, 'My practice');
+    expect(find.text('AI Salon replies saved: 1 of 6'), findsOneWidget);
+  });
+
+  testWidgets('failed rehearsal save keeps dialogue and offers retry', (
+    tester,
+  ) async {
+    final salon = FakeConversation()
+      ..result = const KoraReply('Thank you for your help.', null);
+    await launch(
+      tester,
+      progress: returning,
+      recognition: FakeRecognition(),
+      salon: salon,
+    );
+    await tap(tester, 'Open Day 3');
+    await tap(tester, 'Practise in AI Salon');
+    await tap(tester, 'Enable microphone');
+    await tap(tester, 'Start recording');
+    await tap(tester, 'Stop recording');
+    await tap(tester, 'Hear my words');
+    await tester.enterText(find.byType(TextField), 'pilot-access-code');
+    await tap(tester, 'Continue');
+    store.failSave = true;
+    await tap(tester, 'Send reply to customer');
+    expect(store.progress.bestSalonTurns('welcome-needs-consultation'), 0);
+    expect(find.text('Save rehearsal'), findsOneWidget);
+    expect(find.text('These are practice goals, not a score.'), findsOneWidget);
+    expect(
+      find.textContaining("couldn't save your reply count"),
+      findsOneWidget,
+    );
+    store.failSave = false;
+    await tap(tester, 'Save rehearsal');
+    expect(store.progress.bestSalonTurns('welcome-needs-consultation'), 1);
+    expect(find.text('Save rehearsal'), findsNothing);
+  });
+
+  testWidgets('four-turn Day 3 rehearsal saves four replies, not a score', (
+    tester,
+  ) async {
+    final salon = FakeConversation();
+    await launch(
+      tester,
+      progress: returning,
+      recognition: FakeRecognition(),
+      salon: salon,
+    );
+    await tap(tester, 'Open Day 3');
+    await tap(tester, 'Practise in AI Salon');
+    await tap(tester, 'Enable microphone');
+    for (var turn = 1; turn <= 4; turn++) {
+      if (turn > 1) await tap(tester, 'Prepare next answer');
+      await tap(tester, 'Start recording');
+      await tap(tester, 'Stop recording');
+      await tap(tester, 'Hear my words');
+      if (turn == 1) {
+        await tester.enterText(find.byType(TextField), 'pilot-access-code');
+        await tap(tester, 'Continue');
+      }
+      if (turn == 4) {
+        salon.result = const KoraReply('Thank you for your help.', null);
+      }
+      await tap(tester, 'Send reply to customer');
+      if (turn < 4) {
+        expect(store.progress.bestSalonTurns('welcome-needs-consultation'), 0);
+      }
+    }
+    expect(store.progress.bestSalonTurns('welcome-needs-consultation'), 4);
+    expect(
+      find.text('You answered 4 of 4 customer turns in this rehearsal.'),
+      findsOneWidget,
+    );
+    expect(find.text('These are practice goals, not a score.'), findsOneWidget);
   });
 
   testWidgets('Help Me Say It flows through expression, repeat and role-play', (
@@ -815,6 +930,7 @@ void main() {
           dayOnePrompt: 1,
           otherDayPrompts: {3: 2},
           attemptedPromptIds: {'introduce-name', 'customer-greeting'},
+          salonRehearsalTurns: {'welcome-needs-consultation': 2},
         ),
       );
       await tap(tester, 'Open Day 1');
@@ -835,6 +951,7 @@ void main() {
       expect(store.progress.promptForDay(1), 0);
       expect(store.progress.promptForDay(3), 0);
       expect(store.progress.attemptedPromptIds, isEmpty);
+      expect(store.progress.salonRehearsalTurns, isEmpty);
       expect(mic.discards, greaterThan(0));
     },
   );

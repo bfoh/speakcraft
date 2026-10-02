@@ -175,6 +175,10 @@ class HomeScreen extends ConsumerWidget {
                               ),
                               if (lesson.day == 3 || lesson.day == 5) ...[
                                 const SizedBox(height: 8),
+                                Text(
+                                  'AI Salon replies saved: ${progress.bestSalonTurns(curriculum.scenarioForDay(lesson.day)!.id)} of ${curriculum.scenarioForDay(lesson.day)!.turnLimit}',
+                                ),
+                                const SizedBox(height: 8),
                                 const Text(
                                   'Guided practice. Full challenge is not assessed here.',
                                 ),

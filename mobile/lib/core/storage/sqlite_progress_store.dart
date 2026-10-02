@@ -15,7 +15,7 @@ class SqliteProgressStore implements ProgressStore, ReviewStore {
     final db = await dbFactory.openDatabase(
       path ?? '${await getDatabasesPath()}/speakcraft.db',
       options: OpenDatabaseOptions(
-        version: 4,
+        version: 5,
         onCreate: (db, version) async {
           await db.execute('''
             CREATE TABLE learner_progress (
@@ -34,6 +34,7 @@ class SqliteProgressStore implements ProgressStore, ReviewStore {
           ''');
           await _createReviewTable(db);
           await _createPracticeAttemptsTable(db);
+          await _createSalonRehearsalsTable(db);
         },
         onUpgrade: (db, oldVersion, newVersion) async {
           if (oldVersion < 2) {
@@ -46,6 +47,7 @@ class SqliteProgressStore implements ProgressStore, ReviewStore {
           }
           if (oldVersion < 3) await _createReviewTable(db);
           if (oldVersion < 4) await _createPracticeAttemptsTable(db);
+          if (oldVersion < 5) await _createSalonRehearsalsTable(db);
         },
       ),
     );
@@ -66,6 +68,14 @@ class SqliteProgressStore implements ProgressStore, ReviewStore {
       db.execute('''
     CREATE TABLE practice_attempts (
       prompt_id TEXT PRIMARY KEY NOT NULL CHECK (length(prompt_id) BETWEEN 1 AND 80)
+    )
+  ''');
+
+  static Future<void> _createSalonRehearsalsTable(DatabaseExecutor db) =>
+      db.execute('''
+    CREATE TABLE salon_rehearsals (
+      scenario_id TEXT PRIMARY KEY NOT NULL CHECK (length(scenario_id) BETWEEN 1 AND 80),
+      best_turns INTEGER NOT NULL CHECK (best_turns BETWEEN 1 AND 6)
     )
   ''');
 
@@ -111,6 +121,7 @@ class SqliteProgressStore implements ProgressStore, ReviewStore {
     final row = rows.single;
     final positions = await database.query('lesson_positions');
     final attempts = await database.query('practice_attempts');
+    final rehearsals = await database.query('salon_rehearsals');
     return LearnerProgress(
       onboardingStep: row['onboarding_step'] as int,
       profession: row['profession'] as String?,
@@ -122,6 +133,10 @@ class SqliteProgressStore implements ProgressStore, ReviewStore {
       }),
       attemptedPromptIds: Set.unmodifiable({
         for (final attempt in attempts) attempt['prompt_id'] as String,
+      }),
+      salonRehearsalTurns: Map.unmodifiable({
+        for (final rehearsal in rehearsals)
+          rehearsal['scenario_id'] as String: rehearsal['best_turns'] as int,
       }),
     );
   }
@@ -146,6 +161,13 @@ class SqliteProgressStore implements ProgressStore, ReviewStore {
       for (final promptId in progress.attemptedPromptIds) {
         await txn.insert('practice_attempts', {'prompt_id': promptId});
       }
+      await txn.delete('salon_rehearsals');
+      for (final entry in progress.salonRehearsalTurns.entries) {
+        await txn.insert('salon_rehearsals', {
+          'scenario_id': entry.key,
+          'best_turns': entry.value,
+        });
+      }
     });
   }
 
@@ -154,6 +176,7 @@ class SqliteProgressStore implements ProgressStore, ReviewStore {
     await database.transaction((txn) async {
       await txn.delete('review_state');
       await txn.delete('practice_attempts');
+      await txn.delete('salon_rehearsals');
       await txn.delete('lesson_positions');
       await txn.delete('learner_progress');
     });

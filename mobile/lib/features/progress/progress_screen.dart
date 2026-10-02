@@ -49,6 +49,12 @@ class ProgressScreen extends ConsumerWidget {
                         ? 'Practice steps finished'
                         : '${session.progress.attemptedCount(lesson.prompts.map((p) => p.id))} of ${lesson.prompts.length} speaking steps saved',
                   ),
+                  if (lesson.day == 3 || lesson.day == 5) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'AI Salon replies saved: ${session.progress.bestSalonTurns(curriculum.scenarioForDay(lesson.day)!.id)} of ${curriculum.scenarioForDay(lesson.day)!.turnLimit}',
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   SpeakCraftButton(
                     label: 'Open Day ${lesson.day}',

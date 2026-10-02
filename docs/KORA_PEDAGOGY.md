@@ -6,6 +6,8 @@ Use simple language, keep instructions short, and choose one important correctio
 
 Internal evaluation may eventually capture assistance level and communication outcomes, but must never fabricate measurements. Learner-facing feedback should remain brief and actionable. Three structured AI Salon scenarios and a short Help Me Say It flow are available. The starting assessment captures recordings without scoring; its provisional prompts, picture and future rubric need educator review.
 
+The Day-3 and Day-5 AI Salon end screens show authored goals for learner self-review. Saved reply counts describe how far a rehearsal ran; they do not show whether the customer goal was met, whether speech was intelligible, or whether the Day-3 consultation lasted 90 seconds.
+
 ## Sprint 1 content
 
 Kora's introduction and all Day-1 examples are authored text. Device speech reads that text; there is no model-generated conversation, listening judgement or evaluation. Example names are examples, and the screen asks learners to use their own details. No learner has been assessed simply by passing the assessment introduction.

@@ -70,6 +70,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/salon/day-3',
         builder: (context, state) => const ConversationScreen(
           salon: true,
+          saveRehearsal: true,
           scenarioId: 'welcome-needs-consultation',
         ),
       ),
@@ -77,6 +78,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/salon/day-5',
         builder: (context, state) => const ConversationScreen(
           salon: true,
+          saveRehearsal: true,
           scenarioId: 'complete-salon-conversation',
         ),
       ),

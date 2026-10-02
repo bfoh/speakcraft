@@ -193,6 +193,12 @@ class Curriculum {
     return null;
   }
 
+  SalonScenario? scenarioForDay(int day) => switch (day) {
+    3 => scenarioForId('welcome-needs-consultation'),
+    5 => scenarioForId('complete-salon-conversation'),
+    _ => null,
+  };
+
   factory Curriculum.parse(String source) {
     final json = jsonDecode(source) as Map<String, dynamic>;
     if (json['schema_version'] != 1 ||
